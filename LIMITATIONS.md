@@ -9,7 +9,7 @@ Bachy 0.1.0 is experimental. This is a source audit and targeted comparison with
 | System file clipboard | Cut/copy stores file selections inside one window. It shares between that window's panes, but not separate Bachy windows or Thunar/Nautilus/Dolphin. Copy-path text and drag-and-drop are separate features and do work through different mechanisms. |
 | Copy fidelity | The published v0.1.0 package loses modification time and user extended attributes. Post-0.1.0 main preserves modification time and `user.*` attributes on regular files/directories, subject to destination filesystem support. Access time is captured at item open, possibly after a background size scan. Source mode is still filtered by umask (e.g. 0664 → 0644); special bits, ownership, ACLs, security/system attributes and symlink metadata are excluded. See the [metadata lesson](docs/lessons/01-copy-metadata.md). |
 | Folder collisions | No recursive folder merge. The choices are skip, keep both, replace or cancel. Replacement puts the old object in Trash rather than merging directory contents. |
-| Batch rename | Single-item rename only; no bulk preview, numbering, template naming, find/replace, case conversion or date/metadata renaming. |
+| Batch rename | The GUI renames one item at a time. The TUI supports multi-selection rename through VISUAL/EDITOR, validating one name per line before sequential renames; it is not a graphical template/numbering/date-metadata tool and is not an atomic batch transaction. |
 | Multi-item commands | Dedicated Duplicate and Properties actions require one selected item. Ordinary multi-file copy is supported. |
 | Templates | No creation from documents in the user's Templates directory; only blank files and folders. |
 | Link creation | Existing symlinks are handled, but there is no Create Link/Paste Link or link-drag workflow. |
@@ -51,3 +51,7 @@ The source launcher's Intel/NVIDIA policy is not yet shared by the packaged bina
 - [Dolphin panels](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/panels.html), [views](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/dolphin-view.html).
 
 See [FEATURES.md](FEATURES.md) for implemented functionality and [ROADMAP.md](ROADMAP.md) for planned work.
+
+### Archive tool discovery
+
+Optional tools found on a custom PATH can be offered even when they are outside the archive sandbox. An extracted 7zip runtime in a home workspace was detected but could not execute inside the sandbox (`execvp 7z: No such file or directory`). Use a system installation visible under `/usr`; optional 7z round trips remain unverified in the current audit. System tar.zst, ZIP and RAR fixture checks passed.

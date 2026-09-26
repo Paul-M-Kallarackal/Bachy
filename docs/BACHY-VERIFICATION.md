@@ -8,6 +8,10 @@ The source change documented in [Lesson 1](lessons/01-copy-metadata.md) is not i
 
 A fresh `tests/ops.sh` run passed rename, duplicate, copy/move, no-overwrite and their Undo scenarios, but failed the GIO Trash scenarios in the current test environment. The suite is **not counted as passing**; the feature audit will record the isolated-session rerun separately.
 
+## Comprehensive feature audit
+
+See the [26 September feature audit](BACHY-FEATURE-AUDIT.md) for current GUI/TUI distinctions, native and PTY evidence, corrected test drivers and remaining external prerequisites. Passing individual suites is not certification of every feature or of the full inherited runner.
+
 ## Core checks
 
 - `cargo test --release --locked`: **852 passed, 0 failed** on the publication-preparation run.
@@ -45,7 +49,7 @@ These are idle-GPU observations with local caches, not fresh-boot or cold-disk b
 
 The inherited `tests/run-all.sh` is **not green**. An initial run reported 24 failures out of 35 suites, largely involving missing fixture roots/media, `inotifywait`, legacy Omarchy tooling and environment-specific command resolution. Several suites passed individually afterward; the entire runner was not rerun to completion and is not advertised as passing.
 
-Remaining work includes media-fixture thumbnail/protocol checks, a timing-sensitive UI-state interruption assertion, comprehensive pointer and drag-and-drop behavior, real chooser compatibility, accessibility, physical devices and live network endpoints. Historical Flea benchmarks and screenshots are not Bachy measurements.
+The later feature audit passed media-fixture thumbnail/protocol checks and replaced the timing-sensitive UI-state assertion with a deterministic interruption test. Comprehensive pointer/drag behavior, real chooser compatibility, accessibility, physical devices and live network endpoints remain outside that evidence. Historical Flea benchmarks and screenshots are not Bachy measurements.
 
 ## Reproducing
 

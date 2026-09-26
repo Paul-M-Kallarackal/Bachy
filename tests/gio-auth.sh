@@ -10,6 +10,9 @@ trap cleanup EXIT HUP INT TERM
 sandbox_make "$dir"
 mkdir -p "$dir/bin"
 
+expect_bin=${BACHY_EXPECT_BIN:-$(command -v expect 2>/dev/null)}
+[ -x "$expect_bin" ] || { printf 'gio-auth: expect is missing; install it or set BACHY_EXPECT_BIN to an extracted executable\n' >&2; exit 1; }
+
 fake_secret='not-a-real-password'
 identity_status='unset'
 certificate_status='unset'
@@ -92,7 +95,7 @@ run_helper() {
     : > "$received"
     printf '%s\n' "$fake_secret" | FAKE_GIO_FLOW="$flow" FAKE_GIO_RECEIVED="$received" \
         BACHY_GIO_AUTH_TIMEOUT=5 PATH="$dir/bin:/usr/bin:/bin" \
-        ./tools/bachy-gio-auth 'sftp://user@example.test/' > "$output" 2>&1
+        "$expect_bin" ./tools/bachy-gio-auth 'sftp://user@example.test/' > "$output" 2>&1
 }
 
 for flow in identity certificate; do

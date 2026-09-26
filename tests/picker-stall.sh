@@ -28,7 +28,8 @@ PYEND
 trap cleanup EXIT
 mkdir -p "$fixture/bachy/js"
 cp ui/PickerListing.qml ui/PickerLifecycle.qml ui/Backend.qml "$fixture/bachy/"
-cp ui/js/Messages.js "$fixture/bachy/js/"
+# Copy the real helper imports too: Backend.qml also imports Swap.js.
+cp ui/js/*.js "$fixture/bachy/js/"
 # A test-only method fixes the rare cancel-before-FailedToStart event order, never the handler under test.
 python3 - "$fixture/bachy/Backend.qml" <<'PYEND'
 from pathlib import Path

@@ -27,7 +27,7 @@ A resident process or login preloading is an optional future experiment, not a s
 
 ## 3. Everyday parity
 
-- [ ] Bulk rename with preview, numbering and pattern replacement.
+- [ ] GUI bulk rename with preview, numbering and pattern replacement (external-editor batch rename already exists in the TUI).
 - [ ] Document templates, symlink creation, invert selection and wildcard selection.
 - [ ] Multi-file properties, recursive permissions and group changes.
 - [ ] Restore tab sessions; reorder, detach and reopen tabs.

@@ -56,7 +56,7 @@ while [ -n "${libs// /}" ]; do
   done
   libs=$next
 done
-ln -sfn /usr/share/omarchy/shell/Commons "$QMLDIR/Commons" || exit 1
+ln -sfn "$(readlink -f ui/boot/Commons)" "$QMLDIR/Commons" || exit 1
 printf 'module bachy\nsingleton ViewState 1.0 ViewState.qml\n' > "$QMLDIR/qmldir" || exit 1
 
 cat > "$QMLDIR/probe.qml" <<'QML'

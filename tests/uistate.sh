@@ -448,21 +448,33 @@ echo "     the sweep left $temps temp file(s) behind, one per round killed insid
 check "the sweep left nothing but ui.json, its lock and killed writers' own temps" "0" "$strays"
 check "and never more temps than there were kills" "1" "$([ "$temps" -le "$kills" ] && echo 1 || echo 0)"
 
-# A floor of one kill is what "120 SIGKILL rounds" was being read off, and a 15 ms budget kills 3 of
-# 120 and still clears it. The floor is a fifth of the rounds: a magnitude, not the 88 to 102 this
-# box reached when the floor was set, nor the 92 to 120 the four runs after it reached, because a
-# faster box finishes more rounds inside the 1 to 9 ms budget and a measured
-# number in an assertion is a red gate waiting for the next machine. The count is printed, so
-# anything said about this sweep is read off the run and not off the floor.
-kill_floor=24
-echo "     the sweep killed $kills of 120 rounds, floor $kill_floor"
-check "the kill sweep killed a fifth of its rounds at least" "1" "$([ "$kills" -ge "$kill_floor" ] && echo 1 || echo 0)"
-# The positive control for the line below, which passes vacuously on a sweep that never reached the
-# write: a kill during process startup satisfies kills>0 and enters nothing, while a temp survives
-# only when the kill landed between write_new's exclusive create and the rename, so the count
-# printed above IS the count of rounds killed inside the write window and 0 of them proves nothing.
-check "and a kill landed inside the write window at all" "1" "$([ "$temps" -ge 1 ] && echo 1 || echo 0)"
-check "no kill ever left a partial state file" "0" "$partial"
+# Keep the randomized sweep as stress evidence, but its timing cannot guarantee a
+# kill inside the write on every filesystem/CPU. Prove that window with a barrier.
+echo "     the sweep killed $kills of 120 rounds; $temps reached the write window"
+check "no random kill left a partial state file" "0" "$partial"
+if ! command -v cc >/dev/null || ! cc -shared -fPIC tests/uistate-rename-block.c -ldl -o "$SANDBOX/rename-block.so"; then
+  echo "FAIL could not build the deterministic state-write barrier"
+  fail=1
+else
+  fresh
+  bachy_ui '{"view":"list"}' >/dev/null 2>&1
+  barrier_before=$(cat "$UI")
+  ready="$SANDBOX/run/rename-ready"
+  env LD_PRELOAD="$SANDBOX/rename-block.so" BACHY_UISTATE_TARGET="$UI" BACHY_UISTATE_READY="$ready" \
+    XDG_STATE_HOME="$STATE" XDG_CONFIG_HOME="$CONFIG" "$BIN" --ui-state '{"view":"grid"}' >/dev/null 2>&1 </dev/null &
+  writer_pid=$!
+  for poll in $(seq 1 200); do
+    [ -s "$ready" ] && break
+    sleep 0.01
+  done
+  staged="$UI.$writer_pid.tmp"
+  check "writer reached the barrier before replacing ui.json" "$staged" "$(cat "$ready" 2>/dev/null)"
+  check "new state was fully staged before the kill" "1" "$(grep -c '"view": "grid"' "$staged" 2>/dev/null)"
+  kill -KILL "$writer_pid" 2>/dev/null
+  wait "$writer_pid" 2>/dev/null
+  check "interrupted writer was killed rather than completing" "137" "$?"
+  check "kill at rename leaves the old state byte for byte" "$barrier_before" "$(cat "$UI")"
+fi
 
 sandbox_remove "$SANDBOX" || exit 1
 

@@ -15,16 +15,20 @@ This describes Bachy 0.1.0. “Implemented” means code exists; it does not imp
 | Properties | Basic file information and permission-mode editing | Single local object; no bulk/recursive permission editor |
 | Devices | Discovery, mount, unmount and eject; phone integration paths | GVFS and its relevant backends; physical hardware not comprehensively tested |
 | Network | GIO/GVFS mount flows and saved network locations for supported protocols | SMB/SFTP/FTPS/WebDAV/NFS depend on installed backends and authentication support |
-| Sharing | Optional Tailscale Taildrop and Dropbox actions | External services/CLIs and accounts required; no real peer transfer claimed as tested |
+| Sharing | Optional Tailscale Taildrop, Dropbox and LocalSend actions | External services/CLIs and accounts required; no real peer transfer claimed as tested |
 | Scripts | User executable scripts receive selected paths | Not compatible with Thunarx, Nautilus or KDE extension APIs |
 | Desktop | Desktop entry/icon, folder MIME routing, FileManager1 service, file-chooser portal implementation | Portal and service installation/activation are separate from browsing |
 | Appearance | Local light palette, adjustable text size/density, reduced-motion support, configurable colours | No Omarchy shell required; no automatic desktop-wide theme synchronization |
-| Terminal interface | Inherited Rust TUI, available through --tui | Not a separately parity-certified product |
+| Terminal interface | Rust TUI via --tui: navigation, selection, operations, external-editor bulk rename, previews/PDF/media and Taildrop | External editor/PDF/media/provider tools required for those features; GUI and TUI capabilities differ |
 | Startup | Small boot QML, lazy components, viewport-scoped row work, source-launcher hybrid-GPU policy | GPU policy measured on one Intel/NVIDIA laptop only |
 
 ## Copy metadata on main (after 0.1.0)
 
 Source builds now preserve modification time and `user.*` extended attributes on regular files and directories, including duplicate and cross-filesystem move. Access time is the value observed when each item opens; a background size scan can advance directory access time first. Modes still follow source permissions filtered by umask, with special bits stripped. Metadata errors report failure and keep a partial copy available for recovery; failed cross-filesystem moves retain their source. ACLs, ownership and symlink metadata are excluded. The published **v0.1.0 package does not contain this change**. [First code lesson and verification](docs/lessons/01-copy-metadata.md).
+
+## Retained command-line helpers
+
+The inherited `bachy shelf` commands still support path references, pins/order, transfer/archive helpers and saved piles. Removing the Omarchy bar installation did not remove this CLI. Its presence does not imply a working installed shelf bar.
 
 ## Desktop opening behavior
 

@@ -3,6 +3,9 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
+# Supply the variables makepkg normally provides when this suite sources its recipe.
+startdir=$PWD
+BUILDDIR=${BUILDDIR:-$startdir}
 . ./PKGBUILD
 
 failed=0
@@ -34,7 +37,8 @@ for package in "${required_packages[@]}"; do
 done
 
 helper_path=usr/lib/bachy/bachy-gio-auth
-helper_sha=f4c75e616dd1381b285219415841a2deb9bc9a861998a52aa03a2ace8522d3c8
+# Compare the package with this checkout, not a frozen hash of the pre-port Flea helper.
+helper_sha=$(sha256sum tools/bachy-gio-auth | cut -d' ' -f1)
 package_file=${BACHY_PACKAGE_FILE:-}
 if [ -z "$package_file" ] && command -v makepkg >/dev/null 2>&1; then
     mapfile -t package_files < <(makepkg --packagelist)
@@ -84,9 +88,9 @@ else
         && [ -f "$extract_root/$helper_path" ] && [ -x "$extract_root/$helper_path" ]; then
         archived_sha=$(sha256sum "$extract_root/$helper_path" | cut -d' ' -f1)
         if [ "$archived_sha" = "$helper_sha" ]; then
-            printf 'PASS package helper frozen SHA-256\n'
+            printf 'PASS package helper matches source SHA-256\n'
         else
-            printf 'FAIL package helper SHA-256 differs from frozen helper\n'
+            printf 'FAIL package helper SHA-256 differs from source helper\n'
             failed=$((failed + 1))
         fi
     else

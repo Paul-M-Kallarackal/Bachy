@@ -25,7 +25,9 @@ listing=$(gio list "$uri" | sort)
 [[ "$(gio cat "${uri}alpha.txt")" == "alpha" ]] || fail "alpha.txt content"
 
 local_path=$(gio info "$uri" | sed -n 's/^local path: //p')
-[[ "$local_path" == "/run/user/$(id -u)/gvfs/"* ]] || fail "unexpected FUSE path: $local_path"
+# A private test bus may use an isolated XDG runtime directory.
+runtime_root=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+[[ "$local_path" == "$runtime_root/gvfs/"* ]] || fail "unexpected FUSE path: $local_path"
 [[ -f "$local_path/alpha.txt" ]] || fail "FUSE path cannot read alpha.txt"
 
 DIR="$fixture_dir" ./tools/bachy-gvfs-fixture unmount || fail "unmount"
