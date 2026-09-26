@@ -29,3 +29,4 @@ docs/pending/
 .env
 .env.*
 !.env.example
+/.makepkg-build/

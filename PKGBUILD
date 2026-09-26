@@ -23,6 +23,13 @@ options=('!debug')
 # Empty on purpose: with no source array makepkg builds from $startdir, so a clone is the source.
 source=()
 
+# makepkg otherwise reserves $startdir/src for disposable extraction data. That
+# is this checkout's Rust source directory, so --cleanbuild would delete it.
+# Respect a separate operator-selected build directory; isolate the default.
+if [[ "$BUILDDIR" -ef "$startdir" ]]; then
+  BUILDDIR="$startdir/.makepkg-build"
+fi
+
 build() {
   # Its own target directory, so a makepkg run never disturbs the checkout's target/.
   export CARGO_TARGET_DIR="$srcdir/target"
