@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/bachy-logo.png" width="160" alt="Bachy folder and B logo">
+  <img src="docs/assets/bachy-counterpoint.png" width="192" alt="Bachy abstract counterpoint logo: three flowing bands">
 </p>
 
 # Bachy

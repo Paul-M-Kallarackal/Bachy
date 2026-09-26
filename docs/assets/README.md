@@ -1,15 +1,14 @@
 # Bachy brand assets
 
-- `bachy-logo.png`: generated presentation logo on white, suitable for the repository README in light and dark themes.
-- `bachy-logo-transparent.png`: original transparent-background mark. Use on a light backdrop.
-- `bachy-browser.png`: actual Bachy browser capture using disposable sample files; not a generated UI.
+- `bachy-counterpoint.png`: the current abstract logo, dark ink on an opaque white background.
+- `bachy-browser.png`: an actual Bachy browser capture using disposable sample files, not a generated UI.
 
-The logo was made with the built-in imagegen tool on 26 September 2026. These are raster assets, not hand-drawn vectors. A white-mark experiment was rejected for edge artifacts and is not shipped. The app's existing vector glyph/icon remains until the brand has a consistent small-size icon implementation.
+## Concept
 
-## Original generation prompt
+The mark takes its inspiration from Bach's counterpoint: independent voices retain their character while forming a coherent whole. Three flowing bands suggest rhythm, movement and a shared direction. It is an abstract interpretation, without a portrait or literal musical notation.
 
-Use case: logo-brand. Asset type: application logo for Bachy, a keyboard-first Linux file manager. Create one clean, distinctive, compact logo mark: a simple folder silhouette with a subtle capital B formed by negative space. Crisp geometric construction, confident readable silhouette, restrained professional flat design, monochrome dark ink. Center the single mark with balanced breathing room on a square canvas. Genuinely transparent background with preserved alpha, no background tile. No wordmark, no other text, no gradients, no shadows, no 3D effects, no mockup, no watermark. It should remain recognizable at small desktop icon sizes.
+Created with the built-in imagegen tool on 26 September 2026. The original generated PNG is preserved without raster post-processing. This is a repository branding asset; the existing in-app vector glyph remains until a consistent small-size icon family is prepared.
 
-## Presentation edit prompt
+## Generation prompt
 
-Use case: logo-brand. Edit the provided Bachy logo for a README presentation. Keep the original dark folder silhouette and its crisp negative-space capital B unchanged. Change only the transparent backdrop to a perfectly flat solid white background, including the negative-space B. Keep the existing square composition and margins. Clean sharp edges. No distress, grain, texture, gradients, shadows, wordmark, extra text or other changes.
+Use case: logo-brand. Design a sophisticated ABSTRACT logo for Bachy, inspired by the counterpoint, rhythmic order and expressive movement of Johann Sebastian Bach's music. This is an abstract visual metaphor for a fugue: three independent flowing bands enter at different heights, weave through a compact composition with deliberate negative-space gaps, and resolve into a harmonious upward movement. Find a distinctive, elegant silhouette with the rigor of a modernist music-publisher symbol and a restrained hint of Baroque calligraphy. Bold smooth shapes, precise optical balance, only a few broad curves; readable as a small app icon. It should feel intelligent, fluid and quietly inspirational, not technical clipart. Flat near-black ink on a completely OPAQUE solid WHITE square canvas. Keep the emblem centered and occupying roughly 70 percent of the canvas. ABSOLUTE exclusions: no person, no face, no wig, no portrait, no bust, no photo, no sheet music, no literal musical notes, no treble clef, no folder, no letters or wordmark, no infinity sign, no AI-style hexagonal knot, no circular badge frame, no shadows, no 3D, no gradients, no mockup, no decorative background. One polished abstract mark only.
