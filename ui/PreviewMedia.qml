@@ -1,6 +1,6 @@
 import QtQuick
 import QtMultimedia
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 
 // The only file in the tree importing QtMultimedia: reached only through Preview.qml's Loader, on demand.
@@ -71,7 +71,7 @@ Item {
         source: root.path === "" ? "" : Format.fileUri(root.path)
         autoPlay: root.autoStart
         // MediaMute rule 5: mute silences without pausing, so the clock and the handle keep moving.
-        audioOutput: AudioOutput { muted: Flea.MediaSound.muted }
+        audioOutput: AudioOutput { muted: Bachy.MediaSound.muted }
         videoOutput: video
     }
 
@@ -89,7 +89,7 @@ Item {
         visible: root.kind === "video"
     }
 
-    Flea.Glyph {
+    Bachy.Glyph {
         anchors.centerIn: parent
         maxSize: Theme.stateMarkSize
         width: Theme.stateMarkSize
@@ -109,7 +109,7 @@ Item {
         spacing: Theme.spacing.rowPaddingX
         visible: root.kind === "audio" && !root.failed
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.verticalCenter: parent.verticalCenter
             maxSize: Theme.stateMarkSize
             width: Theme.stateMarkSize
@@ -158,7 +158,7 @@ Item {
         spacing: Theme.spacing.gap
         visible: root.failed
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.horizontalCenter: parent.horizontalCenter
             maxSize: Theme.stateMarkSize
             width: Theme.stateMarkSize

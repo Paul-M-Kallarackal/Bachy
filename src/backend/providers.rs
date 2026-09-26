@@ -32,7 +32,7 @@ fn command_json(name: &str, paths: &[PathBuf]) -> String {
     format!(r#"{{"installed":{},"command":"{}","reason":"{}"}}"#, installed, escape(&command), escape(&reason))
 }
 
-// Directive 71: what Flea can drive is localsend-cli, not the app's own window, so the row is offered
+// Directive 71: what Bachy can drive is localsend-cli, not the app's own window, so the row is offered
 // when that is on PATH. The helper still takes a list, because a rename upstream is one name away.
 fn command_json_any(names: &[&str], paths: &[PathBuf]) -> String {
     let mut answer = (false, String::new(), String::new());
@@ -65,7 +65,7 @@ pub(crate) fn facts() -> String {
         .and_then(|home| dropbox_info(&PathBuf::from(home).join(".dropbox/info.json")));
     let (text, error) = match info { Ok(text) => (text, String::new()), Err(error) => (String::new(), error) };
     format!(r#"{{"taildrop":{},"taildropSend":{},"localsend":{},"dropbox":{},"dropboxInfo":"{}","dropboxError":"{}"}}"#,
-        command_json("tailscale", &paths), command_json("omarchy-tailscale-send", &paths),
+        command_json("tailscale", &paths), command_json("tailscale", &paths),
         command_json_any(&["localsend-cli"], &paths),
         command_json("dropbox-cli", &paths), escape(&text), escape(&error))
 }

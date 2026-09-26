@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Proves trust warnings stop before one redacted password-only GIO exchange.
 set -u
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
-dir="$FIXTURE_ROOT/flea-gio-auth-$$"
+dir="$FIXTURE_ROOT/bachy-gio-auth-$$"
 cleanup() { sandbox_remove "$dir"; }
 trap cleanup EXIT HUP INT TERM
 sandbox_make "$dir"
@@ -91,8 +91,8 @@ run_helper() {
     local flow=$1 received=$2 output=$3
     : > "$received"
     printf '%s\n' "$fake_secret" | FAKE_GIO_FLOW="$flow" FAKE_GIO_RECEIVED="$received" \
-        FLEA_GIO_AUTH_TIMEOUT=5 PATH="$dir/bin:/usr/bin:/bin" \
-        ./tools/flea-gio-auth 'sftp://user@example.test/' > "$output" 2>&1
+        BACHY_GIO_AUTH_TIMEOUT=5 PATH="$dir/bin:/usr/bin:/bin" \
+        ./tools/bachy-gio-auth 'sftp://user@example.test/' > "$output" 2>&1
 }
 
 for flow in identity certificate; do

@@ -6,9 +6,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 // The one name that makes a directory deletable by this module; a directory without it is never touched.
-const MARKER: &str = ".flea-test-sandbox";
+const MARKER: &str = ".bachy-test-sandbox";
 // Every sandbox this process makes shares it, so a stray path outside the pattern is refused on the name alone.
-const PREFIX: &str = "flea-test-";
+const PREFIX: &str = "bachy-test-";
 // A sandbox lives under the temp root, which is at least two components deep, so a shallower path is a bug and not a root.
 const MIN_COMPONENTS: usize = 3;
 
@@ -47,7 +47,7 @@ impl TestDir {
         let path = root.join(name);
         std::fs::create_dir(&path).expect("test sandbox could not be created");
         let mut marker = std::fs::File::create(path.join(MARKER)).expect("test sandbox marker");
-        marker.write_all(b"flea test sandbox\n").expect("test sandbox marker");
+        marker.write_all(b"bachy test sandbox\n").expect("test sandbox marker");
         TestDir { path }
     }
 
@@ -109,7 +109,7 @@ impl Drop for TestDir {
             owner_can_write(&self.path);
             // Loud: a sandbox outliving its test is the state that left eleven roots on this box.
             if let Err(e) = std::fs::remove_dir_all(&self.path) {
-                eprintln!("flea test sandbox left behind: {}: {}", self.path.display(), e);
+                eprintln!("bachy test sandbox left behind: {}: {}", self.path.display(), e);
             }
         }
     }
@@ -225,7 +225,7 @@ mod tests {
         assert!(!removable(Path::new("/")));
         assert!(!removable(Path::new("")));
         // A relative path can be anything the caller's cwd makes it, so it never qualifies.
-        assert!(!removable(Path::new("flea-test-relative")));
+        assert!(!removable(Path::new("bachy-test-relative")));
         // Right shape, right place, no marker.
         let bare = outside.dir(&format!("{}bare", PREFIX));
         assert!(!removable(&bare));

@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Commons
 
 // The Dropbox mark, reproduced from the official artwork rather than recut, the same ruling that
 // brought TailscaleMark back. Five diamond tiles, monochrome and palette-tinted, no brand colour.
-// Outside the cut and outside Glyph.qml, where FleaMark sits.
+// Outside the cut and outside Glyph.qml, where BachyMark sits.
 Item {
     id: root
 

@@ -9,7 +9,7 @@ pub(super) fn echo_wire() -> (Wire, std::thread::JoinHandle<()>) {
     let quit = jsondoc::render(&Json::Obj(vec![("c".into(), word("quit"))])).replace('\n', "");
     let mut child = Command::new("sh").args(["-c",
         r#"while IFS= read -r line; do [ "$line" = "$1" ] && exit 0; printf '%s\n' "$line"; done"#,
-        "flea-tui-wire-test", &quit]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
+        "bachy-tui-wire-test", &quit]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
     let input = child.stdin.take().unwrap();
     let output = child.stdout.take().unwrap();
     let (tx, events) = mpsc::channel();

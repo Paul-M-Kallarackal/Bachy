@@ -1,7 +1,7 @@
-// The undo journal, designed in from the first operation, which is why nothing in Flea needs a confirm dialog.
+// The undo journal, designed in from the first operation, which is why nothing in Bachy needs a confirm dialog.
 use crate::backend::renamecompat::rename_path;
 use crate::backend::trash;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 
@@ -17,7 +17,7 @@ impl ItemIdentity {
     pub fn record(meta: &std::fs::Metadata) -> Self {
         Self { dev: meta.dev(), ino: meta.ino(), kind: meta.mode() & 0o170000, changed: (meta.ctime(), meta.ctime_nsec()) }
     }
-    pub fn inspect(path: &std::path::Path) -> Result<Self, FleaError> {
+    pub fn inspect(path: &std::path::Path) -> Result<Self, BachyError> {
         path.symlink_metadata().map(|meta| Self::record(&meta))
             .map_err(|e| from_io("journal", &path.to_string_lossy(), &e))
     }
@@ -81,7 +81,7 @@ const DEPTH: usize = 50;
 
 pub struct Journal {
     entries: Vec<Entry>,
-    redo: Vec<Result<super::redo::Replay, FleaError>>,
+    redo: Vec<Result<super::redo::Replay, BachyError>>,
 }
 
 impl Journal {
@@ -117,7 +117,7 @@ impl Journal {
 
     // The whole entry is reversed or the failure is reported; a step that fails stops the rest, because
     // continuing past it would leave the operation half-reversed with nothing recording which half.
-    pub fn undo(&mut self) -> Result<String, FleaError> {
+    pub fn undo(&mut self) -> Result<String, BachyError> {
         let entry = match self.entries.pop() {
             Some(e) => e,
             None => return Err(err("there is nothing to undo")),
@@ -130,17 +130,17 @@ impl Journal {
         Ok(op)
     }
 
-    pub fn redo_info(&self) -> Result<(String, usize), FleaError> {
+    pub fn redo_info(&self) -> Result<(String, usize), BachyError> {
         match self.redo.last() {
             Some(Ok(replay)) => Ok((replay.op().to_string(), replay.len())),
-            Some(Err(error)) => Err(FleaError { where_: "redo".into(), path: error.path.clone(), msg: error.msg.clone() }),
-            None => Err(FleaError { where_: "redo".into(), path: String::new(), msg: "there is nothing to redo".into() }),
+            Some(Err(error)) => Err(BachyError { where_: "redo".into(), path: error.path.clone(), msg: error.msg.clone() }),
+            None => Err(BachyError { where_: "redo".into(), path: String::new(), msg: "there is nothing to redo".into() }),
         }
     }
 
     pub fn redo(&mut self, id: usize, cancel: &std::sync::atomic::AtomicBool,
-                tx: &std::sync::mpsc::Sender<super::opsreq::OpMsg>) -> Result<String, FleaError> {
-        let replay = self.redo.pop().ok_or_else(|| FleaError { where_: "redo".into(), path: String::new(), msg: "there is nothing to redo".into() })??;
+                tx: &std::sync::mpsc::Sender<super::opsreq::OpMsg>) -> Result<String, BachyError> {
+        let replay = self.redo.pop().ok_or_else(|| BachyError { where_: "redo".into(), path: String::new(), msg: "there is nothing to redo".into() })??;
         let (entry, changes, result) = replay.run(id, cancel, tx);
         for (old, new) in changes { self.rebase(&old, &new); }
         if !entry.steps.is_empty() { self.entries.push(entry); }
@@ -157,31 +157,31 @@ impl Journal {
 // The shelf keeps its one step back in a file rather than in a Journal, because the process that
 // made the move has exited by the time the card presses z; the walk home is still this one, so the
 // no-clobber rename and its cross-filesystem fallback are shared rather than written twice.
-pub fn move_back(to: &std::path::Path, from: &std::path::Path) -> Result<(), FleaError> {
+pub fn move_back(to: &std::path::Path, from: &std::path::Path) -> Result<(), BachyError> {
     rename_path(to, from)
 }
 
-pub fn copied(from: &std::path::Path, to: &std::path::Path, source: ItemIdentity) -> Result<Step, FleaError> {
+pub fn copied(from: &std::path::Path, to: &std::path::Path, source: ItemIdentity) -> Result<Step, BachyError> {
     Ok(Step::Copied { from: from.to_path_buf(), to: to.to_path_buf(), source, created: ItemIdentity::inspect(to)?, manifest: None })
 }
 
 // A failed or cancelled tree copy carries what it managed to create; a success keeps the plain step.
 
-pub fn copied_partial(from: &std::path::Path, to: &std::path::Path, source: ItemIdentity, manifest: Option<super::copymanifest::Handle>) -> Result<Step, FleaError> {
+pub fn copied_partial(from: &std::path::Path, to: &std::path::Path, source: ItemIdentity, manifest: Option<super::copymanifest::Handle>) -> Result<Step, BachyError> {
     Ok(Step::Copied { from: from.to_path_buf(), to: to.to_path_buf(), source, created: ItemIdentity::inspect(to)?, manifest })
 }
 
-pub fn moved(from: &std::path::Path, to: &std::path::Path, before: ItemIdentity) -> Result<Step, FleaError> {
+pub fn moved(from: &std::path::Path, to: &std::path::Path, before: ItemIdentity) -> Result<Step, BachyError> {
     Ok(Step::Moved { from: from.to_path_buf(), to: to.to_path_buf(), before, after: ItemIdentity::inspect(to)? })
 }
 
-fn reverse(step: &Step) -> Result<Option<(ItemIdentity, ItemIdentity)>, FleaError> {
+fn reverse(step: &Step) -> Result<Option<(ItemIdentity, ItemIdentity)>, BachyError> {
     match step {
         // Back the way it came, and still refusing to clobber: something may occupy the old name now.
         Step::Moved { from, to, after, .. } => {
             let current = ItemIdentity::inspect(to)?;
             if !after.same_item(&current) {
-                return Err(FleaError { where_: "undo".into(), path: to.to_string_lossy().into(), msg: "the moved item was replaced, so undo left it in place".into() });
+                return Err(BachyError { where_: "undo".into(), path: to.to_string_lossy().into(), msg: "the moved item was replaced, so undo left it in place".into() });
             }
             rename_path(to, from)?;
             return Ok(if current == *after { Some((current, ItemIdentity::inspect(from)?)) } else { None });
@@ -205,7 +205,7 @@ fn reverse(step: &Step) -> Result<Option<(ItemIdentity, ItemIdentity)>, FleaErro
         }
         Step::MadeDir { path, identity } => {
             if !identity.same_item(&ItemIdentity::inspect(path)?) {
-                return Err(FleaError { where_: "undo".into(), path: path.to_string_lossy().into(), msg: "the new folder was replaced, so undo left it in place".into() });
+                return Err(BachyError { where_: "undo".into(), path: path.to_string_lossy().into(), msg: "the new folder was replaced, so undo left it in place".into() });
             }
             remove_empty(path)?;
         }
@@ -216,23 +216,23 @@ fn reverse(step: &Step) -> Result<Option<(ItemIdentity, ItemIdentity)>, FleaErro
 }
 
 // Today's whole-tree check, kept for successes and for a manifest that never verified a record.
-fn remove_copied(to: &PathBuf, created: &ItemIdentity) -> Result<Option<(ItemIdentity, ItemIdentity)>, FleaError> {
+fn remove_copied(to: &PathBuf, created: &ItemIdentity) -> Result<Option<(ItemIdentity, ItemIdentity)>, BachyError> {
     if ItemIdentity::inspect(to)? != *created {
-        return Err(FleaError { where_: "undo".into(), path: to.to_string_lossy().into(),
+        return Err(BachyError { where_: "undo".into(), path: to.to_string_lossy().into(),
             msg: "the copied item changed since this operation, so undo left it in place".into() });
     }
     if let Some(newer) = newer_inside(to, created.changed)? {
-        return Err(FleaError { where_: "undo".into(), path: newer.to_string_lossy().into(),
+        return Err(BachyError { where_: "undo".into(), path: newer.to_string_lossy().into(),
             msg: "something inside the copied folder changed since this operation, so undo left it in place".into() });
     }
     remove(to)?;
     Ok(None)
 }
 
-fn remove_new_file(path: &PathBuf, identity: &ItemIdentity) -> Result<(), FleaError> {
+fn remove_new_file(path: &PathBuf, identity: &ItemIdentity) -> Result<(), BachyError> {
     let meta = path.symlink_metadata().map_err(|e| from_io("undo", &path.to_string_lossy(), &e))?;
     if !meta.is_file() || meta.len() != 0 || ItemIdentity::record(&meta) != *identity {
-        return Err(FleaError { where_: "undo".into(), path: path.to_string_lossy().into(),
+        return Err(BachyError { where_: "undo".into(), path: path.to_string_lossy().into(),
             msg: "the new file changed since creation, so undo left it in place".into() });
     }
     std::fs::remove_file(path).map_err(|e| from_io("undo", &path.to_string_lossy(), &e))
@@ -243,7 +243,7 @@ fn remove_new_file(path: &PathBuf, identity: &ItemIdentity) -> Result<(), FleaEr
 // root's mode last, so nothing it wrote is newer than the ctime recorded for the root.
 // corner: neither a change landing between this walk and the removal, the window every check-then-act
 // has, nor one inside the filesystem's own timestamp granularity: tmpfs is coarser than a copy is fast.
-fn newer_inside(root: &std::path::Path, copied: (i64, i64)) -> Result<Option<PathBuf>, FleaError> {
+fn newer_inside(root: &std::path::Path, copied: (i64, i64)) -> Result<Option<PathBuf>, BachyError> {
     let meta = root.symlink_metadata().map_err(|e| from_io("undo", &root.to_string_lossy(), &e))?;
     if !meta.is_dir() || meta.file_type().is_symlink() {
         return Ok(None);
@@ -266,7 +266,7 @@ fn newer_inside(root: &std::path::Path, copied: (i64, i64)) -> Result<Option<Pat
 }
 
 // Only ever a path this operation itself created, so a directory it made is removed with its contents.
-fn remove(path: &PathBuf) -> Result<(), FleaError> {
+fn remove(path: &PathBuf) -> Result<(), BachyError> {
     let meta = path
         .symlink_metadata()
         .map_err(|e| from_io("undo", &path.to_string_lossy(), &e))?;
@@ -280,10 +280,10 @@ fn remove(path: &PathBuf) -> Result<(), FleaError> {
 
 // Only ever an empty directory this operation made. A folder the user has filled since is theirs now, so
 // undo refuses and leaves it, the way a rename undo refuses a name something else has taken meanwhile.
-fn remove_empty(path: &PathBuf) -> Result<(), FleaError> {
+fn remove_empty(path: &PathBuf) -> Result<(), BachyError> {
     match std::fs::remove_dir(path) {
         Ok(()) => Ok(()),
-        Err(e) if e.kind() == std::io::ErrorKind::DirectoryNotEmpty => Err(FleaError {
+        Err(e) if e.kind() == std::io::ErrorKind::DirectoryNotEmpty => Err(BachyError {
             where_: "undo".to_string(),
             path: path.to_string_lossy().to_string(),
             msg: "the new folder has been filled since, so undo left it in place".to_string(),
@@ -292,8 +292,8 @@ fn remove_empty(path: &PathBuf) -> Result<(), FleaError> {
     }
 }
 
-fn err(msg: &str) -> FleaError {
-    FleaError { where_: "undo".to_string(), path: String::new(), msg: msg.to_string() }
+fn err(msg: &str) -> BachyError {
+    BachyError { where_: "undo".to_string(), path: String::new(), msg: msg.to_string() }
 }
 
 #[cfg(test)]

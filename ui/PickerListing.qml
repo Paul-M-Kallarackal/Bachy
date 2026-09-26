@@ -70,7 +70,7 @@ Item {
             property var request
             property bool obsolete: false
             property bool started: false
-            command: [Quickshell.env("FLEA_BIN") || "flea", "--backend"]
+            command: [Quickshell.env("BACHY_BIN") || "bachy", "--backend"]
             stdinEnabled: true
             onStarted: {
                 started = true

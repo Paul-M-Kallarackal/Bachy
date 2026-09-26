@@ -3,10 +3,11 @@
 # 0.2.1 demanded a credential for every sftp://user@host before it ever ran gio, so no key could
 # ever open one; see AGENTS.md "A public key mounts sftp, and a password is asked only after".
 set -u
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+QS_BIN=$(command -v qs) || { echo "Quickshell is required" >&2; exit 1; }
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
-test_root="$FIXTURE_ROOT/flea-network-keyless-$$"
+test_root="$FIXTURE_ROOT/bachy-network-keyless-$$"
 sandbox_make "$test_root"
 cleanup() { sandbox_remove "$test_root"; }
 trap cleanup EXIT
@@ -24,29 +25,29 @@ helper_log="$test_root/state/helper.log"
 : > "$helper_log"
 
 # Only the submitted fixture token and expected URI may authenticate this location.
-cat > "$test_root/bin/flea-gio-auth" <<'EOS'
+cat > "$test_root/bin/bachy-gio-auth" <<'EOS'
 #!/bin/sh
 [ "$#" -eq 1 ] || exit 2
 [ "$1" = "sftp://pw@slot.test/home" ] || exit 60
 IFS= read -r password || exit 3
 [ "$password" = "fixture-secret" ] || exit 4
 password=
-printf 'auth uri=%s token=accepted\n' "$1" >> "$FLEA_TEST_CALL_LOG"
-printf 'uri=%s token=accepted\n' "$1" >> "$FLEA_TEST_HELPER_LOG"
-: > "$FLEA_TEST_AUTH_MARKER"
+printf 'auth uri=%s token=accepted\n' "$1" >> "$BACHY_TEST_CALL_LOG"
+printf 'uri=%s token=accepted\n' "$1" >> "$BACHY_TEST_HELPER_LOG"
+: > "$BACHY_TEST_AUTH_MARKER"
 EOS
-chmod +x "$test_root/bin/flea-gio-auth"
+chmod +x "$test_root/bin/bachy-gio-auth"
 
 cat > "$test_root/bin/gio" <<'EOS'
 #!/bin/sh
 if [ "$1 ${2:-}" != "mount -li" ]; then
-  printf 'gio %s\n' "$*" >> "$FLEA_TEST_CALL_LOG"
+  printf 'gio %s\n' "$*" >> "$BACHY_TEST_CALL_LOG"
 fi
 case "$1 ${2:-}" in
   "mount -li") exit 2 ;;
   # A key authenticates this one, the way gvfsd-sftp's own ssh does, so no prompt ever appears.
   "mount sftp://key@slot.test/home") exit 0 ;;
-  "info sftp://key@slot.test/home") printf 'local path: %s\n' "$FLEA_TEST_KEY_PATH" ;;
+  "info sftp://key@slot.test/home") printf 'local path: %s\n' "$BACHY_TEST_KEY_PATH" ;;
   # These two refused locations must both reach gio mount before their credential prompt.
   "mount sftp://ask@slot.test/home") exit 2 ;;
   "info sftp://ask@slot.test/home") exit 2 ;;
@@ -57,8 +58,8 @@ case "$1 ${2:-}" in
   # The remembered-password location refuses its keyless attempt, then opens only after auth.
   "mount sftp://pw@slot.test/home") exit 2 ;;
   "info sftp://pw@slot.test/home")
-    [ -e "$FLEA_TEST_AUTH_MARKER" ] || exit 2
-    printf 'local path: %s\n' "$FLEA_TEST_AUTH_PATH"
+    [ -e "$BACHY_TEST_AUTH_MARKER" ] || exit 2
+    printf 'local path: %s\n' "$BACHY_TEST_AUTH_PATH"
     ;;
   # An SMB root whose info refuses but whose list enumerates must still be tried.
   "mount --anonymous") [ "$3" = "smb://nas.test/" ] && exit 2 || exit 64 ;;
@@ -72,17 +73,17 @@ EOS
 chmod +x "$test_root/bin/gio"
 
 output=$(env \
-    FLEA_TEST_KEY_PATH="/key-should-open" \
-    FLEA_TEST_AUTH_PATH="/password-should-open" \
-    FLEA_TEST_AUTH_MARKER="$test_root/state/authenticated" \
-    FLEA_TEST_CALL_LOG="$call_log" \
-    FLEA_TEST_HELPER_LOG="$helper_log" \
-    FLEA_GIO_AUTH="$test_root/bin/flea-gio-auth" \
+    BACHY_TEST_KEY_PATH="/key-should-open" \
+    BACHY_TEST_AUTH_PATH="/password-should-open" \
+    BACHY_TEST_AUTH_MARKER="$test_root/state/authenticated" \
+    BACHY_TEST_CALL_LOG="$call_log" \
+    BACHY_TEST_HELPER_LOG="$helper_log" \
+    BACHY_GIO_AUTH="$test_root/bin/bachy-gio-auth" \
     HOME="$test_root/home" \
     PATH="$test_root/bin:/usr/bin:/bin" \
     QT_QPA_PLATFORM=offscreen \
     QT_FORCE_STDERR_LOGGING=1 \
-    timeout 20 qs -p "$test_root/config" 2>&1)
+    timeout 20 "$QS_BIN" -p "$test_root/config" 2>&1)
 
 failures=0
 pass_count=$(printf '%s\n' "$output" | grep -c 'NETWORK_KEYLESS passwordless=open needs-password=asked bare-root=asked remembered=kept smb-root=listed')

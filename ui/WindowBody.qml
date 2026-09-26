@@ -1,8 +1,7 @@
 import Quickshell
 import QtQuick
-import qs.Commons
 import "."
-import "." as Flea
+import "." as Bachy
 import "js/TextSize.js" as TextSize
 import "js/Nav.js" as Nav
 import "js/Ops.js" as Ops
@@ -15,7 +14,7 @@ Rectangle {
     id: view
     anchors.fill: parent
     color: Theme.color.background
-    // The window this body was loaded into. Named host, not fleaWindow: a root property of
+    // The window this body was loaded into. Named host, not bachyWindow: a root property of
     // that name would bind to itself through Ipc and read null.
     property var host
     readonly property bool dualMode: ViewState.state.view === "dual"
@@ -77,7 +76,7 @@ Rectangle {
             ViewState.followTextSize()
         else
             ViewState.stepTextSize(direction)
-        view.currentPane.message(TextSize.announce(ViewState.textSize, ViewState.omarchyBase), false)
+        view.currentPane.message(TextSize.announce(ViewState.textSize, ViewState.appBase), false)
     }
 
     // The backend is told first and answers when it has drained, so closing never leaves a half
@@ -91,7 +90,7 @@ Rectangle {
 
     // The canvas's own top chrome: where you are on the left, how you are looking at it on
     // the right. The path lives here, which is why the status bar below carries counts instead.
-    Flea.ChromeBar {
+    Bachy.ChromeBar {
         id: chrome
         inputLive: !preview.active
         visible: view.dualMode || !view.currentPane.trash.opened
@@ -133,7 +132,7 @@ Rectangle {
         function onPeeked(path, hidden, total, rows, readFailed, mode) { chrome.completeWith(path, hidden, rows) }
     }
 
-    Flea.TabBar {
+    Bachy.TabBar {
         id: tabBar
         anchors.left: parent.left
         anchors.right: parent.right
@@ -141,7 +140,7 @@ Rectangle {
         pane: view.currentPane
     }
 
-    Flea.Pane {
+    Bachy.Pane {
         id: primaryPane
         anchors.left: parent.left
         width: view.dualMode ? sidebarWidth + (view.width - sidebarWidth - Theme.spacing.hairline) / 2 : view.width
@@ -190,7 +189,7 @@ Rectangle {
                 preserveSort: true
                 onQuitReady: view.backendDrained(1)
             }
-            Flea.Pane {
+            Bachy.Pane {
                 id: otherPane
                 anchors.fill: parent
                 backend: otherBackend
@@ -221,11 +220,11 @@ Rectangle {
         onLoaded: {
             built = true
             // Before initialized this is the launch, the only time a command-line folder applies.
-            var named = view.initialized ? "" : (Quickshell.env("FLEA_PATH") || "")
+            var named = view.initialized ? "" : (Quickshell.env("BACHY_PATH") || "")
             var pair = Startup.dualPaths(ViewState.state.dual, primaryPane.path || primaryPane.home, named)
             item.pane.clipboard = primaryPane.clipboard
             if (pair.launchSide === 1)
-                item.pane.pendingSelect = Quickshell.env("FLEA_SELECT") || ""
+                item.pane.pendingSelect = Quickshell.env("BACHY_SELECT") || ""
             item.pane.open(pair.paths[1])
             if (view.initialized && view.dualMode) view.focusPane(view.focusSide)
         }
@@ -240,7 +239,7 @@ Rectangle {
         color: Theme.color.muted
     }
 
-    Flea.StatusBar {
+    Bachy.StatusBar {
         id: bar
         anchors.left: parent.left
         anchors.right: parent.right
@@ -261,7 +260,7 @@ Rectangle {
         onTransferCancelRequested: function (id) { bar.transferOwner.backend.transfercancel(id) }
     }
 
-    Flea.Preview { id: preview; pane: view.currentPane }
+    Bachy.Preview { id: preview; pane: view.currentPane }
 
     MouseArea {
         anchors.fill: parent
@@ -441,12 +440,12 @@ Rectangle {
 
     Component.onCompleted: {
         var home = Quickshell.env("HOME")
-        var named = Quickshell.env("FLEA_PATH") || ""
+        var named = Quickshell.env("BACHY_PATH") || ""
         var start = Startup.startPath(ViewState.state, home, named)
         var pair = Startup.dualPaths(ViewState.state.dual, start, named)
         // Read once, and only on the side that took the named folder; Pane.applyPendingSelect() forgets it after the first rows.
         if (!view.dualMode || pair.launchSide !== 1)
-            primaryPane.pendingSelect = Quickshell.env("FLEA_SELECT") || ""
+            primaryPane.pendingSelect = Quickshell.env("BACHY_SELECT") || ""
         primaryPane.open(view.dualMode ? pair.paths[0] : start)
         view.initialized = true
         if (view.dualMode) view.focusPane(view.focusSide)
@@ -466,8 +465,8 @@ Rectangle {
     }
 
     // The seam the tests drive, see AGENTS.md "Testing". Every reader lives in ui/Ipc.qml.
-    Flea.Ipc {
-        fleaWindow: view.host
+    Bachy.Ipc {
+        bachyWindow: view.host
         pane: view.currentPane
         panes: [primaryPane, secondPane.item ? secondPane.item.pane : null]
         bar: bar

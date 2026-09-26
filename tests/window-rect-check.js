@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../ui/boot/shell.qml'), 'utf8');
 const handler = source.match(/^        function rectOf\(item\) \{[^]*?^        \}/m);
 assert.ok(handler, 'production rectangle observer exists');
-const context = vm.createContext({fleaWindow: {itemRect: item => item}});
+const context = vm.createContext({bachyWindow: {itemRect: item => item}});
 vm.runInContext(handler[0], context);
 assert.equal(context.rectOf(null), '');
 assert.equal(context.rectOf({x: 1364.5, y: 69, width: 1171.5, height: 1294}), '1365 69 1171 1294');

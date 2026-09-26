@@ -1,13 +1,12 @@
 import QtQuick
 import Quickshell.Io
-import qs.Commons
 import "js/Tabs.js" as Tabs
 
 // The seam the tests drive, see AGENTS.md "Testing". Read-only: it reports, never acts.
 QtObject {
     id: root
 
-    property var fleaWindow: null
+    property var bachyWindow: null
     property var pane: null
     property var panes: []
     property var bar: null
@@ -27,18 +26,18 @@ QtObject {
     function controlState(name, item) {
         return {name: name, visible: !!item && item.visible, enabled: !!item && item.enabled
             && (item.available === undefined || item.available), focused: !!item && item.activeFocus,
-            centre: item ? root.fleaWindow.centreOf(item) : "", rect: item ? root.fleaWindow.rectOf(item) : ""}
+            centre: item ? root.bachyWindow.centreOf(item) : "", rect: item ? root.bachyWindow.rectOf(item) : ""}
     }
     function confirmationState(item) {
         return item ? {opened: item.opened, token: item.snapshot.token || 0, count: item.snapshot.count || 0,
             all: item.snapshot.all === true, destructiveFocus: item.destructiveFocus, title: item.titleText,
-            rect: root.fleaWindow.rectOf(item.cardItem), cancel: root.controlState("Cancel", item.cancelItem),
+            rect: root.bachyWindow.rectOf(item.cardItem), cancel: root.controlState("Cancel", item.cancelItem),
             danger: root.controlState("Delete", item.dangerItem)} : {opened: false}
     }
 
     // The wrapper holds the references because an IpcHandler marshals every property it owns.
     property IpcHandler seam: IpcHandler {
-        target: "flea"
+        target: "bachy"
         function ready(): bool { return true }
         function themeLoaded(): bool { return Theme.ready }
         function themeForeground(): string { return String(Theme.color.foreground) }
@@ -53,7 +52,7 @@ QtObject {
         function metrics(): string { return Theme.font.bodySmall + " " + Theme.font.caption + " " + Theme.spacing.rowPaddingX + " " + Theme.rowHeight }
         // A file row at the stored density; metrics() keeps the board rowHeight, which density never moves.
         function fileRowHeight(): int { return Theme.fileRowHeight }
-        // Every token the Blueprint board states, one key=value per line; tools/flea-metrics-gate diffs it. metrics() above stays positional for tests/ui.sh.
+        // Every token the Blueprint board states, one key=value per line; tools/bachy-metrics-gate diffs it. metrics() above stays positional for tests/ui.sh.
         function tokens(): string { return Theme.tokens() }
         function cursor(): int { return root.pane.cursorIndex }
         function gridColumns(): int { return root.pane.cursorStride }
@@ -116,7 +115,7 @@ QtObject {
             }), errors: root.bar.errors.length, notice: root.bar.notice,
                 undoAvailable: root.bar.hasUndo,
                 transferCard: {visible: !!card && card.visible, cancelling: !!card && card.cancelling, byteLine: card ? card.byteText : "",
-                    rect: root.fleaWindow.rectOf(card), cancel: root.controlState("Cancel", card ? card.cancelItem : null)}})
+                    rect: root.bachyWindow.rectOf(card), cancel: root.controlState("Cancel", card ? card.cancelItem : null)}})
         }
         function statusFooterState(): string {
             // Every zone's x in the strip's own coordinates: the centre pair sits in a Row inside the middle slot, so its own x is relative to that Row and says nothing about zone order.
@@ -127,7 +126,7 @@ QtObject {
             }
             return JSON.stringify({path: root.bar.path, total: root.bar.total, selected: root.bar.selectionCount,
                 listingState: root.bar.listingState, filesystem: root.bar.fsText(), counts: root.bar.countText(),
-                frame: root.fleaWindow.rectOf(root.bar.stripItem), borderWidth: root.bar.stripItem.border.width,
+                frame: root.bachyWindow.rectOf(root.bar.stripItem), borderWidth: root.bar.stripItem.border.width,
                 zoneWidth: root.bar.zoneWidth, hintWidth: root.bar.hintWidth,
                 left: textState(root.bar.countsItem), centre: textState(root.bar.primaryItem),
                 secondary: textState(root.bar.secondaryItem), disk: textState(root.bar.diskItem), lane: {x: root.bar.centreItem.mapToItem(root.bar.stripItem, 0, 0).x, width: root.bar.centreItem.width}})
@@ -148,7 +147,7 @@ QtObject {
             return JSON.stringify({opened: menu.visible, entries: menu.entries, cursor: menu.cursor,
                 snapshotReady: root.pane.menuActions.ready, snapshotId: root.pane.menuActions.requestId,
                 submenu: menu.submenuOpen, submenuCursor: menu.submenuCursor, submenuEntries: menu.submenuEntries,
-                frame: root.fleaWindow.rectOf(menu.frameItem), flyout: root.fleaWindow.rectOf(menu.submenuFrameItem),
+                frame: root.bachyWindow.rectOf(menu.frameItem), flyout: root.bachyWindow.rectOf(menu.submenuFrameItem),
                 workArea: menu.workArea, forHeader: menu.forHeader, forRail: menu.forRail, hasRow: menu.hasRow})
         }
         function contextMenuModel(): string { return JSON.stringify(root.pane.contextMenu().entries) }
@@ -170,7 +169,7 @@ QtObject {
                     reason: dropbox.dropboxReason, path: dropbox.dropboxPath,
                     timeoutSeconds: dropbox.dropboxStatusTimeoutSeconds} : null})
         }
-        function contextMenuSubmenuRowCentre(index: int): string { return root.fleaWindow.centreOf(root.pane.contextMenu().submenuItemFor(index)) }
+        function contextMenuSubmenuRowCentre(index: int): string { return root.bachyWindow.centreOf(root.pane.contextMenu().submenuItemFor(index)) }
         function menuDialogState(): string {
             var dialog = root.pane.menuActions.item
             if (!dialog) return JSON.stringify({opened: false})
@@ -179,7 +178,7 @@ QtObject {
             var cursor = dialog.cursor !== undefined ? dialog.cursor : 0
             return JSON.stringify({opened: dialog.opened, action: dialog.action, busy: dialog.busy,
                 committing: dialog.committing, error: dialog.errorText, facts: dialog.facts,
-                applications: applications, cursor: cursor, rect: root.fleaWindow.rectOf(dialog.cardItem),
+                applications: applications, cursor: cursor, rect: root.bachyWindow.rectOf(dialog.cardItem),
                 controls: [Object.assign(root.controlState("Cancel", dialog.closeItem), {enabled: dialog.closeItem.activeFocusOnTab}),
                     Object.assign(root.controlState("Submit", dialog.submitItem), {enabled: dialog.canSubmit}),
                     root.controlState("Field", dialog.fieldItem), root.controlState("Applications", dialog.applicationsItem)],
@@ -190,7 +189,7 @@ QtObject {
             var card = root.pane.collide.item
             return JSON.stringify(card ? {opened: card.opened, title: card.titleText, titleTruncated: card.titleTruncated,
                 names: card.names.map(function (n) { return n.n }), more: card.moreText, explain: card.explainText, focus: card.focusName,
-                buttonsFit: card.buttonsFit, explainLines: card.explainLines, rect: root.fleaWindow.rectOf(card.cardItem),
+                buttonsFit: card.buttonsFit, explainLines: card.explainLines, rect: root.bachyWindow.rectOf(card.cardItem),
                 buttons: ["cancel", "skip", "keep", "replace"].map(function (b) { return root.controlState(b, card.buttonItem(b)) })} : {opened: false})
         }
         // OpenWith.html's own card: the two groups it draws, the seat the cursor holds, and the
@@ -205,10 +204,10 @@ QtObject {
                     return row.eyebrow !== undefined ? {eyebrow: row.eyebrow, rule: row.rule === true}
                          : {id: row.id, label: row.label, icon: row.icon, isDefault: row.default === true}
                 }),
-                rect: root.fleaWindow.rectOf(dialog.cardItem),
+                rect: root.bachyWindow.rectOf(dialog.cardItem),
                 rowHeight: Theme.rowHeight, eyebrowHeight: dialog.eyebrowHeight,
-                listRect: root.fleaWindow.rectOf(dialog.applicationsItem),
-                rowRect: root.fleaWindow.rectOf(dialog.applicationItem(dialog.cursor)),
+                listRect: root.bachyWindow.rectOf(dialog.applicationsItem),
+                rowRect: root.bachyWindow.rectOf(dialog.applicationItem(dialog.cursor)),
                 controls: [root.controlState("Field", dialog.fieldItem), root.controlState("Applications", dialog.applicationsItem),
                     root.controlState("Always", dialog.alwaysItem), root.controlState("Cancel", dialog.closeItem),
                     Object.assign(root.controlState("Open", dialog.submitItem), {enabled: dialog.canSubmit})]})
@@ -218,8 +217,8 @@ QtObject {
             if (!dialog) return JSON.stringify({opened: false})
             return JSON.stringify({opened: dialog.opened, facts: dialog.facts, path: dialog.path, mode: dialog.modeText,
                 displayedError: dialog.displayedError, displayedSummary: dialog.displayedSummary,
-                bodyRect: root.fleaWindow.rectOf(dialog.bodyItem),
-                editable: dialog.editable, busy: dialog.busy, error: dialog.errorText, rect: root.fleaWindow.rectOf(dialog.cardItem),
+                bodyRect: root.bachyWindow.rectOf(dialog.bodyItem),
+                editable: dialog.editable, busy: dialog.busy, error: dialog.errorText, rect: root.bachyWindow.rectOf(dialog.cardItem),
                 controls: dialog.controls().map(function(control) {
                     return Object.assign(root.controlState(control.name, control.item), {checked: control.checked, bit: control.bit,
                         enabled: control.enabled === undefined ? control.item.enabled : control.enabled})
@@ -240,12 +239,12 @@ QtObject {
                 rows: view.rows.map(function(row) { return Object.assign({}, row, {selected: view.isSelected(row.uri)}) }),
                 confirmation: root.confirmationState(view.confirmationItem)})
         }
-        function trashRowCentre(index: int): string { return root.pane.trash.item ? root.fleaWindow.centreOf(root.pane.trash.item.rowItemFor(index)) : "" }
+        function trashRowCentre(index: int): string { return root.pane.trash.item ? root.bachyWindow.centreOf(root.pane.trash.item.rowItemFor(index)) : "" }
         function trashControlCentre(name: string): string {
             var view = root.pane.trash.item
             if (!view) return ""
             var item = ({back: view.backItem, up: view.upItem, cancel: view.confirmationItem.cancelItem, danger: view.confirmationItem.dangerItem})[name]
-            return item ? root.fleaWindow.centreOf(item) : ""
+            return item ? root.bachyWindow.centreOf(item) : ""
         }
 
         // The sticky slot an operation holds while it runs, so a test can name the verb in flight.
@@ -310,13 +309,13 @@ QtObject {
         function settingsRows(): string { return root.settingsPanel ? root.settingsPanel.rowsText() : "" }
         function settingsModel(): string { return root.settingsPanel ? JSON.stringify(root.settingsPanel.rows) : "[]" }
         function settingsSections(): string { return root.settingsPanel ? root.settingsPanel.sectionsText() : "[]" }
-        function settingsRowCentre(id: string): string { return root.settingsPanel ? root.fleaWindow.centreOf(root.settingsPanel.rowItemForId(id)) : "" }
+        function settingsRowCentre(id: string): string { return root.settingsPanel ? root.bachyWindow.centreOf(root.settingsPanel.rowItemForId(id)) : "" }
         function settingsFavouriteControlCentre(id: string, part: string): string {
             var row = root.settingsPanel ? root.settingsPanel.rowItemForId(id) : null
             if (!row || !row.isFavourite) return ""
             var item = part === "drag" ? row.favouriteItem.dragItem
                      : part === "remove" ? row.favouriteItem.removeItem : null
-            return item && item.visible ? root.fleaWindow.centreOf(item) : ""
+            return item && item.visible ? root.bachyWindow.centreOf(item) : ""
         }
         function uiSettings(): string { return JSON.stringify(ViewState.state) }
         function keymapPreset(): string { return ViewState.keysPreset }
@@ -343,24 +342,24 @@ QtObject {
         }
 
         // The panel's own title, a spot on the card with no control under it: a click there must leave the panel open.
-        function settingsTitleCentre(): string { return root.settingsPanel ? root.fleaWindow.centreOf(root.settingsPanel.titleItem) : "" }
+        function settingsTitleCentre(): string { return root.settingsPanel ? root.bachyWindow.centreOf(root.settingsPanel.titleItem) : "" }
         // A rail row's centre, clicked over the list by tests/ui.sh clickthrough to prove the press stops at the panel.
-        function settingsRailRowCentre(id: string): string { return root.settingsPanel ? root.fleaWindow.centreOf(root.settingsPanel.railItemFor(id)) : "" }
+        function settingsRailRowCentre(id: string): string { return root.settingsPanel ? root.bachyWindow.centreOf(root.settingsPanel.railItemFor(id)) : "" }
         // Observe the compact card's actual content and viewport without changing its scroll position.
         function settingsScroll(): string { return root.settingsPanel ? root.settingsPanel.paneScroll() : "" }
         function settingsScrollState(): string { return root.settingsPanel ? root.settingsPanel.scrollState() : "{}" }
         // Each card's rectangle, so the window-size battery asserts every overlay stays on screen.
-        function settingsCardRect(): string { return root.settingsPanel ? root.fleaWindow.rectOf(root.settingsPanel.cardItem) : "" }
-        function networkCardRect(): string { return root.networkDialog ? root.fleaWindow.rectOf(root.networkDialog.cardItem) : "" }
+        function settingsCardRect(): string { return root.settingsPanel ? root.bachyWindow.rectOf(root.settingsPanel.cardItem) : "" }
+        function networkCardRect(): string { return root.networkDialog ? root.bachyWindow.rectOf(root.networkDialog.cardItem) : "" }
         function networkScroll(): string { return root.networkDialog ? root.networkDialog.bodyScroll() : "" }
         // The clipping viewport inside the card, so a field's on-screen check is against what the body shows.
-        function networkBodyRect(): string { return root.networkDialog ? root.fleaWindow.rectOf(root.networkDialog.bodyItem) : "" }
-        function keymapCardRect(): string { return root.keymapSheet ? root.fleaWindow.rectOf(root.keymapSheet.cardItem) : "" }
-        function convertCardRect(): string { return root.convertDialog ? root.fleaWindow.rectOf(root.convertDialog.cardItem) : "" }
+        function networkBodyRect(): string { return root.networkDialog ? root.bachyWindow.rectOf(root.networkDialog.bodyItem) : "" }
+        function keymapCardRect(): string { return root.keymapSheet ? root.bachyWindow.rectOf(root.keymapSheet.cardItem) : "" }
+        function convertCardRect(): string { return root.convertDialog ? root.bachyWindow.rectOf(root.convertDialog.cardItem) : "" }
         // A menu row's own centre, so a driven click lands on the row a test named rather than on a
         // pixel derived from a row count the Menus settings section can change under it.
-        function contextMenuRowCentre(i: int): string { return root.fleaWindow.centreOf(root.pane.contextMenu().itemFor(i)) }
-        function contextMenuRect(): string { return root.fleaWindow.rectOf(root.pane.contextMenu().frameItem) }
+        function contextMenuRowCentre(i: int): string { return root.bachyWindow.centreOf(root.pane.contextMenu().itemFor(i)) }
+        function contextMenuRect(): string { return root.bachyWindow.rectOf(root.pane.contextMenu().frameItem) }
         function contextMenuFocusState(): string {
             var menu = root.pane.contextMenu()
             var window = menu.Window.window
@@ -377,7 +376,7 @@ QtObject {
         function listingBackgroundCentre(): string {
             var area = root.pane.viewMode === "columns" ? root.pane.columnsArea.activeColumn()
                                                         : root.pane.listArea
-            return root.fleaWindow.centreOf(area)
+            return root.bachyWindow.centreOf(area)
         }
         // The row that is its own rename editor, or -1; drives the States artboard's inline rename.
         function renamingIndex(): int { return root.pane.renamingIndex }
@@ -398,7 +397,7 @@ QtObject {
                 fieldHeight: editor ? editor.fieldHeight : 0, errorHeight: editor ? editor.errorHeight : 0,
                 editorTop: point ? point.y : 0, editorBottom: point ? point.y + editor.height : 0, viewportHeight: area.height,
                 selectedText: editor ? editor.inputItem.selectedText : "",
-                centre: editor ? root.fleaWindow.centreOf(editor.inputItem) : ""})
+                centre: editor ? root.bachyWindow.centreOf(editor.inputItem) : ""})
         }
         function railRenameEditorLive(): bool { return root.pane.sidebar.renameEditor() !== null }
         function railRenameEditorText(): string { var e = root.pane.sidebar.renameEditor(); return e ? e.editorText : "" }
@@ -408,7 +407,7 @@ QtObject {
         function previewState(): string { return root.pane.preview.status }
         function previewPosition(): int { return root.pane.preview.position } function previewDuration(): int { return root.pane.preview.duration }
         // Fix round 1: what the strip actually draws, not a re-derived guess at its visible: expression.
-        function previewStrip(): string { return JSON.stringify({ visible: root.pane.preview.stripVisible, muted: root.pane.preview.muted, mute: root.fleaWindow.centreOf(root.pane.preview.muteMark) }) }
+        function previewStrip(): string { return JSON.stringify({ visible: root.pane.preview.stripVisible, muted: root.pane.preview.muted, mute: root.bachyWindow.centreOf(root.pane.preview.muteMark) }) }
         // A 0.25 zoom step and an expand flag are not legible off a screenshot, so the seam is the
         // only honest answer for either; "" means no PDF is loaded, which is not zoom 1 or false.
         function previewPdfPage(): int { var p = root.pane.preview.pdfItem; return p ? p.page : -1 }
@@ -418,11 +417,11 @@ QtObject {
             var p = overlay ? root.pane.preview.pdfItem : root.pane.previewColumnItem
             if (!p) return "null"
             return JSON.stringify({ page: overlay ? p.page : p.pdfPage(), pages: overlay ? p.pageCount : p.pdfPages,
-                frame: overlay ? "" : root.fleaWindow.rectOf(p.pdfFrameItem),
-                toolbar: overlay ? "" : root.fleaWindow.rectOf(p.pdfToolbarItem),
+                frame: overlay ? "" : root.bachyWindow.rectOf(p.pdfFrameItem),
+                toolbar: overlay ? "" : root.bachyWindow.rectOf(p.pdfToolbarItem),
                 zoom: overlay ? p.zoom : p.pdfZoom, scrollY: p.pdfScrollY, focused: p.activeFocus, control: p.pdfControlIndex,
                 controls: p.pdfControls.map(function (control) { return { name: control.accessName, enabled: control.enabled,
-                    visible: control.visible, centre: root.fleaWindow.centreOf(control) } }) })
+                    visible: control.visible, centre: root.bachyWindow.centreOf(control) } }) })
         }
         function previewExpanded(): string { var p = root.pane.preview.pdfItem; return p ? String(p.expanded) : "" }
         function previewSelectionState(): string {
@@ -488,19 +487,19 @@ QtObject {
                 previewReady: column !== null && column.frameStatus === Image.Ready})
         }
         function viewContentY(): int { return Math.round(root.pane.viewMode === "columns" && root.columns ? root.columns.activeContentY() : root.pane.listArea.contentY) }
-        function listAreaRect(): string { return root.fleaWindow.rectOf(root.pane.listArea) }
-        function rowRect(i: int): string { return root.fleaWindow.rectOf(root.pane.visibleItemFor(i)) }
+        function listAreaRect(): string { return root.bachyWindow.rectOf(root.pane.listArea) }
+        function rowRect(i: int): string { return root.bachyWindow.rectOf(root.pane.visibleItemFor(i)) }
         function dragPaneGeometry(side: int, index: int): string {
             var pane = side >= 0 && side < root.panes.length ? root.panes[side] : null
             if (!pane || index < 0 || index >= pane.total) return "{}"
             var folder = pane.rowFor(index), last = pane.rowFor(pane.total - 1)
             return JSON.stringify({side: side, active: ViewState.state.view === "dual", focused: root.pane === pane,
                 path: pane.path, view: pane.viewMode, loading: pane.listInFlight, total: pane.total,
-                area: root.fleaWindow.rectOf(pane.listArea),
+                area: root.bachyWindow.rectOf(pane.listArea),
                 folder: {index: index, name: folder ? folder.n : "", directory: !!folder && folder.d === true,
-                    rect: root.fleaWindow.rectOf(pane.visibleItemFor(index))},
+                    rect: root.bachyWindow.rectOf(pane.visibleItemFor(index))},
                 last: {index: pane.total - 1, name: last ? last.n : "",
-                    rect: root.fleaWindow.rectOf(pane.visibleItemFor(pane.total - 1))}})
+                    rect: root.bachyWindow.rectOf(pane.visibleItemFor(pane.total - 1))}})
         }
         // Ready is the decoded image on screen; a path alone is not a thumbnail, see GridTile.thumbDrawn.
         function rowThumbReady(i: int): bool { var item = root.pane.visibleItemFor(i); return item && item.iconStatus !== undefined ? item.iconStatus === Image.Ready : false }
@@ -508,20 +507,20 @@ QtObject {
         function columnThumbShown(): bool { return root.columns ? root.columns.thumbShown() : false }
         function columnFrameReady(): bool { return root.columns ? root.columns.frameReady() : false }
         function columnTextLines(): string { return root.columns ? root.columns.textLines() : "" }
-        function columnLinesRect(): string { return root.columns ? root.fleaWindow.rectOf(root.columns.linesItem()) : "" }
-        function columnArchiveRect(): string { return root.columns ? root.fleaWindow.rectOf(root.columns.archiveItem()) : "" }
-        function previewSurfaceRect(): string { return root.fleaWindow.rectOf(root.pane.preview.surfaceItem()) }
+        function columnLinesRect(): string { return root.columns ? root.bachyWindow.rectOf(root.columns.linesItem()) : "" }
+        function columnArchiveRect(): string { return root.columns ? root.bachyWindow.rectOf(root.columns.archiveItem()) : "" }
+        function previewSurfaceRect(): string { return root.bachyWindow.rectOf(root.pane.preview.surfaceItem()) }
         function previewMediaLoaded(): bool { return root.pane.preview.mediaLoaded() }
         function previewText(): string { return root.pane.preview.textShown() }
         function previewArchiveNames(): string { return root.pane.preview.archiveNames() }
         function columnArchiveNames(): string { return root.columns ? root.columns.archiveNames() : "" }
         function columnFailure(): string { return root.columns ? root.columns.failureText() : "" }
-        function rowThumbRect(i: int): string { var item = root.pane.visibleItemFor(i); return item && item.thumbItem ? root.fleaWindow.rectOf(item.thumbItem) : "" }
-        function columnFrameRect(): string { return root.columns ? root.fleaWindow.rectOf(root.columns.frameItem()) : "" }
+        function rowThumbRect(i: int): string { var item = root.pane.visibleItemFor(i); return item && item.thumbItem ? root.bachyWindow.rectOf(item.thumbItem) : "" }
+        function columnFrameRect(): string { return root.columns ? root.bachyWindow.rectOf(root.columns.frameItem()) : "" }
         function columnChildEmpty(): string { var e = root.columns ? root.columns.childEmptyItem() : null; return e ? e.visible + " " + e.opacity.toFixed(2) + " " + e.markItem.opacity.toFixed(2) : "" }
-        function columnChildMarkRect(): string { var e = root.columns ? root.columns.childEmptyItem() : null; return e ? root.fleaWindow.rectOf(e.markItem) : "" }
-        function columnChildRowCentre(i: int): string { return root.columns ? root.fleaWindow.centreOf(root.columns.childItemAt(i)) : "" }
-        function columnParentRowCentre(i: int): string { return root.columns ? root.fleaWindow.centreOf(root.columns.parentItemAt(i)) : "" }
+        function columnChildMarkRect(): string { var e = root.columns ? root.columns.childEmptyItem() : null; return e ? root.bachyWindow.rectOf(e.markItem) : "" }
+        function columnChildRowCentre(i: int): string { return root.columns ? root.bachyWindow.centreOf(root.columns.childItemAt(i)) : "" }
+        function columnParentRowCentre(i: int): string { return root.columns ? root.bachyWindow.centreOf(root.columns.parentItemAt(i)) : "" }
         function rowIcon(i: int): string {
             var item = root.pane.itemFor(i)
             return item ? String(item.iconUrl) : ""
@@ -547,7 +546,7 @@ QtObject {
         }
         // "x y width height" of the empty mark in window pixels, for a painted-pixel count: the state
         // flag above cannot see a mark drawn under its own parent's paint.
-        function emptyMarkRect(): string { return root.emptyState ? root.fleaWindow.rectOf(root.emptyState.markItem) : "" }
+        function emptyMarkRect(): string { return root.emptyState ? root.bachyWindow.rectOf(root.emptyState.markItem) : "" }
         function emptyHeroState(): string {
             var empty = root.emptyState
             if (!empty) return "{}"
@@ -559,7 +558,7 @@ QtObject {
                 reducedMotion: Theme.reducedMotion, rotateMs: empty.rotateMs})
         }
         // The whole hero box, so a test can hold it to the listing slot exactly rather than merely inside it.
-        function emptyStateRect(): string { return root.emptyState ? root.fleaWindow.rectOf(root.emptyState) : "" }
+        function emptyStateRect(): string { return root.emptyState ? root.bachyWindow.rectOf(root.emptyState) : "" }
         function rowAt(i: int): string {
             var item = root.pane.itemFor(i)
             return item ? item.describe() : "loading"
@@ -567,7 +566,7 @@ QtObject {
         function visibleRows(): int { return root.pane.visibleRows }
         // The list's scroll position and the platform's lines per notch, for tests/ui.sh scroll.
         function listContentY(): int { return Math.round(root.pane.listArea.contentY) }
-        function scrollbarState(): string { var bar = root.pane.listArea.scrollBar; return bar ? JSON.stringify({visible: bar.visible, shown: bar.shown, knob: bar.knobWidth, rect: root.fleaWindow.rectOf(bar), handle: bar.handleLength, offset: bar.handleOffset, content: bar.contentLength, viewport: bar.viewportLength}) : "{}" }
+        function scrollbarState(): string { var bar = root.pane.listArea.scrollBar; return bar ? JSON.stringify({visible: bar.visible, shown: bar.shown, knob: bar.knobWidth, rect: root.bachyWindow.rectOf(bar), handle: bar.handleLength, offset: bar.handleOffset, content: bar.contentLength, viewport: bar.viewportLength}) : "{}" }
         function wheelLines(): int { return Application.styleHints.wheelScrollLines }
         function thumbRequests(): int { return root.backend.thumbRequests }
         function dirSizeRequests(): int { return root.backend.dirSizeRequests }
@@ -575,14 +574,14 @@ QtObject {
         // The listing swap's record, ui/PaneSwap.qml describe(): what is held and every frame drawn with no row.
         function swapState(): string { return JSON.stringify(root.pane.swap.describe()) }
         function thumbFile(i: int): string { return root.pane.thumbFor(i) }
-        function rowCentre(i: int): string { return root.pane.rowFor(i) ? root.fleaWindow.centreOf(root.pane.visibleItemFor(i)) : "" }
+        function rowCentre(i: int): string { return root.pane.rowFor(i) ? root.bachyWindow.centreOf(root.pane.visibleItemFor(i)) : "" }
         // The same lookup as rowCentre, but for the preview's own seek slider, so a test can drive
         // a real wheel event over it without hardcoding the strip's layout.
         function previewSliderCentre(): string {
-            return root.pane.preview.active && root.pane.preview.isMedia ? root.fleaWindow.centreOf(root.pane.preview.seekSlider) : ""
+            return root.pane.preview.active && root.pane.preview.isMedia ? root.bachyWindow.centreOf(root.pane.preview.seekSlider) : ""
         }
         // The same lookup as rowCentre, but for a rail row: the rail has no ListView, so Sidebar.railItemFor(i) walks its own two Repeaters instead.
-        function railRowCentre(i: int): string { return root.fleaWindow.centreOf(root.pane.sidebar.railItemFor(i)) }
+        function railRowCentre(i: int): string { return root.bachyWindow.centreOf(root.pane.sidebar.railItemFor(i)) }
         function railLabel(i: int): string { var item = root.pane.sidebar.railItemFor(i); return item ? item.modelData.label : "" }
         function railLabels(): string { var out = []; for (var i = 0; i < root.pane.railCount; i++) { var item = root.pane.sidebar.railItemFor(i); out.push(item ? item.modelData.label : "") } return out.join("|") }
         // The sidebar pushes the row and the header right by its own width, so a pixel-crop test needs this rather than assuming x=0.
@@ -590,9 +589,9 @@ QtObject {
             var item = root.pane.itemFor(i)
             if (!item || !root.pane.rowFor(i))
                 return ""
-            return String(Math.round(root.fleaWindow.itemRect(item).x))
+            return String(Math.round(root.bachyWindow.itemRect(item).x))
         }
-        function headerLeft(): string { return String(Math.round(root.fleaWindow.itemRect(root.pane.header).x)) }
+        function headerLeft(): string { return String(Math.round(root.bachyWindow.itemRect(root.pane.header).x)) }
         function viewMode(): string { return root.pane.viewMode }
         // What this box probed: the compress submenu is exactly this and never a fixed list.
         function archiveFormats(): string { return root.backend.archiveFormats.join("|") }
@@ -610,10 +609,10 @@ QtObject {
             return JSON.stringify({opened: dialog.opened, source: dialog.source, format: dialog.format, strip: dialog.strip,
                 checking: dialog.checking, busy: dialog.busy, unavailable: dialog.unavailable, collision: dialog.collision, error: dialog.errorText,
                 output: dialog.outputPath, outputText: dialog.outputItem.text, outputLines: dialog.outputItem.lineCount,
-                outputRect: root.fleaWindow.rectOf(dialog.outputItem),
-                bodyRect: root.fleaWindow.rectOf(dialog.bodyItem), scrollY: dialog.bodyItem.contentY,
+                outputRect: root.bachyWindow.rectOf(dialog.outputItem),
+                bodyRect: root.bachyWindow.rectOf(dialog.bodyItem), scrollY: dialog.bodyItem.contentY,
                 requestId: dialog.requestId, operationId: dialog.operationId, cursor: dialog.cursor, focusPart: dialog.focusPart, canConvert: dialog.canConvert,
-                rect: root.fleaWindow.rectOf(dialog.cardItem),
+                rect: root.bachyWindow.rectOf(dialog.cardItem),
                 formats: dialog.formats.map(function(format, index) {
                     return Object.assign(root.controlState(format, dialog.formatItem(index)), {selected: dialog.format === format,
                         current: dialog.formatItem(index).current, labelColor: String(dialog.formatItem(index).labelColor),
@@ -621,7 +620,7 @@ QtObject {
                 }), controls: [root.controlState("Remove metadata", dialog.metadataItem),
                     root.controlState("Cancel", dialog.cancelItem), root.controlState("Convert", dialog.submitItem)]})
         }
-        function convertTitleCentre(): string { return root.convertDialog ? root.fleaWindow.centreOf(root.convertDialog.titleItem) : "" }
+        function convertTitleCentre(): string { return root.convertDialog ? root.bachyWindow.centreOf(root.convertDialog.titleItem) : "" }
         // The preview column's own table and state, so a test asserts the canvas's rows without OCR.
         function previewFacts(): string { return root.columns ? root.columns.factsLine() : "" }
         function previewColumnState(): string { return root.columns ? root.columns.previewStateName() : "" }
@@ -630,9 +629,9 @@ QtObject {
         function columnMediaPosition(): int { return root.columns ? root.columns.mediaPosition() : -1 }
         function columnPlayCentre(): string {
             var strip = root.columns ? root.columns.mediaStrip() : null
-            return strip ? root.fleaWindow.centreOf(strip.playItem) : ""
+            return strip ? root.bachyWindow.centreOf(strip.playItem) : ""
         }
-        function columnStripCentre(): string { return root.columns ? root.fleaWindow.centreOf(root.columns.mediaStrip()) : "" }
+        function columnStripCentre(): string { return root.columns ? root.bachyWindow.centreOf(root.columns.mediaStrip()) : "" }
         // The preview column's PDF page position, so a test proves a page turned rather than
         // eyeballing a render. Both readers are pure, like every other one on this handler.
         function columnPdfPage(): int { return root.columns ? root.columns.pdfPage() : -1 }
@@ -640,7 +639,7 @@ QtObject {
         function columnPdfLoaded(): bool { return root.columns ? root.columns.pdfLoaded() : false }
         function columnChevronCentre(dir: string): string {
             var item = root.columns ? root.columns.pdfChevron(dir) : null
-            return item && item.visible ? root.fleaWindow.centreOf(item) : ""
+            return item && item.visible ? root.bachyWindow.centreOf(item) : ""
         }
         function chromeHeight(): int { return Math.round(Theme.chromeHeight) }
         function tabCount(): int { return Tabs.count(root.pane) }
@@ -650,11 +649,11 @@ QtObject {
         function tabCentre(i: int): string {
             if (!root.tabBar)
                 return ""
-            return root.fleaWindow.centreOf(root.tabBar.itemAt(i))
+            return root.bachyWindow.centreOf(root.tabBar.itemAt(i))
         }
         // The chrome's buttons carry a glyph and no text, so a test reaches one by name and clicks
         // its centre, exactly the way rowCentre already works for a row.
-        function chromeButtonCentre(glyph: string): string { return root.fleaWindow.centreOf(root.chrome.buttonFor(glyph)) }
+        function chromeButtonCentre(glyph: string): string { return root.bachyWindow.centreOf(root.chrome.buttonFor(glyph)) }
         function chromeButtonState(glyph: string): string {
             return JSON.stringify(root.controlState(glyph, root.chrome.buttonFor(glyph)))
         }
@@ -662,10 +661,10 @@ QtObject {
         // opens it on, which is the pointer's half of ":" and Ctrl+L.
         function pathBarOpen(): bool { return root.chrome.editing }
         function pathBarText(): string { return String(root.chrome.editText) }
-        function pathCentre(): string { return root.fleaWindow.centreOf(root.chrome.pathArea) }
+        function pathCentre(): string { return root.bachyWindow.centreOf(root.chrome.pathArea) }
         // The elision marker, or "" while the whole path fits: the one spot the crumbs slide under.
         function elisionCentre(): string {
-            return root.chrome.elisionMarker ? root.fleaWindow.centreOf(root.chrome.elisionMarker) : ""
+            return root.chrome.elisionMarker ? root.bachyWindow.centreOf(root.chrome.elisionMarker) : ""
         }
         // Issue 45's segments, reached the way tabCentre reaches a tab: a driven press on a real
         // crumb is the only thing that can tell a bound TapHandler from an unbound one.
@@ -679,7 +678,7 @@ QtObject {
                 return ""
             var box = item.mapToItem(root.chrome.pathArea, 0, 0)
             var inside = box.x >= 0 && box.x + item.width <= root.chrome.pathArea.width
-            return inside ? root.fleaWindow.centreOf(item) : ""
+            return inside ? root.bachyWindow.centreOf(item) : ""
         }
         // A dual pane's own path, side 0 or 1, answered the way crumbCount and crumbCentre answer the chrome's.
         function paneCrumbCount(side: int): int { return root.panes[side] ? root.panes[side].pathCrumbs.count : 0 }
@@ -690,22 +689,22 @@ QtObject {
                 return ""
             var box = item.mapToItem(pane.pathSlot, 0, 0)
             var inside = box.x >= 0 && box.x + item.width <= pane.pathSlot.width
-            return inside ? root.fleaWindow.centreOf(item) : ""
+            return inside ? root.bachyWindow.centreOf(item) : ""
         }
         // The whole of that pane's path strip, "x y width height", so a test can press where no crumb is.
         function panePathRect(side: int): string {
             var pane = root.panes[side]
-            return pane && pane.pathStrip.visible ? root.fleaWindow.rectOf(pane.pathStrip) : ""
+            return pane && pane.pathStrip.visible ? root.bachyWindow.rectOf(pane.pathStrip) : ""
         }
         // The button's painted box as "WxH": the mark is Theme.chromeMarkSize wide and the hit area is the whole strip tall.
         function chromeButtonSize(glyph: string): string {
             var item = root.chrome.buttonFor(glyph)
             if (!item)
                 return ""
-            var rect = root.fleaWindow.itemRect(item)
+            var rect = root.bachyWindow.itemRect(item)
             return Math.round(rect.width) + "x" + Math.round(rect.height)
         }
-        function headerTop(): string { return String(Math.round(root.fleaWindow.itemRect(root.pane.header).y)) }
+        function headerTop(): string { return String(Math.round(root.bachyWindow.itemRect(root.pane.header).y)) }
         function railRenamingIndex(): int { return root.pane.sidebar.renamingIndex }
         function dialogOpen(): bool { return root.networkDialog ? root.networkDialog.opened : false }
         // The network form's own state, so a test asserts the protocol swap and the URI it built.
@@ -744,26 +743,26 @@ QtObject {
             var items = root.pane.sidebar.networkMarkItems()
             if (!items[0] || !items[1] || !items[2])
                 return ""
-            return [root.fleaWindow.boxOf(items[0]), root.fleaWindow.boxOf(items[1]),
-                root.fleaWindow.boxOf(items[2])].join("|")
+            return [root.bachyWindow.boxOf(items[0]), root.bachyWindow.boxOf(items[1]),
+                root.bachyWindow.boxOf(items[2])].join("|")
         }
         // Where a click probe aims: the hit target's own middle, so the probe varies only x.
-        function networkMarkCentre(): string { return root.fleaWindow.centreOf(root.pane.sidebar.networkMarkItems()[1]) }
+        function networkMarkCentre(): string { return root.bachyWindow.centreOf(root.pane.sidebar.networkMarkItems()[1]) }
         // A protocol chip carries a label and no tree, so a test clicks its centre the way it does a row.
-        function networkChipCentre(name: string): string { return root.networkDialog ? root.fleaWindow.centreOf(root.networkDialog.formChip(name)) : "" }
+        function networkChipCentre(name: string): string { return root.networkDialog ? root.bachyWindow.centreOf(root.networkDialog.formChip(name)) : "" }
         function shareBrowserOpen(): bool { return root.shareBrowser ? root.shareBrowser.active : false }
         // One share name per line, in cursor order; empty when the overlay is shut.
         function shareBrowserEntries(): string { return root.shareBrowser ? root.shareBrowser.shares.join("\n") : "" }
         function shareBrowserCursor(): int { return root.shareBrowser ? root.shareBrowser.cursorIndex : -1 }
-        function shareBrowserRect(): string { return root.shareBrowser ? root.fleaWindow.rectOf(root.shareBrowser) : "" }
+        function shareBrowserRect(): string { return root.shareBrowser ? root.bachyWindow.rectOf(root.shareBrowser) : "" }
         function shareBrowserState(): string {
             var browser = root.panes[0] ? root.panes[0].shareBrowser : null
             return JSON.stringify({active: !!browser && browser.active,
                 owner: browser && browser.owner ? root.panes.indexOf(browser.owner) : -1,
-                rect: browser ? root.fleaWindow.rectOf(browser) : "",
+                rect: browser ? root.bachyWindow.rectOf(browser) : "",
                 baseUri: root.shareBrowser ? root.shareBrowser.baseUri : "",
                 cursor: root.shareBrowser ? root.shareBrowser.cursorIndex : -1,
-                paneRects: root.panes.map(function(pane) { return pane ? root.fleaWindow.rectOf(pane.listSlot) : "" })})
+                paneRects: root.panes.map(function(pane) { return pane ? root.bachyWindow.rectOf(pane.listSlot) : "" })})
         }
         // One line per entry, "label|group|kind|mounted", so a test can assert count and shape without a screenshot.
         function networkEntries(): string {

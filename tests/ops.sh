@@ -2,13 +2,13 @@
 # Drives every write operation through the real binary and asserts both the wire lines and the filesystem.
 set -u
 # Hard rule 9's guard, which owns FIXTURE_ROOT and every create and delete below.
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 
 cd "$(dirname "$0")/.." || exit 1
-BIN=./target/debug/flea
+BIN=./target/debug/bachy
 # Without this every case below drives a missing binary and reports the result as a product failure.
 [ -x "$BIN" ] || { echo "ops.sh: $BIN is missing, run cargo build" >&2; exit 1; }
-D="$FIXTURE_ROOT/flea-ops-test-$$"
+D="$FIXTURE_ROOT/bachy-ops-test-$$"
 fail=0
 
 cleanup() {
@@ -169,7 +169,7 @@ check "the item after it still ran" "good" "$(cat "$D/dest/good.txt" 2>/dev/null
 check "done reports one of each" "1" "$(seen '"ok":1,"failed":1,"skipped":0')"
 stop_backend
 
-echo "--- a destination Flea will not create is refused before anything is touched ---"
+echo "--- a destination Bachy will not create is refused before anything is touched ---"
 start_backend
 printf 'x' > "$D/x.txt"
 send "{\"c\":\"transfer\",\"op\":\"copy\",\"paths\":[\"$D/x.txt\"],\"dest\":\"$D/no-such-dir\"}"

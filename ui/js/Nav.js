@@ -166,7 +166,7 @@ function applyPendingSelect(pane) {
     pane.pendingMenu = false
 }
 
-// Enter on the cursor row: a directory navigates, an archive opens Flea's own view, anything else
+// Enter on the cursor row: a directory navigates, an archive opens Bachy's own view, anything else
 // goes to the opener. The in-flight guard is what stops a second Enter queueing a second listing.
 function openCursor(pane, opener) {
     if (pane.listInFlight) {

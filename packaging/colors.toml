@@ -1,0 +1,8 @@
+background = "#FFFFFF"
+foreground = "#28303D"
+accent = "#1E40AF"
+muted = "#606876"
+urgent = "#991B1B"
+cyan = "#1E40AF"
+green = "#166534"
+selection_background = "#DBEAFE"

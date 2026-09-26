@@ -1,7 +1,7 @@
 .pragma library
 
 // ui/ViewState.qml's one-writer bookkeeping, and nothing else: `saved` is the newest patch a writer
-// landed, `inflight` is what the running `flea --ui-state` carries, and `pending` is the newest patch
+// landed, `inflight` is what the running `bachy --ui-state` carries, and `pending` is the newest patch
 // waiting behind it. All three are patch bytes and not the state file's, because a patch names only
 // the settings that window changed. Imports no QML, so tests/js/uistate.js can redden on a mutation.
 

@@ -1,4 +1,4 @@
-// The per-user preference files flea --default touches: where they are, and the one way they are rewritten.
+// The per-user preference files bachy --default touches: where they are, and the one way they are rewritten.
 use std::fs;
 use std::io::Write;
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
@@ -43,8 +43,8 @@ fn data_dirs() -> Vec<PathBuf> {
 }
 
 // Where an installed package's own file is looked for, and the one ladder both install proofs read:
-// flea --default's desktop entry and flea --picker's portal file, which answered differently about
-// the same package until they shared this. Sample input: "applications/com.thisisgm.flea.desktop".
+// bachy --default's desktop entry and bachy --picker's portal file, which answered differently about
+// the same package until they shared this. Sample input: "applications/local.bachy.FileManager.desktop".
 pub fn data_file(relative: &str) -> Option<PathBuf> {
     data_dirs().into_iter().map(|d| d.join(relative)).find(|p| p.is_file())
 }
@@ -116,8 +116,8 @@ mod tests {
     // One test, because the variable is process wide and cargo runs tests in threads.
     #[test]
     fn config_home_reads_a_non_empty_xdg_config_home_and_falls_back_to_home() {
-        std::env::set_var("XDG_CONFIG_HOME", "/tmp/flea-test-xdg");
-        assert_eq!(config_home().expect("set"), PathBuf::from("/tmp/flea-test-xdg"));
+        std::env::set_var("XDG_CONFIG_HOME", "/tmp/bachy-test-xdg");
+        assert_eq!(config_home().expect("set"), PathBuf::from("/tmp/bachy-test-xdg"));
         std::env::set_var("XDG_CONFIG_HOME", "");
         let home = std::env::var("HOME").expect("HOME");
         assert_eq!(config_home().expect("fallback"), PathBuf::from(home).join(".config"));
@@ -128,25 +128,25 @@ mod tests {
     // only one of the two install proofs searched is what put them out of step about one package.
     #[test]
     fn both_install_proofs_read_one_xdg_ladder() {
-        std::env::set_var("XDG_DATA_HOME", "/flea-test/data-home");
-        std::env::set_var("XDG_DATA_DIRS", "/flea-test/only");
+        std::env::set_var("XDG_DATA_HOME", "/bachy-test/data-home");
+        std::env::set_var("XDG_DATA_DIRS", "/bachy-test/only");
         assert_eq!(
             data_dirs(),
-            vec![PathBuf::from("/flea-test/data-home"), PathBuf::from("/flea-test/only")]
+            vec![PathBuf::from("/bachy-test/data-home"), PathBuf::from("/bachy-test/only")]
         );
         // The first rung is its own function, because the D-Bus claim writes into exactly that one.
-        assert_eq!(data_home().expect("set"), PathBuf::from("/flea-test/data-home"));
+        assert_eq!(data_home().expect("set"), PathBuf::from("/bachy-test/data-home"));
         std::env::set_var("XDG_DATA_HOME", "");
         let home = std::env::var("HOME").expect("HOME");
         assert_eq!(data_home().expect("fallback"), PathBuf::from(&home).join(".local/share"));
         assert_eq!(data_dirs()[0], PathBuf::from(&home).join(".local/share"));
-        std::env::set_var("XDG_DATA_HOME", "/flea-test/data-home");
+        std::env::set_var("XDG_DATA_HOME", "/bachy-test/data-home");
         // An empty variable is unset, and the default is where pacman puts the package's files.
         std::env::set_var("XDG_DATA_DIRS", "");
         assert_eq!(
             data_dirs(),
             vec![
-                PathBuf::from("/flea-test/data-home"),
+                PathBuf::from("/bachy-test/data-home"),
                 PathBuf::from("/usr/local/share"),
                 PathBuf::from("/usr/share"),
             ]
@@ -155,11 +155,11 @@ mod tests {
         // The ladder is the half that diverged; this is the join and the find on top of it.
         let d = TestDir::new("data-file");
         let share = d.dir("share/applications");
-        fs::write(share.join("flea.test"), "").expect("entry");
+        fs::write(share.join("bachy.test"), "").expect("entry");
         std::env::set_var("XDG_DATA_HOME", d.join("absent").display().to_string());
         std::env::set_var("XDG_DATA_DIRS", d.join("share").display().to_string());
-        assert_eq!(data_file("applications/flea.test"), Some(share.join("flea.test")));
-        assert_eq!(data_file("applications/flea.missing"), None);
+        assert_eq!(data_file("applications/bachy.test"), Some(share.join("bachy.test")));
+        assert_eq!(data_file("applications/bachy.missing"), None);
 
         std::env::remove_var("XDG_DATA_HOME");
         std::env::remove_var("XDG_DATA_DIRS");

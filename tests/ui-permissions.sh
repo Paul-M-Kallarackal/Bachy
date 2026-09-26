@@ -3,7 +3,7 @@
 
 permissions_guard() {
     local path="$1" canonical
-    [[ -n "$path" && "$path" == /* && -f "$permissions_box/.flea-test-sandbox" ]] \
+    [[ -n "$path" && "$path" == /* && -f "$permissions_box/.bachy-test-sandbox" ]] \
         || fail "permissions: mutation needs an absolute path and owned marker"
     canonical=$(realpath -m -- "$path") || fail "permissions: mutation path did not resolve"
     [[ "$canonical" == "$permissions_box/"* && "$canonical" != "$permissions_box" ]] \
@@ -59,7 +59,7 @@ permissions_control() {
 permissions_viewport() {
     local target_width="${1:-1100}" target_height="${2:-800}"
     local client address result wx wy width height end=$((SECONDS + 20))
-    client=$(hyprctl clients -j | jq -ec --argjson pid "$(flea_pid)" '.[] | select(.pid == $pid)') \
+    client=$(hyprctl clients -j | jq -ec --argjson pid "$(bachy_pid)" '.[] | select(.pid == $pid)') \
         || fail "permissions: owned window unavailable"
     address=$(jq -er '.address' <<< "$client") || fail "permissions: owned window has no address"
     [[ "$address" =~ ^0x[0-9a-fA-F]+$ ]] || fail "permissions: invalid owned window address"
@@ -82,7 +82,7 @@ permissions_setup() {
     local root
     sandbox_require "$fixture_root"
     permissions_box=$(mktemp -d "$fixture_root/permissions.XXXXXXXX") || fail "permissions: fixture creation failed"
-    printf 'native Permissions fixture\n' > "$permissions_box/.flea-test-sandbox"
+    printf 'native Permissions fixture\n' > "$permissions_box/.bachy-test-sandbox"
     [[ "$permissions_box" == "$(realpath -e "$permissions_box")" ]] || fail "permissions: fixture is not canonical"
     permissions_listing="$permissions_box/listing"
     for root in "$permissions_listing" "$permissions_box/data" "$permissions_box/config" "$permissions_box/cache"; do
@@ -347,7 +347,7 @@ permissions_keys() {
     local -a cycle=(Apply Close 'Owner read' 'Owner write' 'Owner execute' 'Group read' 'Group write' 'Group execute' 'Everyone read' 'Everyone write' 'Everyone execute' Octal Cancel)
     local -a reverse=(Octal 'Everyone execute' 'Everyone write' 'Everyone read' 'Group execute' 'Group write' 'Group read' 'Owner execute' 'Owner write' 'Owner read' Close Apply Cancel)
     for preset in default vim mac windows; do
-        kill_flea
+        kill_bachy
         seed_ui_state "$permissions_box/state" "{\"view\":\"list\",\"keys\":\"$preset\",\"preview\":{\"column\":false,\"thumbnails\":\"off\"},\"menu\":{\"hidden\":[]}}"
         launch "$permissions_listing"
         wait_listing 6
@@ -412,7 +412,7 @@ permissions_keys() {
             permissions_expect cursor "$((row + 1))"
         done
     done
-    kill_flea
+    kill_bachy
     seed_ui_state "$permissions_box/state" '{"view":"list","keys":"default","preview":{"column":false,"thumbnails":"off"},"menu":{"hidden":[]}}'
     launch "$permissions_listing"
     wait_listing 6
@@ -560,7 +560,7 @@ permissions_failure() {
     command -v bwrap >/dev/null || fail "permissions: installed bubblewrap is required for the real EROFS case"
     real_qs=$(command -v qs) || fail "permissions: real Quickshell executable unavailable"
     [[ "$real_qs" == /* && -x "$real_qs" ]] || fail "permissions: Quickshell path is not absolute and executable"
-    kill_flea
+    kill_bachy
     permissions_guard "$permissions_box/bin"
     mkdir "$permissions_box/bin" || fail "permissions: could not create the owned launch directory"
     permissions_guard "$permissions_box/bin/qs"
@@ -569,7 +569,7 @@ permissions_failure() {
 set -eu
 [[ "$PERMISSIONS_REAL_QS" == /* && -x "$PERMISSIONS_REAL_QS" ]] || exit 80
 if [[ "$#" != 2 || "$1" != -p || "$2" != "$PERMISSIONS_UI" ]]; then exec "$PERMISSIONS_REAL_QS" "$@"; fi
-[[ -n "$PERMISSIONS_BIND_ROOT" && "$PERMISSIONS_BIND_ROOT" == /* && -f "$PERMISSIONS_BIND_ROOT/.flea-test-sandbox" ]] || exit 81
+[[ -n "$PERMISSIONS_BIND_ROOT" && "$PERMISSIONS_BIND_ROOT" == /* && -f "$PERMISSIONS_BIND_ROOT/.bachy-test-sandbox" ]] || exit 81
 [[ -n "$PERMISSIONS_BIND_FILE" && "$PERMISSIONS_BIND_FILE" == "$PERMISSIONS_BIND_ROOT/"* ]] || exit 82
 [[ -f "$PERMISSIONS_BIND_FILE" && ! -L "$PERMISSIONS_BIND_FILE" ]] || exit 83
 [[ "$(realpath -e -- "$PERMISSIONS_BIND_FILE")" == "$PERMISSIONS_BIND_FILE" ]] || exit 84
@@ -577,7 +577,7 @@ if [[ "$#" != 2 || "$1" != -p || "$2" != "$PERMISSIONS_UI" ]]; then exec "$PERMI
 exec bwrap --die-with-parent --unshare-user --bind / / --dev-bind /dev/dri /dev/dri --ro-bind "$PERMISSIONS_BIND_FILE" "$PERMISSIONS_BIND_FILE" -- "$PERMISSIONS_REAL_QS" "$@"
 SH
     chmod 0700 "$permissions_box/bin/qs" || fail "permissions: could not make the owned launcher executable"
-    export PERMISSIONS_REAL_QS="$real_qs" PERMISSIONS_UI="$flea_ui/boot/shell.qml"
+    export PERMISSIONS_REAL_QS="$real_qs" PERMISSIONS_UI="$bachy_ui/boot/shell.qml"
     export PERMISSIONS_BIND_ROOT="$permissions_box" PERMISSIONS_BIND_FILE="$permissions_listing/notes.md"
     permissions_guard "$PERMISSIONS_BIND_FILE"
     before=$(stat -c '%d:%i:%u:%g:%a:%s' "$PERMISSIONS_BIND_FILE")
@@ -587,7 +587,7 @@ SH
     export PATH="$saved_path"
     wait_listing 6
     permissions_viewport
-    pid=$(flea_pid)
+    pid=$(bachy_pid)
     [[ "$(readlink "/proc/$pid/ns/user")" != "$(readlink "/proc/$$/ns/user")" ]] \
         || fail "permissions: candidate did not enter a distinct user namespace"
     # Sample mountinfo: "112 29 0:25 /notes.md /owned/listing/notes.md ro,relatime - ext4 /dev/device rw".
@@ -616,7 +616,7 @@ PY
     done
     permissions_control Cancel
     permissions_wait '(.opened == false)'
-    kill_flea
+    kill_bachy
     unset PERMISSIONS_REAL_QS PERMISSIONS_UI PERMISSIONS_BIND_ROOT PERMISSIONS_BIND_FILE
     launch "$permissions_listing"
     wait_listing 6
@@ -631,11 +631,11 @@ PY
 permissions_backend_owned() {
     local pid="$1"
     [[ "$pid" =~ ^[0-9]+$ && -r "/proc/$pid/environ" ]] || return 1
-    [[ "$(readlink "/proc/$pid/exe")" == "$(realpath -e "$flea_bin")" \
+    [[ "$(readlink "/proc/$pid/exe")" == "$(realpath -e "$bachy_bin")" \
         && "$(stat -c '%u' "/proc/$pid")" == "$(id -u)" ]] || return 1
     backend_pids | grep -Fx "$pid" >/dev/null || return 1
-    tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "FLEA_BIN=$flea_bin" >/dev/null || return 1
-    tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "FLEA_PATH=$permissions_listing" >/dev/null || return 1
+    tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "BACHY_BIN=$bachy_bin" >/dev/null || return 1
+    tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "BACHY_PATH=$permissions_listing" >/dev/null || return 1
     tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "XDG_STATE_HOME=$XDG_STATE_HOME" >/dev/null
 }
 
@@ -704,7 +704,7 @@ permissions_backenddeath() {
         if [[ "$phase" == applying ]]; then
             expected='(.displayedError | contains("outcome is unknown") and contains("check the current mode"))'
         else
-            expected='(.displayedError | contains("Permissions is unavailable") and contains("restart Flea"))'
+            expected='(.displayedError | contains("Permissions is unavailable") and contains("restart Bachy"))'
         fi
         permissions_wait ".opened and (.busy == false) and (.editable == false) and .mode == \"$wanted\" and $expected" "$phase backend death retains the draft and reports the actual failure"
         permissions_wait 'all(.controls[] | select(.bit != null or .name == "Octal" or .name == "Apply"); .enabled == false)' 'lost descriptor disables every mutation control'
@@ -714,7 +714,7 @@ permissions_backenddeath() {
         [[ "$(stat -c '%d:%i:%u:%g:%a:%s' "$permissions_listing/notes.md")" == "$before" \
             && "$(sha256sum < "$permissions_listing/notes.md")" == "$contents" ]] \
             || fail "permissions: controlled backend death changed the paused fixture"
-        printf 'PERMISSIONS_BACKEND_DEATH phase=%s pid=%s source=%s path=%s\n' "$phase" "$pid" "$flea_bin" "$permissions_listing/notes.md"
+        printf 'PERMISSIONS_BACKEND_DEATH phase=%s pid=%s source=%s path=%s\n' "$phase" "$pid" "$bachy_bin" "$permissions_listing/notes.md"
         permissions_control Cancel
         permissions_wait '(.opened == false)'
         launch "$permissions_listing"
@@ -742,10 +742,10 @@ case_permissionsfailure() { case_permissions failure; }
 case_permissionsbackenddeath() { case_permissions backenddeath; }
 
 case_permissionsnonowner() {
-    local external="${FLEA_PERMISSIONS_NONOWNER_ROOT:-}" session root before contents uid gid
+    local external="${BACHY_PERMISSIONS_NONOWNER_ROOT:-}" session root before contents uid gid
     [[ -n "$external" && "$external" == /* && -d "$external" && -O "$external" \
-        && -f "$external/.flea-test-sandbox" && ! -L "$external/.flea-test-sandbox" ]] \
-        || fail "permissionsnonowner: FLEA_PERMISSIONS_NONOWNER_ROOT must name an owned, marked absolute fixture root"
+        && -f "$external/.bachy-test-sandbox" && ! -L "$external/.bachy-test-sandbox" ]] \
+        || fail "permissionsnonowner: BACHY_PERMISSIONS_NONOWNER_ROOT must name an owned, marked absolute fixture root"
     [[ "$(realpath -e -- "$external")" == "$external" ]] || fail "permissionsnonowner: fixture root is not canonical"
     local FIXTURE_ROOT="$external" fixture_root="$external"
     local permissions_box="$external" permissions_listing="$external/listing" permissions_checks=0 permissions_group=nonowner
@@ -761,14 +761,14 @@ case_permissionsnonowner() {
     before=$(stat -c '%d:%i:%u:%g:%a:%s' "$permissions_listing/owned-by-other.txt")
     contents=$(sha256sum < "$permissions_listing/owned-by-other.txt")
     session=$(mktemp -d "$external/permissions-session.XXXXXXXX") || fail "permissionsnonowner: session creation failed"
-    printf 'native nonowner Permissions session\n' > "$session/.flea-test-sandbox"
+    printf 'native nonowner Permissions session\n' > "$session/.bachy-test-sandbox"
     for root in "$session/data" "$session/config" "$session/cache"; do
         permissions_guard "$root"
         mkdir "$root" || fail "permissionsnonowner: session directory creation failed"
     done
     export XDG_DATA_HOME="$session/data" XDG_CONFIG_HOME="$session/config" XDG_CACHE_HOME="$session/cache"
     seed_ui_state "$session/state" '{"view":"list","keys":"default","preview":{"column":false,"thumbnails":"off"},"menu":{"hidden":[]}}'
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     launch "$permissions_listing"
     wait_listing 1
     permissions_viewport
@@ -779,7 +779,7 @@ case_permissionsnonowner() {
     [[ "$(stat -c '%d:%i:%u:%g:%a:%s' "$permissions_listing/owned-by-other.txt")" == "$before" \
         && "$(sha256sum < "$permissions_listing/owned-by-other.txt")" == "$contents" ]] \
         || fail "permissionsnonowner: native refusal changed the external fixture"
-    kill_flea
+    kill_bachy
     trap - EXIT
     permissions_guard "$session"
     sandbox_remove "$session"
@@ -812,5 +812,5 @@ case_permissions() {
         *) fail "permissions: unknown focused group $permissions_group" ;;
     esac
     printf 'PERMISSIONS_NATIVE group=%s checks=%s root=%s; screenshots require separate inspection.\n' "$permissions_group" "$permissions_checks" "$permissions_box"
-    kill_flea
+    kill_bachy
 }

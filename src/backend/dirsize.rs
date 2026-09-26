@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn a_missing_directory_answers_zero_and_partial_rather_than_a_panic() {
-        let result = walk(Path::new("/definitely/not/here/flea-dirsize-test"));
+        let result = walk(Path::new("/definitely/not/here/bachy-dirsize-test"));
         assert_eq!(result.bytes, 0);
         assert!(result.partial);
     }

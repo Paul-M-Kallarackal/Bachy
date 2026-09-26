@@ -1,6 +1,6 @@
 .pragma library
 
-// The picker's Recent location, read out of the desktop's own history and never written to. Flea
+// The picker's Recent location, read out of the desktop's own history and never written to. Bachy
 // keeps no history of its own; this is the freedesktop file every application on the box appends to,
 // so everything here treats it as untrusted input. Pure, so tests/js/recent.js drives it with no
 // window; ui/PickerRecent.qml is the Qt XML reader that feeds it.

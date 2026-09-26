@@ -4,7 +4,7 @@ use crate::backend::opscancel::Live;
 use crate::backend::opsreq::OpMsg;
 use crate::backend::proto::{parse_request, Request, TRANSFER_CANCEL};
 use crate::backend::thumbs::Done;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::io::{self, BufRead};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
@@ -20,7 +20,7 @@ pub enum Event {
     // The watch descriptor that saw it, so a burst belonging to the directory the client has already
     // left is dropped rather than answered for the new one; see src/backend/watch.rs.
     Changed(i32),
-    ReadError(FleaError),
+    ReadError(BachyError),
     Closed,
 }
 

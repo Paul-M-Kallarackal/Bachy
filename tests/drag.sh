@@ -9,12 +9,12 @@ set -u
 set -o pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-# Without this the UI resolves "flea" from PATH, which is the installed package and not this tree.
-export FLEA_BIN="${FLEA_BIN:-$repo/target/release/flea}"
-export FLEA_UI="$repo/ui"
-. "$repo/tools/flea-sandbox-guard"
+# Without this the UI resolves "bachy" from PATH, which is the installed package and not this tree.
+export BACHY_BIN="${BACHY_BIN:-$repo/target/release/bachy}"
+export BACHY_UI="$repo/ui"
+. "$repo/tools/bachy-sandbox-guard"
 
-SB=$FIXTURE_ROOT/flea-drag-char-$$
+SB=$FIXTURE_ROOT/bachy-drag-char-$$
 HOMEDIR=$SB/home
 pass=0
 fail=0
@@ -34,15 +34,15 @@ check() { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1"; note "expected [$3]";
 die() { bad "$*"; exit 1; }
 
 stop_owned_processes() {
-  [[ -n "${FLEA_PID:-}" ]] || return 0
-  python3 - "$SB" "$FLEA_PID" <<'PY'
+  [[ -n "${BACHY_PID:-}" ]] || return 0
+  python3 - "$SB" "$BACHY_PID" <<'PY'
 import os, signal, sys, time
 from pathlib import Path
 
 root, session = Path(sys.argv[1]), int(sys.argv[2])
-if not root.is_absolute() or not (root / ".flea-test-sandbox").is_file():
+if not root.is_absolute() or not (root / ".bachy-test-sandbox").is_file():
     raise RuntimeError("drag cleanup: ownership root is missing; processes and fixtures kept")
-marker = b"FLEA_TEST_RUN_ROOT=" + os.fsencode(root)
+marker = b"BACHY_TEST_RUN_ROOT=" + os.fsencode(root)
 drain_seconds, kill_wait_seconds, poll_seconds = 30, 5, 0.05
 
 def owned_processes(pid=None):
@@ -121,14 +121,14 @@ cleanup() {
   if [ "$control_down" = true ]; then
     ydotool key 29:0 >/dev/null 2>&1 || { bad "cleanup could not release Ctrl"; status=1; }
   fi
-  if [ -f "$SB/flea.log" ]; then
-    note "native stderr from $SB/flea.log"
-    cat -- "$SB/flea.log"
+  if [ -f "$SB/bachy.log" ]; then
+    note "native stderr from $SB/bachy.log"
+    cat -- "$SB/bachy.log"
   fi
   if [ "$drained" = true ]; then
     sandbox_remove "$SB" 2>/dev/null
     # R7's tmpfs root has its own mktemp and marker, checked again before deletion.
-    case "${XDEV:-}" in /dev/shm/flea-drag-xdev-*) FIXTURE_ROOT=/dev/shm sandbox_remove "$XDEV" ;; esac
+    case "${XDEV:-}" in /dev/shm/bachy-drag-xdev-*) FIXTURE_ROOT=/dev/shm sandbox_remove "$XDEV" ;; esac
   else
     bad "cleanup did not drain; fixtures kept at $SB ${XDEV:-}"
   fi
@@ -173,7 +173,7 @@ glide_to() {
 
 # ---------------------------------------------------------------- the app
 # The instance id and the process id together: the id addresses IPC, the pid finds this suite's own
-# window. Matching the window by class alone aborted three runs beside another lane's Flea, which is
+# window. Matching the window by class alone aborted three runs beside another lane's Bachy, which is
 # right to refuse but needlessly blind, because the pid is already in hand.
 myid() {
   qs list --all --json 2>/dev/null | python3 -c '
@@ -182,12 +182,12 @@ hits = [i for i in json.load(sys.stdin) if i["config_path"] == sys.argv[1] and i
 if len(hits) != 1:
     sys.exit(1)
 print("%s %s" % (hits[0]["id"], hits[0]["pid"]))
-' "$repo/ui/boot/shell.qml" "$FLEA_PID"
+' "$repo/ui/boot/shell.qml" "$BACHY_PID"
 }
-ipc() { qs ipc -i "$MYID" call flea "$@" 2>&1; }
+ipc() { qs ipc -i "$MYID" call bachy "$@" 2>&1; }
 native_key() {
   local result=0
-  omarchy-drive key --window flea "$@" || result=$?
+  omarchy-drive key --window bachy "$@" || result=$?
   (( result == 0 )) || die "native key delivery failed with status $result: $*"
 }
 expect_ipc() {
@@ -209,9 +209,9 @@ r5_state() {
 }
 
 # The product entry resolves the UI, renderer and backend identity before execing Quickshell.
-QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" HOME="$HOMEDIR" FLEA_TEST_RUN_ROOT="$SB" \
-  setsid "$FLEA_BIN" --gui "$HOMEDIR" >"$SB/flea.log" 2>&1 &
-FLEA_PID=$!
+QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" HOME="$HOMEDIR" BACHY_TEST_RUN_ROOT="$SB" \
+  setsid "$BACHY_BIN" --gui "$HOMEDIR" >"$SB/bachy.log" 2>&1 &
+BACHY_PID=$!
 MYID=""
 MYPID=""
 for i in $(seq 1 60); do
@@ -225,14 +225,14 @@ done
 [ "$(ipc themeLoaded)" = "true" ] || { echo "theme did not load in the fixture home"; exit 1; }
 
 # Two guards, and both are needed. The pid finds this suite's own window, because matching on class
-# alone is ambiguous beside another lane's Flea. The refusal is separate and stands anyway: this
-# suite drives a real pointer across the screen, so a second Flea window changes the tiling under it
-# and can take the drop. One run beside a foreign Flea reported the window 30px high and failed R2
+# alone is ambiguous beside another lane's Bachy. The refusal is separate and stands anyway: this
+# suite drives a real pointer across the screen, so a second Bachy window changes the tiling under it
+# and can take the drop. One run beside a foreign Bachy reported the window 30px high and failed R2
 # for no reason but that, which is a wrong answer, not a flaky one.
-FLEACOUNT=$(hyprctl clients -j | python3 -c '
+BACHYCOUNT=$(hyprctl clients -j | python3 -c '
 import json, sys
-print(sum(1 for w in json.load(sys.stdin) if w["class"] == "com.thisisgm.flea"))')
-[ "$FLEACOUNT" = "1" ] || { echo "refusing: $FLEACOUNT Flea windows are open, and this suite needs the screen to itself"; exit 1; }
+print(sum(1 for w in json.load(sys.stdin) if w["class"] == "local.bachy.FileManager"))')
+[ "$BACHYCOUNT" = "1" ] || { echo "refusing: $BACHYCOUNT Bachy windows are open, and this suite needs the screen to itself"; exit 1; }
 WIN=$(hyprctl clients -j | python3 -c '
 import json, sys
 hits = [w for w in json.load(sys.stdin) if str(w["pid"]) == sys.argv[1]]
@@ -587,7 +587,7 @@ echo "== R7: a drop on a tab whose listing is still out is a copy, never a cross
 # a move across devices copies and then deletes the source. The window is held open, not raced: the
 # suite's own backend is stopped before the switch, so the listing it asks for cannot come back until
 # the drop has been taken, and the backend is continued only then.
-XDEV=$(mktemp -d /dev/shm/flea-drag-xdev-XXXXXX)
+XDEV=$(mktemp -d /dev/shm/bachy-drag-xdev-XXXXXX)
 : > "$XDEV/$SANDBOX_MARKER"
 mkdir -p "$XDEV/big/dest"
 check "the tmpfs root is another filesystem than the fixture" \
@@ -603,10 +603,10 @@ check "the third tab lists the tmpfs directory" "$(ipc path)" "$XDEV/big"
 native_tab 0
 check "the home tab is current again" "$(ipc path)" "$HOMEDIR"
 for i in $(seq 1 40); do rowidx r7.txt >/dev/null 2>&1 && break; sleep 0.25; done
-# The one backend this suite owns: the instance's child running FLEA_BIN --backend, ui/Backend.qml's command.
+# The one backend this suite owns: the instance's child running BACHY_BIN --backend, ui/Backend.qml's command.
 BACKEND_PID=""
 for p in $(pgrep -P "$MYPID"); do
-  [ "$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)" = "$FLEA_BIN --backend " ] && BACKEND_PID=$p
+  [ "$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)" = "$BACHY_BIN --backend " ] && BACKEND_PID=$p
 done
 check "the suite found the one backend it owns" "$([ -n "$BACKEND_PID" ] && echo found || echo none)" "found"
 point=$(screen_centre r7.txt) || die "R7 source r7.txt is not visible"
@@ -808,9 +808,9 @@ PY
 dual_drag_diagnostic() {
   local evidence window address pointer current
   [[ "$(myid)" == "$MYID $MYPID" ]] || { bad "dual drag diagnostic lost its owned instance"; return 1; }
-  evidence=$(mktemp -d /tmp/flea-drag-failure.XXXXXX) || return 1
-  [[ "$evidence" == /tmp/flea-drag-failure.* && -d "$evidence" && ! -L "$evidence" ]] || return 1
-  printf 'dual drag failure evidence\n' > "$evidence/.flea-test-sandbox"
+  evidence=$(mktemp -d /tmp/bachy-drag-failure.XXXXXX) || return 1
+  [[ "$evidence" == /tmp/bachy-drag-failure.* && -d "$evidence" && ! -L "$evidence" ]] || return 1
+  printf 'dual drag failure evidence\n' > "$evidence/.bachy-test-sandbox"
   printf '%s\n' "${dual_before:-}" > "$evidence/saved-before.json"
   printf '%s\n' "${dual_after:-}" > "$evidence/fresh-after.json"
   pointer=$(hyprctl cursorpos -j) || { bad "dual drag diagnostic cursor read failed"; return 1; }
@@ -821,7 +821,7 @@ dual_drag_diagnostic() {
   printf '%s\n' "$current" > "$evidence/current.json"
   printf '%s\n' "$window" > "$evidence/window.json"
   printf 'DRAG_DUAL_MISMATCH evidence=%s pointer=%s current=%s\n' "$evidence" "$pointer" "$current"
-  [[ -f "$evidence/.flea-test-sandbox" && ! -e "$evidence/window.png" && ! -L "$evidence/window.png" ]] || return 1
+  [[ -f "$evidence/.bachy-test-sandbox" && ! -e "$evidence/window.png" && ! -L "$evidence/window.png" ]] || return 1
   omarchy-drive shot "$evidence/window.png" "$address" || { bad "dual drag failure screenshot failed"; return 1; }
   [[ -s "$evidence/window.png" ]] || { bad "dual drag failure screenshot is missing"; return 1; }
 }

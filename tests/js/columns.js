@@ -18,7 +18,7 @@ var OTHER = { rowPaddingX: 6, gap: 4, iconSize: 16, nameMin: 100, mode: 40, size
 var PICKER = { rowPaddingX: 14, gap: 9, iconSize: 23, nameMin: 156, mode: 70, size: 70, date: 80, kind: 130 }
 
 // The chooser's list area on this box: Hyprland floats the picker at 875 px and ui/PickerPlaces.qml
-// takes Theme.space(150), 175 px of it, measured off the window Hyprland reported for flea --pick.
+// takes Theme.space(150), 175 px of it, measured off the window Hyprland reported for bachy --pick.
 var PICKER_SLOT = 700
 
 // The anchor chain in ui/Row.qml, walked here independently of ui/js/Columns.js: the row, less its
@@ -51,7 +51,7 @@ function run(check) {
     check("the four floors nest, widest last",
           f.mode < f.size && f.size < f.date && f.date < f.kind, true)
 
-    // 732 is the list area of the 900 px window Flea asks for, beside this box's 168 px rail.
+    // 732 is the list area of the 900 px window Bachy asks for, beside this box's 168 px rail.
     check("the default window draws every column",
           Columns.names(Columns.set(732, BOX)), "name,mode,size,date,kind")
     check("a column is kept at exactly its floor",
@@ -66,7 +66,7 @@ function run(check) {
           Columns.names(Columns.set(373, BOX)), "name,mode")
     check("mode goes last, and the last layout is the mark and the name",
           Columns.names(Columns.set(294, BOX)), "name")
-    // 453 is the list area at the 621 px window Hyprland handed Flea beside three terminals.
+    // 453 is the list area at the 621 px window Hyprland handed Bachy beside three terminals.
     check("the width that drew no name at all now draws the name, mode and size",
           Columns.names(Columns.set(453, BOX)), "name,mode,size")
 

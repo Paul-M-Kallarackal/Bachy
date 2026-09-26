@@ -41,7 +41,7 @@ impl Worker {
         let generation = Arc::new(AtomicU64::new(0));
         let current = generation.clone();
         // The recursive walker previously used the main thread; retain stack headroom for deep trees.
-        std::thread::Builder::new().name("flea-dirsize".into()).stack_size(16 * 1024 * 1024).spawn(move || {
+        std::thread::Builder::new().name("bachy-dirsize".into()).stack_size(16 * 1024 * 1024).spawn(move || {
             for job in rx {
                 for (row, path) in job.rows {
                     // Account for queued rows after cancellation without entering their paths.

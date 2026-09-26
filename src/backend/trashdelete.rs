@@ -465,7 +465,7 @@ impl Reviewed {
             return Err("Trash item changed; review a fresh confirmation.".into());
         }
         let quarantine_name = format!(
-            ".flea-delete-{}-{}",
+            ".bachy-delete-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         );
@@ -571,7 +571,7 @@ impl PathReview {
         if identity(&fd_path(&parent, name))? != self.payload {
             return Err("Item changed; review a fresh deletion confirmation.".into());
         }
-        let quarantine_name = format!(".flea-delete-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed));
+        let quarantine_name = format!(".bachy-delete-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed));
         let quarantine_path = fd_path(&parent, OsStr::new(&quarantine_name));
         std::fs::DirBuilder::new().mode(0o700).create(&quarantine_path)
             .map_err(|e| format!("Could not create deletion quarantine: {}", e))?;

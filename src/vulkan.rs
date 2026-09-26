@@ -186,8 +186,8 @@ fn pci_id(handle: *mut c_void, get: GetPhysicalDeviceProperties) -> (u32, u32) {
     )
 }
 
-// The launcher marks its own pin, so a program Flea starts can tell it from the operator's own list.
-pub const PIN_MARKER: &str = "FLEA_VK_PIN";
+// The launcher marks its own pin, so a program Bachy starts can tell it from the operator's own list.
+pub const PIN_MARKER: &str = "BACHY_VK_PIN";
 
 // Empty is absent, the same rule QSG_RHI_BACKEND and the loader variables already follow.
 fn pin_is_marked(marker: Option<&OsStr>) -> bool {
@@ -416,7 +416,7 @@ mod tests {
         if skipped_without_loader("vulkan::tests::a_required_extension_no_loader_offers_reads_unusable") {
             return;
         }
-        let absent = c"VK_KHR_flea_probe_extension_that_cannot_exist";
+        let absent = c"VK_KHR_bachy_probe_extension_that_cannot_exist";
         let alone = usable_with(&[absent]).unwrap_err();
         assert!(alone.starts_with("vkCreateInstance answered"), "{alone}");
         let beside = usable_with(&[SURFACE, absent]).unwrap_err();
@@ -429,11 +429,11 @@ mod tests {
         if skipped_without_loader("vulkan::tests::the_refusal_names_the_call_and_the_extension_it_was_asked_for") {
             return;
         }
-        let absent = c"VK_KHR_flea_probe_extension_that_cannot_exist";
+        let absent = c"VK_KHR_bachy_probe_extension_that_cannot_exist";
         // corner: a working loader lands on the vkCreateInstance arm, so the other five cannot be reached from here.
         let reason = usable_with(&[SURFACE, absent]).unwrap_err();
         assert!(reason.contains("VK_KHR_surface"), "{reason}");
-        assert!(reason.contains("VK_KHR_flea_probe_extension_that_cannot_exist"), "{reason}");
+        assert!(reason.contains("VK_KHR_bachy_probe_extension_that_cannot_exist"), "{reason}");
     }
 
     // An exported-but-empty WAYLAND_DISPLAY is not a Wayland session, the rule paths::has_display() uses.
@@ -600,7 +600,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root = std::env::temp_dir().join(format!("flea-{name}-{}-{unique}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("bachy-{name}-{}-{unique}", std::process::id()));
         std::fs::create_dir(&root).unwrap();
         root
     }

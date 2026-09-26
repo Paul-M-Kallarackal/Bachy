@@ -59,7 +59,7 @@ noblank_step() {
 # for its whole wait, and one past it, which must fall back to the loading state and is the control
 # that proves the counter sees frames at all, since the loading frames it counts are drawn empty too.
 case_noblank() {
-    local dir="$fixture_root/noblank" bin="$fixture_root/noblank-bin" real_bin="$flea_bin" i
+    local dir="$fixture_root/noblank" bin="$fixture_root/noblank-bin" real_bin="$bachy_bin" i
     local before after
     sandbox_scratch "$dir"
     mkdir -p "$dir/inner" "$dir/held" "$dir/slow"
@@ -69,7 +69,7 @@ case_noblank() {
 
     # A relay to the real binary that holds back the two late directories' list requests and ends on quit.
     sandbox_scratch "$bin"
-    cat > "$bin/flea" <<'SH'
+    cat > "$bin/bachy" <<'SH'
 #!/usr/bin/env bash
 set -u
 [[ "${1:-}" == --backend ]] || exec "$NOBLANK_REAL_BIN" "$@"
@@ -82,14 +82,14 @@ while IFS= read -r line; do
     [[ "$line" == *'"c":"quit"'* ]] && break
 done | "$NOBLANK_REAL_BIN" --backend
 SH
-    chmod +x "$bin/flea"
+    chmod +x "$bin/bachy"
 
     seed_ui_state "$fixture_root/noblank-state" '{"keys":"default","view":"list"}'
     local -x NOBLANK_REAL_BIN="$real_bin" NOBLANK_HELD="$dir/held" NOBLANK_SLOW="$dir/slow"
     local -x NOBLANK_HELD_DELAY="$noblank_held_delay_s" NOBLANK_SLOW_DELAY="$noblank_slow_delay_s"
-    flea_bin="$bin/flea"
+    bachy_bin="$bin/bachy"
     launch "$dir"
-    flea_bin="$real_bin"
+    bachy_bin="$real_bin"
     # held, inner, slow, then outer-01 to outer-40.
     wait_listing 43
     settle
@@ -143,5 +143,5 @@ SH
     switch_view list
 
     printf 'NOBLANK enter=ok doubleclick=ok backspace=ok held=ok slow=ok grid=ok columns=ok %s\n' "$(noblank_state)"
-    kill_flea
+    kill_bachy
 }

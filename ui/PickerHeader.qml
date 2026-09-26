@@ -1,10 +1,10 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Picker.js" as Picker
 import "js/Sort.js" as Sort
 
 // Owns no sort state; the picker's sortable gates both this click and the s and S keys so they cannot differ.
-Flea.Header {
+Bachy.Header {
     id: root
     required property var picker
     required property var backend

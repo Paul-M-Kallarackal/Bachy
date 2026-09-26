@@ -2,7 +2,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// The one component that runs Flea's own opening modes, so the huge page corner has one owner; see AGENTS.md "Opening a file".
+// The one component that runs Bachy's own opening modes, so the huge page corner has one owner; see AGENTS.md "Opening a file".
 Item {
     id: root
 
@@ -22,7 +22,7 @@ Item {
     // started second rewrite the path the first one's onExited still reports.
     property string terminalCurrent: ""
 
-    // flea --open waits for gio open and not for the application it starts, and that wait is 11 to 15 ms
+    // bachy --open waits for gio open and not for the application it starts, and that wait is 11 to 15 ms
     // for an Exec= handler but 0.32 to 0.75 s for a DBusActivatable one, which is what this box's
     // twenty-five archive types default to, so this guard drops a second Enter for that long and says so.
     function open(path) {
@@ -31,7 +31,7 @@ Item {
             return
         }
         root.current = path
-        child.command = [Quickshell.env("FLEA_BIN") || "flea", "--open", path]
+        child.command = [Quickshell.env("BACHY_BIN") || "bachy", "--open", path]
         child.running = true
     }
 
@@ -50,7 +50,7 @@ Item {
         }
     }
 
-    // A terminal in the current directory, through flea --terminal so the huge page,
+    // A terminal in the current directory, through bachy --terminal so the huge page,
     // process-group and stdio guards in src/terminal.rs apply. Its own Process, so a terminal
     // launch and a file open in flight cannot take each other's exit status.
     function openTerminal(path) {
@@ -59,7 +59,7 @@ Item {
             return
         }
         root.terminalCurrent = path
-        terminalChild.command = [Quickshell.env("FLEA_BIN") || "flea", "--terminal", path]
+        terminalChild.command = [Quickshell.env("BACHY_BIN") || "bachy", "--terminal", path]
         terminalChild.running = true
     }
 
@@ -75,7 +75,7 @@ Item {
     }
 
     // The system clipboard, for the listing menu's Copy Path row. wl-copy reads the text on stdin,
-    // so the one-liner hands it over; flea's own copy clipboard (Ops.clip) is a different thing
+    // so the one-liner hands it over; bachy's own copy clipboard (Ops.clip) is a different thing
     // and must stay a different thing.
     function copyText(text) {
         if (copier.running) {
@@ -89,8 +89,8 @@ Item {
         id: copier
     }
 
-    // A library cannot name a singleton, so the menu's Update Flea row comes through here, and the pane's footer says what it did.
-    function updateFlea(pane) {
+    // A library cannot name a singleton, so the menu's Update Bachy row comes through here, and the pane's footer says what it did.
+    function updateBachy(pane) {
         UpdateCheck.launch(pane)
     }
 

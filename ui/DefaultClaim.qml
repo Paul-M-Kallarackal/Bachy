@@ -4,11 +4,11 @@ import Quickshell
 import Quickshell.Io
 import "js/MakeDefault.js" as MakeDefault
 
-// Settings > About's Make Flea the default, shared by every window: the handler xdg-mime answers, whether this build has a desktop entry, `flea --default [off]` and the portal restart after it; ui/js/MakeDefault.js holds the states and the words.
+// Settings > About's Make Bachy the default, shared by every window: the handler xdg-mime answers, whether this build has a desktop entry, `bachy --default [off]` and the portal restart after it; ui/js/MakeDefault.js holds the states and the words.
 QtObject {
     id: root
 
-    readonly property string binary: Quickshell.env("FLEA_BIN") || "flea"
+    readonly property string binary: Quickshell.env("BACHY_BIN") || "bachy"
     // The one answer the File manager row states and the box is ticked by.
     property string handler: ""
     property var claim: MakeDefault.idle()
@@ -21,10 +21,10 @@ QtObject {
     // Each process's exit code and collector text, filled in whichever order they land.
     property var readAnswer: ({})
     property var runAnswer: ({})
-    // What the run asked for, so a flea that never starts is named in the note.
+    // What the run asked for, so a bachy that never starts is named in the note.
     property var runCommand: []
 
-    // About opening: the handler, and whether there is an entry for flea --default to point at.
+    // About opening: the handler, and whether there is an entry for bachy --default to point at.
     function read() {
         root.startRead()
         prober.command = MakeDefault.probeCommand(MakeDefault.entryPaths({
@@ -91,7 +91,7 @@ QtObject {
     property var readQuery: Process {
         id: reader
         command: ["xdg-mime", "query", "default", "inode/directory"]
-        // Sample output: com.thisisgm.flea.desktop
+        // Sample output: local.bachy.FileManager.desktop
         stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.readLanded({ text: this.text }) }
         onExited: function (code) { root.readLanded({ code: code }) }
         // An xdg-mime that cannot start raises no exited, so the read ends here, stating no handler.
@@ -106,12 +106,12 @@ QtObject {
         onExited: function (code) { root.claim = MakeDefault.probed(root.claim, code === 0) }
     }
 
-    // Asynchronous like every Process, so the window keeps drawing while flea rewrites the four files.
+    // Asynchronous like every Process, so the window keeps drawing while bachy rewrites the four files.
     property var runQuery: Process {
         id: runner
         stderr: StdioCollector { waitForEnd: true; onStreamFinished: root.runLanded({ text: this.text }) }
         onExited: function (code) { root.runLanded({ code: code }) }
-        // A flea that cannot start wrote nothing, so there is nothing to read again and no portal to restart.
+        // A bachy that cannot start wrote nothing, so there is nothing to read again and no portal to restart.
         onRunningChanged: {
             if (MakeDefault.neverRan(root.runAnswer, runner.running)) {
                 root.runAnswer = MakeDefault.landed(root.runAnswer, MakeDefault.NEVER_RAN)
@@ -120,7 +120,7 @@ QtObject {
         }
     }
 
-    // Only this switch restarts the portal; flea --default on a command line prints the hint instead.
+    // Only this switch restarts the portal; bachy --default on a command line prints the hint instead.
     property var restartQuery: Process {
         id: restarter
         command: MakeDefault.RESTART

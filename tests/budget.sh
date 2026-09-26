@@ -1,5 +1,5 @@
 #!/bin/bash
-# Asserts tools/flea-file-budget rejects an oversized file and accepts a normal tree.
+# Asserts tools/bachy-file-budget rejects an oversized file and accepts a normal tree.
 set -u
 # The cd comes first: a trap installed above it fires against the caller's working directory when
 # the cd fails, which is a relative-path rm -rf in somebody else's tree.
@@ -30,17 +30,17 @@ check() {
 }
 
 # Read-only against the real tree, which is the gate this suite exists to keep.
-"$repo/tools/flea-file-budget" >/dev/null 2>&1
+"$repo/tools/bachy-file-budget" >/dev/null 2>&1
 check "clean tree passes" 0 $?
 
 mkdir -p "$scratch/src" "$scratch/ui" "$scratch/tests"
-( cd "$scratch" && "$repo/tools/flea-file-budget" >/dev/null 2>&1 )
+( cd "$scratch" && "$repo/tools/bachy-file-budget" >/dev/null 2>&1 )
 check "an empty tree passes too" 0 $?
 
 # A literal one past the Rust hard cap of 400, so the test stays independent.
 oversized_lines=401
 seq 1 $oversized_lines | sed 's/^/\/\/ line /' > "$scratch/src/oversized.rs"
-( cd "$scratch" && "$repo/tools/flea-file-budget" >/dev/null 2>&1 )
+( cd "$scratch" && "$repo/tools/bachy-file-budget" >/dev/null 2>&1 )
 check "oversized file fails" 1 $?
 
 exit $fail

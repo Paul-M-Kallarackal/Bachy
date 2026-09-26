@@ -60,7 +60,7 @@ function run(check) {
     var asking = Menu.listingEntries(state({ localSendInstalled: true, localSendPeers: [], localSendChecking: true }))
     check("and a list still being read is only disabled", [entry(asking, "localsend").disabled, entry(asking, "localsend").errored === true].join(","), "true,false")
 
-    // What Flea itself says: the dispatch, and then the verdict its own CLI came back with.
+    // What Bachy itself says: the dispatch, and then the verdict its own CLI came back with.
     check("one file names the file and the device", LocalSend.sending("Clean Lemon", ["/home/gm/a file.txt"]),
           "Sending a file.txt to Clean Lemon with LocalSend.")
     check("several are counted", LocalSend.sending("Clean Lemon", ["/home/gm/a.txt", "/home/gm/b.txt"]),

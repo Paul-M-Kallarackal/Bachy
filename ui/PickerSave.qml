@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Picker.js" as Picker
 
@@ -22,7 +22,7 @@ Item {
     implicitHeight: visible ? Math.min(maximumHeight, body.wanted + 2 * Theme.spacing.rowPaddingX) : 0
 
     Rectangle { anchors.fill: parent; color: Theme.color.surface }
-    Flea.CardScroll {
+    Bachy.CardScroll {
         id: body
         anchors.fill: parent
         anchors.margins: Theme.spacing.rowPaddingX
@@ -103,7 +103,7 @@ Item {
                     Keys.onRightPressed: contentX = Math.min(Math.max(0, contentWidth - width), contentX + Theme.font.caption)
                     Keys.onTabPressed: function(event) { root.picker.stepFocus(outputUri, (event.modifiers & Qt.ShiftModifier) !== 0) }
                     Keys.onBacktabPressed: root.picker.stepFocus(outputUri, true)
-                    Flea.FastScrollHandler { flickable: outputUri }
+                    Bachy.FastScrollHandler { flickable: outputUri }
                     TapHandler { onTapped: outputUri.forceActiveFocus(Qt.MouseFocusReason) }
                     Text {
                         id: uriText

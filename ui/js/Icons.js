@@ -2,7 +2,7 @@
 
 .import "Format.js" as Format
 
-// The backend sends a freedesktop icon name per row; this is the only place Flea maps one to a mark.
+// The backend sends a freedesktop icon name per row; this is the only place Bachy maps one to a mark.
 // Counts re-derived 2026-08-31 from /usr/share/mime/generic-icons on this box, see AGENTS.md "Icons in the row":
 // x-office-document 106, package-x-generic 89, application-x-executable 57, text-x-generic 46,
 // image-x-generic 40, x-office-spreadsheet 38, text-x-script 36, font-x-generic 23, x-office-presentation 21,

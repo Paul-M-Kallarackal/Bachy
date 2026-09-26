@@ -1,8 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Icons.js" as Icons
 import "js/Mounts.js" as Mounts
 import "js/Places.js" as Places
@@ -349,7 +348,7 @@ Item {
             parent: scroller
             flickable: scroller
         }
-        Flea.ViewportScrollBar { parent: scroller; anchors.top: parent.top; anchors.right: parent.right; flickable: scroller }
+        Bachy.ViewportScrollBar { parent: scroller; anchors.top: parent.top; anchors.right: parent.right; flickable: scroller }
         Column {
             id: rail
             anchors.top: parent.top

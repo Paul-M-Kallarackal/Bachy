@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 
 // Menu-only actions share the existing card, field and button language.
@@ -179,14 +178,14 @@ FocusScope {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             onWheel: function(wheel) { wheel.accepted = true }
         }
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.margins: Theme.spacing.rowPaddingX
             Column {
                 width: body.width
                 spacing: Theme.spacing.gap
-                Flea.DialogTitle {
+                Bachy.DialogTitle {
                     width: parent.width
                     text: root.title
                 }
@@ -263,7 +262,7 @@ FocusScope {
                         Keys.onBacktabPressed: root.stepFocus(true)
                         Keys.onReturnPressed: root.close()
                         Keys.onSpacePressed: root.close()
-                        Flea.DialogButton { id: closeButton; label: root.action === "properties" ? "Close" : "Cancel"; primary: parent.activeFocus; available: parent.activeFocusOnTab; onActivated: root.close() }
+                        Bachy.DialogButton { id: closeButton; label: root.action === "properties" ? "Close" : "Cancel"; primary: parent.activeFocus; available: parent.activeFocusOnTab; onActivated: root.close() }
                     }
                     FocusScope {
                         id: submitFocus
@@ -275,7 +274,7 @@ FocusScope {
                         Keys.onBacktabPressed: root.stepFocus(true)
                         Keys.onReturnPressed: root.submit()
                         Keys.onSpacePressed: root.submit()
-                        Flea.DialogButton { id: submitButton; label: root.action === "newFile" ? "Create" : root.action === "moveTo" ? "Move" : "Copy"; primary: parent.activeFocus; available: root.canSubmit; onActivated: root.submit() }
+                        Bachy.DialogButton { id: submitButton; label: root.action === "newFile" ? "Create" : root.action === "moveTo" ? "Move" : "Copy"; primary: parent.activeFocus; available: root.canSubmit; onActivated: root.submit() }
                     }
                 }
             }
@@ -283,7 +282,7 @@ FocusScope {
     }
     // Match Trash's identity-check cadence only while the destructive strip is visible.
     Timer { interval: 2500; repeat: true; running: confirmation.opened && !root.busy; onTriggered: root.checkDeletion() }
-    Flea.TrashConfirm {
+    Bachy.TrashConfirm {
         id: confirmation
         scopeName: "items"
         onCancelled: root.close()

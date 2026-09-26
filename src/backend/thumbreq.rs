@@ -127,7 +127,7 @@ fn trace_line(t: &Trace) {
     let exited = if t.exited.is_zero() { whole } else { t.exited };
     let ms = |d: Duration| d.as_secs_f64() * 1000.0;
     eprintln!(
-        "flea: trace row={} depth={} queued={:.2} setup={:.2} child={:.2} after={:.2} total={:.2}",
+        "bachy: trace row={} depth={} queued={:.2} setup={:.2} child={:.2} after={:.2} total={:.2}",
         t.row, t.depth, ms(t.popped), ms(spawned.saturating_sub(t.popped)),
         ms(exited.saturating_sub(spawned)), ms(whole.saturating_sub(exited)), ms(whole)
     );

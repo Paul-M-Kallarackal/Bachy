@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Thumbs.js" as Thumbs
 
@@ -59,7 +58,7 @@ Item {
         spacing: Theme.spacing.gap
         visible: root.failed
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.horizontalCenter: parent.horizontalCenter
             // A failure mark stands alone, so it takes the pane-state ceiling States.dc.html draws at 40.
             maxSize: Theme.stateMarkSize

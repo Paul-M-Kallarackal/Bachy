@@ -1,10 +1,9 @@
 import QtQuick
-import qs.Commons
 import "js/Drag.js" as DragOps
 import "js/Format.js" as Format
 import "js/Icons.js" as Icons
 import "js/Match.js" as Match
-import "." as Flea
+import "." as Bachy
 
 Item {
     id: root
@@ -44,7 +43,7 @@ Item {
     // A search row's name is its path relative to the search root, so the name and location split here; see docs/protocol.md "search".
     readonly property bool searching: !root.filtering && root.searchQuery.length > 0 && root.row !== null && root.row.n.length > 0
     readonly property string displayName: root.row ? (root.searching ? Match.base(root.row.n) : root.row.n) : ""
-    // FleaWindow.html and ThemeRoles.html both spell it "shell -> /usr/share/omarchy".
+    // BachyWindow.html and ThemeRoles.html both spell it "shell -> /usr/share/omarchy".
     readonly property string linkMark: root.row && root.row.l ? " -> " + root.row.l : ""
     // The name, then a link's target; a folder carries no slash, its glyph and the folders-first order already say it.
     readonly property string decoratedName: root.displayName + root.linkMark
@@ -171,7 +170,7 @@ Item {
         anchors.right: mode.left
         anchors.rightMargin: root.modeShown ? Theme.spacing.gap : 0
         anchors.verticalCenter: parent.verticalCenter
-        sourceComponent: Flea.RenameField {
+        sourceComponent: Bachy.RenameField {
             height: implicitHeight
             pane: root.renamePane
             name: root.displayName

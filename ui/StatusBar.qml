@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Filter.js" as Filter
 import "js/Ops.js" as Ops
@@ -345,7 +344,7 @@ Item {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         onVisibleChanged: contentY = 0
-        Flea.ViewportScrollBar {
+        Bachy.ViewportScrollBar {
             parent: detailView
             anchors { top: parent.top; right: parent.right }
             flickable: detailView

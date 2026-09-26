@@ -65,13 +65,13 @@ mod tests {
 
     fn store_with(d: &TestDir, text: &str) -> Store {
         let s = Store::at(&d.dir("state"), &d.dir("config"));
-        d.dir("state/flea");
-        fs::write(d.join("state/flea/ui.json"), text).expect("seed the state file");
+        d.dir("state/bachy");
+        fs::write(d.join("state/bachy/ui.json"), text).expect("seed the state file");
         s
     }
 
     fn on_disk(d: &TestDir) -> Json {
-        jsondoc::parse(&fs::read_to_string(d.join("state/flea/ui.json")).expect("state file")).expect("valid JSON on disk")
+        jsondoc::parse(&fs::read_to_string(d.join("state/bachy/ui.json")).expect("state file")).expect("valid JSON on disk")
     }
 
     #[test]
@@ -97,9 +97,9 @@ mod tests {
         s.update(&patch(r#"{"places":{"showUnmounted":false}}"#)).expect("switched off after the migration");
         s.update(&patch(r#"{"view":"list"}"#)).expect("a later write");
         assert_eq!(shown(&s.read()), Some(false), "the operator's own off outlives the next write");
-        let ino = fs::metadata(d.join("state/flea/ui.json")).expect("meta").ino();
+        let ino = fs::metadata(d.join("state/bachy/ui.json")).expect("meta").ino();
         s.settle().expect("the next launch");
-        assert_eq!(fs::metadata(d.join("state/flea/ui.json")).expect("meta").ino(), ino, "a stamped file is not rewritten");
+        assert_eq!(fs::metadata(d.join("state/bachy/ui.json")).expect("meta").ino(), ino, "a stamped file is not rewritten");
         assert_eq!(shown(&s.read()), Some(false));
     }
 
@@ -111,9 +111,9 @@ mod tests {
         s.settle().expect("the first 0.3.3 launch");
         let stored = on_disk(&d);
         assert_eq!((shown(&stored), stamp(&stored)), (Some(true), Some(1.0)));
-        let ino = fs::metadata(d.join("state/flea/ui.json")).expect("meta").ino();
+        let ino = fs::metadata(d.join("state/bachy/ui.json")).expect("meta").ino();
         s.settle().expect("the second launch");
-        assert_eq!(fs::metadata(d.join("state/flea/ui.json")).expect("meta").ino(), ino, "one migration is one write");
+        assert_eq!(fs::metadata(d.join("state/bachy/ui.json")).expect("meta").ino(), ino, "one migration is one write");
     }
 
     // No file at all is the default document, which is already stamped, so a fresh off is not undone.
@@ -129,17 +129,17 @@ mod tests {
 
     #[test]
     fn every_other_key_survives_the_migration_and_a_newer_stamp_is_kept() {
-        let text = r#"{"fromANewerFlea":{"a":[1,"two"]},"places":{"newLeaf":7,"showUnmounted":false},"keys":"vim"}"#;
+        let text = r#"{"fromANewerBachy":{"a":[1,"two"]},"places":{"newLeaf":7,"showUnmounted":false},"keys":"vim"}"#;
         let read = from_file(text);
-        assert_eq!(jsondoc::render(read.get("fromANewerFlea").expect("top-level unknown")), "{\n  \"a\": [\n    1,\n    \"two\"\n  ]\n}\n");
+        assert_eq!(jsondoc::render(read.get("fromANewerBachy").expect("top-level unknown")), "{\n  \"a\": [\n    1,\n    \"two\"\n  ]\n}\n");
         assert_eq!(read.get("places").and_then(|p| p.get("newLeaf")).and_then(Json::as_f64), Some(7.0));
         assert_eq!(read.get("keys").and_then(Json::as_str), Some("vim"));
         let d = TestDir::new("uimigrate-unknown");
         let s = store_with(&d, text);
         s.update(&patch(r#"{"hidden":true}"#)).expect("write");
-        assert_eq!(on_disk(&d).get("fromANewerFlea"), read.get("fromANewerFlea"), "and it is written back as it was read");
+        assert_eq!(on_disk(&d).get("fromANewerBachy"), read.get("fromANewerBachy"), "and it is written back as it was read");
         let newer = from_file(r#"{"stateVersion":7,"places":{"showUnmounted":false}}"#);
-        assert_eq!((shown(&newer), stamp(&newer)), (Some(false), Some(7.0)), "a newer Flea's stamp is not rewound");
+        assert_eq!((shown(&newer), stamp(&newer)), (Some(false), Some(7.0)), "a newer Bachy's stamp is not rewound");
     }
 
     #[test]

@@ -1,4 +1,4 @@
-// The backend's side of `flea --thumb-worker`: one worker for the pool, started on the first video that qualifies and retired for good at its first failure; see AGENTS.md "Thumbnail worker".
+// The backend's side of `bachy --thumb-worker`: one worker for the pool, started on the first video that qualifies and retired for good at its first failure; see AGENTS.md "Thumbnail worker".
 use crate::backend::child::Ran;
 use crate::backend::fdpass;
 use crate::backend::sandbox;
@@ -23,7 +23,7 @@ const O_NOCTTY: i32 = 0o400;
 const POLLIN: i16 = 1;
 const EINTR: i32 = 4;
 // The operator's way back to the exec path, and the battery's way to run it on purpose.
-const OFF_SWITCH: &str = "FLEA_THUMB_WORKER";
+const OFF_SWITCH: &str = "BACHY_THUMB_WORKER";
 
 #[repr(C)]
 struct PollFd {
@@ -134,7 +134,7 @@ impl WorkerLink {
     // Started under the lock, so pool threads meeting their first video together start one worker between them.
     fn spawn() -> Result<(Child, OwnedFd), String> {
         let exe = std::fs::canonicalize("/proc/self/exe").map_err(|e| format!("/proc/self/exe did not resolve: {}", e))?;
-        let exe_text = exe.to_str().ok_or("the flea executable's path is not UTF-8")?.to_string();
+        let exe_text = exe.to_str().ok_or("the bachy executable's path is not UTF-8")?.to_string();
         let (mine, theirs) = fdpass::pair().map_err(|e| format!("no socket pair: {}", e))?;
         let argv = sandbox::wrap_worker(&[exe_text, "--thumb-worker".to_string()], &exe);
         // corner: bwrap's --die-with-parent follows the thread that spawns it, and a pool thread lives as long as the backend.
@@ -161,7 +161,7 @@ impl WorkerLink {
             *state = match WorkerLink::spawn() {
                 Ok((child, requests)) => State::Running { child, requests },
                 Err(why) => {
-                    eprintln!("flea: the thumbnail worker did not start ({}), so videos use the thumbnailer program", why);
+                    eprintln!("bachy: the thumbnail worker did not start ({}), so videos use the thumbnailer program", why);
                     State::Gone
                 }
             };
@@ -180,7 +180,7 @@ impl WorkerLink {
         if let State::Running { child, .. } = state {
             let _ = child.kill();
             let _ = child.wait();
-            eprintln!("flea: the thumbnail worker {}, so videos use the thumbnailer program", why);
+            eprintln!("bachy: the thumbnail worker {}, so videos use the thumbnailer program", why);
         }
         *state = State::Gone;
     }

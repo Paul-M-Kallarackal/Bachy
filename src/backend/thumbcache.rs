@@ -2,7 +2,7 @@ use crate::backend::md5;
 use std::path::{Path, PathBuf};
 
 // This application's name in the shared cache's fail/ namespace, per the freedesktop thumbnail spec.
-const APP_NAME: &str = "flea";
+const APP_NAME: &str = "bachy";
 const LARGE_DIR: &str = "large";
 const FAIL_DIR: &str = "fail";
 const CACHE_DIR: &str = "thumbnails";
@@ -190,7 +190,7 @@ mod tests {
     fn the_fail_path_is_namespaced_by_this_application() {
         let c = Cache::new();
         let p = c.fail_path("file:///tmp/a.jpg");
-        assert!(p.to_string_lossy().contains("/thumbnails/fail/flea/"));
+        assert!(p.to_string_lossy().contains("/thumbnails/fail/bachy/"));
         assert!(p.to_string_lossy().ends_with(".png"));
     }
 
@@ -203,7 +203,7 @@ mod tests {
         );
         assert_eq!(
             c.fail_path("file:///tmp/a.jpg").parent().unwrap(),
-            Path::new("/x/y/thumbnails/fail/flea")
+            Path::new("/x/y/thumbnails/fail/bachy")
         );
         assert!(default_root().ends_with("thumbnails"));
     }

@@ -1,4 +1,4 @@
-//@ pragma ShellId flea-network-keyless-test
+//@ pragma ShellId bachy-network-keyless-test
 
 import QtQuick
 import Quickshell

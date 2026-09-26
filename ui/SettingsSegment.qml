@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // The Display board's two-value control: both names side by side, the current one bright, rather than
 // the chevron walk a longer list needs. ui/SettingsRow.qml draws it for any row whose model names its
@@ -41,7 +41,7 @@ Row {
             Accessible.name: String(segment.modelData)
             Accessible.onPressAction: root.picked(segment.index)
 
-            Flea.Glyph {
+            Bachy.Glyph {
                 anchors.centerIn: parent
                 visible: segment.glyph.length > 0
                 width: Theme.railIconSize

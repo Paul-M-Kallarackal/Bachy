@@ -3,17 +3,17 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-probe_dir=$(mktemp -d /tmp/flea-keymap.XXXXXXXX) || exit 1
+probe_dir=$(mktemp -d /tmp/bachy-keymap.XXXXXXXX) || exit 1
 tmp=$probe_dir/Keymap.js
 cleanup() {
   # The test owns this mktemp root; every deletion must still pass its absolute-path guard.
-  case "$probe_dir" in /tmp/flea-keymap.?*) ;; *) return 1 ;; esac
+  case "$probe_dir" in /tmp/bachy-keymap.?*) ;; *) return 1 ;; esac
   local path=$probe_dir
   case "$path" in "$probe_dir"|"$probe_dir"/*) rm -rf -- "$path" ;; *) return 1 ;; esac
 }
 trap cleanup EXIT
 
-./tools/flea-keymap-gen "$tmp" || { echo "FAIL the generator did not run"; exit 1; }
+./tools/bachy-keymap-gen "$tmp" || { echo "FAIL the generator did not run"; exit 1; }
 
 # SettingsKeys.html says conflicts fail the build, and until now they did not: a second mac ctrl-1
 # claiming viewGrid emitted two overlay rows, exited 0, and let the first silently win. The broken
@@ -30,7 +30,7 @@ keys = "ctrl-1"
 action = "viewGrid"
 label = "grid view"
 CONFLICT
-if ./tools/flea-keymap-gen "$probe_dir/conflict.js" "$conflict" 2>"$probe_dir/conflict.err"; then
+if ./tools/bachy-keymap-gen "$probe_dir/conflict.js" "$conflict" 2>"$probe_dir/conflict.err"; then
   echo "FAIL the generator accepted a preset claiming ctrl-1 twice"
   exit 1
 fi
@@ -91,5 +91,5 @@ if diff -u ui/js/Keymap.js "$tmp"; then
   echo "ok   ui/js/Keymap.js matches keys.toml"
   exit 0
 fi
-echo "FAIL ui/js/Keymap.js is stale, run ./tools/flea-keymap-gen"
+echo "FAIL ui/js/Keymap.js is stale, run ./tools/bachy-keymap-gen"
 exit 1

@@ -1,4 +1,4 @@
-module flea
+module bachy
 singleton Theme 1.0 Theme.qml
 singleton MediaSound 1.0 MediaSound.qml
 singleton Scripts 1.0 Scripts.qml
@@ -64,7 +64,7 @@ NetworkMounts 1.0 NetworkMounts.qml
 NetworkPlaces 1.0 NetworkPlaces.qml
 MountListing 1.0 MountListing.qml
 PhoneMounts 1.0 PhoneMounts.qml
-FleaMark 1.0 FleaMark.qml
+BachyMark 1.0 BachyMark.qml
 Opener 1.0 Opener.qml
 Preview 1.0 Preview.qml
 PreviewArchive 1.0 PreviewArchive.qml
@@ -117,3 +117,10 @@ PaneStates 1.0 PaneStates.qml
 MenuActionDialog 1.0 MenuActionDialog.qml
 PickerListing 1.0 PickerListing.qml
 PickerLifecycle 1.0 PickerLifecycle.qml
+
+singleton Style 1.0 Style.qml
+singleton Color 1.0 Color.qml
+singleton Util 1.0 Util.qml
+singleton Border 1.0 Border.qml
+BorderSurface 1.0 BorderSurface.qml
+PanelSectionHeader 1.0 PanelSectionHeader.qml

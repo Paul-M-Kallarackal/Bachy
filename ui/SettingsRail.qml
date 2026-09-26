@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Settings.js" as Settings
 
 // The settings panel's section rail, drawn the way the window's own sidebar draws its rows: the
@@ -32,12 +31,12 @@ Flickable {
             contentY = Math.max(0, item.y + item.height - height)
     }
 
-    Flea.FastScrollHandler {
+    Bachy.FastScrollHandler {
         parent: root
         flickable: root
     }
 
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         parent: root
         anchors { top: parent.top; right: parent.right }
         flickable: root
@@ -93,7 +92,7 @@ Flickable {
                     opacity: root.focused && railRow.current ? root.focusOpacity : 0
                 }
 
-                Flea.Glyph {
+                Bachy.Glyph {
                     id: mark
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.spacing.rowPaddingX

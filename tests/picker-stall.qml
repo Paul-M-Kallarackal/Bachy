@@ -1,10 +1,10 @@
 import QtQuick
 import Quickshell
-import "flea" as Flea
+import "bachy" as Bachy
 
 ShellRoot {
     id: root
-    property string scenario: Quickshell.env("FLEA_PICKER_CASE")
+    property string scenario: Quickshell.env("BACHY_PICKER_CASE")
     property bool stalled: false
     property bool localReady: false
     property bool paged: false
@@ -23,7 +23,7 @@ ShellRoot {
             listing.request({c: "list", path: "/local", first: 1})
         } else root.stop()
     }
-    Flea.PickerListing {
+    Bachy.PickerListing {
         id: listing
         onFailed: function(reason) {
             if (root.scenario.indexOf("missing") >= 0) root.stop()
@@ -43,7 +43,7 @@ ShellRoot {
             }
         }
     }
-    Flea.Backend {
+    Bachy.Backend {
         id: checks
         pickerOnly: true
         onPickerResult: function(message) { if (message.op === "blocked") { root.validationBlocked = true; root.advance() } }
@@ -51,7 +51,7 @@ ShellRoot {
             if (root.scenario.indexOf("missing") < 0) { console.log(message); root.failures++ }
         }
     }
-    Flea.PickerLifecycle {
+    Bachy.PickerLifecycle {
         id: lifecycle
         checks: checks
         listing: listing

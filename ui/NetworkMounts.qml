@@ -314,7 +314,7 @@ Item {
             root._authAwaitingStart = true
             root.result = "mounting"
             authProcess.command = ["timeout", String(root.authTimeoutSeconds),
-                                   Quickshell.env("FLEA_GIO_AUTH") || "/usr/lib/flea/flea-gio-auth", root._pendingUri]
+                                   Quickshell.env("BACHY_GIO_AUTH") || "/usr/lib/bachy/bachy-gio-auth", root._pendingUri]
             authProcess.running = true
             return
         }

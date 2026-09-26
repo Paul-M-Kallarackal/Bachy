@@ -1,12 +1,12 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Facts.js" as Facts
 import "js/Thumbs.js" as Thumbs
 import "js/Keymap.js" as Keymap
 import "js/PreviewKeys.js" as PreviewKeys
 
 // Selection loading is independent of column visibility and the separate Quick Look overlay.
-Flea.PreviewColumn {
+Bachy.PreviewColumn {
     id: root
     property var pane: null
     property int loadedIndex: -1

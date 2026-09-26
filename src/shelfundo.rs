@@ -1,6 +1,6 @@
-// Keys board: z is undo in every Flea surface, the shelf included. Two things here can be the last
+// Keys board: z is undo in every Bachy surface, the shelf included. Two things here can be the last
 // thing that happened, a move out of the pile and a clear, so this owns both and reverses whichever
-// is newer. The move half is a one-step journal on disk, because `flea shelf move` is a process that
+// is newer. The move half is a one-step journal on disk, because `bachy shelf move` is a process that
 // has already exited by the time the card asks for its reversal.
 use crate::backend::undo::{move_back, Step};
 use crate::jsondoc::{self, Json};
@@ -11,7 +11,7 @@ use std::fs;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
-const DIR: &str = "omarchy/flea-shelf";
+const DIR: &str = "bachy/shelf";
 const MOVES: &str = "undo.json";
 const LOCK: &str = "undo.lock";
 
@@ -145,7 +145,7 @@ pub fn moves_from(steps: &[Step]) -> Vec<Move> {
         .collect()
 }
 
-// flea shelf undo: what z presses. The newer of the two is what one press reverses, so pressing it
+// bachy shelf undo: what z presses. The newer of the two is what one press reverses, so pressing it
 // twice after a move and a clear walks back through both, newest first.
 pub fn undo() -> i32 {
     let (moves, summon) = match (Moves::user(), Summon::user()) {
@@ -199,11 +199,11 @@ fn reverse(moves: &Moves) -> i32 {
     let count = back.len();
     let settled = settle_back(&shelf, &back);
     if let Some(e) = stopped {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         return 2;
     }
     if let Err(e) = settled {
-        eprintln!("flea: the files are back and the shelf is not ({})", e);
+        eprintln!("bachy: the files are back and the shelf is not ({})", e);
         return 2;
     }
     println!("move {}", count);
@@ -244,12 +244,12 @@ fn read_doc(path: &Path) -> Json {
 // unlock that failed is not the answer to that question.
 fn give_back(path: &Path, lock: fs::File) {
     if let Err(e) = lock.unlock() {
-        eprintln!("flea: {} could not be unlocked ({:?})", path.display(), e.kind());
+        eprintln!("bachy: {} could not be unlocked ({:?})", path.display(), e.kind());
     }
 }
 
 fn failed(why: &str) -> i32 {
-    eprintln!("flea: {}", why);
+    eprintln!("bachy: {}", why);
     2
 }
 

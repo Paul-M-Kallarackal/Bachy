@@ -1,5 +1,5 @@
 #!/bin/bash
-# Guards the one declaration that decides what an external application sees when Flea drags a file
+# Guards the one declaration that decides what an external application sees when Bachy drags a file
 # out. tests/drag.sh proves the behaviour but needs the display and a real pointer, so it never runs
 # in the headless battery: put Qt.MoveAction back and every other suite stays green while Chromium
 # reports dropEffect move again and Google refuses the upload. That regression shipped in 0.1.4.

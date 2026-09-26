@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Drag.js" as DragOps
 import "js/Icons.js" as Icons
 import "js/Format.js" as Format
@@ -92,7 +91,7 @@ Item {
             source: root.thumb.length > 0 ? Format.fileUri(root.thumb) : ""
         }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.fill: parent
             visible: !root.thumbDrawn
             name: root.row ? Icons.glyphForRow(root.row.i, root.row.p) : "file"
@@ -150,7 +149,7 @@ Item {
         width: root.dropTarget ? dropLabel.implicitWidth : root.showChevron ? Theme.font.caption : 0
         height: root.dropTarget ? dropLabel.implicitHeight : Theme.font.caption
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.fill: parent
             visible: root.showChevron && !root.dropTarget
             name: "chevron-right"

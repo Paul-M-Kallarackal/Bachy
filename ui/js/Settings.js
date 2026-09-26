@@ -9,7 +9,6 @@
 var SECTIONS = [
     { id: "view", label: "View", glyph: "sliders" },
     { id: "places", label: "Places", glyph: "star" },
-    { id: "shelf", label: "Shelf", glyph: "shelf" },
     { id: "preview", label: "Preview", glyph: "preview" },
     { id: "keys", label: "Keys", glyph: "keyboard" },
     { id: "display", label: "Display", glyph: "maximize" },
@@ -36,7 +35,7 @@ var MENU_GROUPS = [
     { id: "openInspect", label: "Open and inspect",
       ids: ["openwith", "openTerminal", "moveto", "copyto", "properties", "permissions", "copypath"] },
     { id: "extras", label: "Extras", features: ["placeMenu"],  // features gate a surface, not a row
-      ids: ["shelf", "compress", "extract", "convert", "taildrop", "localsend", "dropbox", "sharelink", "runScript", "placeMenu", "updateFlea"] }
+      ids: ["compress", "extract", "convert", "taildrop", "localsend", "dropbox", "sharelink", "runScript", "placeMenu"] }
 ]
 
 // Open and Show hidden files draw the lock mark instead of a box, and the board says why: a menu that cannot open the row under the cursor is not a menu, and the hidden toggle is the one background row with no keyboard-independent alternative.
@@ -49,7 +48,7 @@ var LABELS = {
     compress: "Compress", extract: "Extract", localsend: "Send with LocalSend",
     convert: "Convert", taildrop: "Send with Taildrop", dropbox: "Move to Dropbox",
     sharelink: "Copy Share Link", open: "Open", toggleHidden: "Show hidden files", shelf: "Enable shelf", placeMenu: "Places row menu", runScript: "Run script",
-    updateFlea: "Update Flea"
+    updateBachy: "Update Bachy"
 }
 
 // The four values of the Keys row, in SettingsKeys.html's own chooser order. The first is what a missing or unrecognised stored name resolves to, which that board says is Default.
@@ -63,11 +62,11 @@ var GLYPHS = {
     delete: "trash", openwith: "app-window", moveto: "folder-plus", copyto: "copy", properties: "info",
     extract: "archive-out",
     convert: "sliders", sharelink: "network", open: "folder-open", toggleHidden: "eye", placeMenu: "folder-open", runScript: "terminal",
-    updateFlea: "download"
+    updateBachy: "download"
 }
 
 // Taildrop, LocalSend and Dropbox are brand reproductions rather than cut glyphs, so they name a component the way a menu entry does; ui/SettingsRow.qml draws them exactly as ui/MenuRow.qml does.
-var MARKS = { taildrop: "tailscale", localsend: "localsend", dropbox: "dropbox", shelf: "flea", "display.hyprlandIcons": "hyprland" }
+var MARKS = { taildrop: "tailscale", localsend: "localsend", dropbox: "dropbox", shelf: "bachy", "display.hyprlandIcons": "hyprland" }
 
 function label(id) {
     return LABELS[id] || id
@@ -176,18 +175,18 @@ function rows(section, state) {
 // The sentence beside Effective has a job only while the ruler cannot state the running size: in Follow the two differ whenever Omarchy's size is not one of the seven, and an override is always a stop.
 function effectiveNote(follows, baseSize) {
     var nearest = TextSize.nearest(baseSize)
-    return !follows ? "Your override." : nearest === baseSize ? "Omarchy's own size."
-        : "Omarchy's own size. The ruler marks " + nearest + ", the nearest stop."
+    return !follows ? "Your override." : nearest === baseSize ? "Bachy default size."
+        : "Bachy default size. The ruler marks " + nearest + ", the nearest stop."
 }
 
-// The SettingsScale board's own division: Flea owns its text override and Omarchy owns the rest. The size follows the desktop until one of TextSize's seven stops is pinned, and the monitor scale and the corner rounding are the compositor's, drawn as the read-only facts they are.
+// The SettingsScale board's own division: Bachy owns its text override and Omarchy owns the rest. The size follows the desktop until one of TextSize's seven stops is pinned, and the monitor scale and the corner rounding are the compositor's, drawn as the read-only facts they are.
 function displayRows(state) {
     var follows = TextSize.following(state.textSize)
     var out = [
         { kind: "group", label: "Text size" },
         { kind: "choice", id: "textMode", label: "Text size", glyph: "type",
-          labels: ["Follow Omarchy", "Override"],
-          value: follows ? "Follow Omarchy" : "Override" },
+          labels: ["Bachy default", "Override"],
+          value: follows ? "Bachy default" : "Override" },
         // The board's seven-stop ruler, the override's own control, now carrying the numbers it stands for; a size Omarchy invented that is not a stop marks the nearest one.
         { kind: "ruler", id: "textStop", stops: TextSize.STOPS, on: !follows,
           index: TextSize.STOPS.indexOf(TextSize.nearest(state.baseSize)) }
@@ -201,7 +200,7 @@ function displayRows(state) {
     out.push({ kind: "fact", label: "Scale", glyph: "maximize",
                value: scaleLabel(state.monitorScale) })
     out.push({ kind: "hint",
-               label: "Flea follows the compositor value and does not step or cycle it." })
+               label: "Bachy follows the compositor value and does not step or cycle it." })
     out.push({ kind: "group", label: "Appearance" })
     out.push({ kind: "check", id: "display.hyprlandIcons", label: "Hyprland-aware icons",
                mark: MARKS["display.hyprlandIcons"],
@@ -329,7 +328,7 @@ function viewRows(state) {
         { kind: "group", label: "Cursor" },
         { kind: "check", id: "wrapAtEnds", label: "Wrap at list ends", caption: "arrow-up at the top", glyph: "arrow-up", on: data.wrapAtEnds === true },
         { kind: "group", label: "Opening" },
-        choice("startIn", "Flea opens in", "house", ["home", "last", "folder"],
+        choice("startIn", "Bachy opens in", "house", ["home", "last", "folder"],
                ["Home", "Last folder", "Chosen folder"], data.startIn || "home"),
         // The action writes the folder the panel was opened over and selects the mode with it, so the row above never names a chosen folder that was never chosen. The value is the path itself.
         { kind: "action", id: "startFolder", label: "Chosen folder", glyph: "folder",

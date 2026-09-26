@@ -17,10 +17,10 @@ gi.require_version("Gio", "2.0")
 from gi.repository import Gio, GLib
 
 REPO = Path(__file__).resolve().parent.parent
-BIN = Path(os.environ.get("FLEA_BIN", REPO / "target/release/flea")).resolve(strict=True)
-UI = Path(os.environ.get("FLEA_UI", REPO / "ui")).resolve(strict=True)
+BIN = Path(os.environ.get("BACHY_BIN", REPO / "target/release/bachy")).resolve(strict=True)
+UI = Path(os.environ.get("BACHY_UI", REPO / "ui")).resolve(strict=True)
 FRONTEND = "org.freedesktop.portal.Desktop"
-BACKEND = "org.freedesktop.impl.portal.desktop.flea"
+BACKEND = "org.freedesktop.impl.portal.desktop.bachy"
 OBJECT = "/org/freedesktop/portal/desktop"
 DEADLINE = 20
 # A refused sort draws nothing to wait for, and a key that lands later still changes the order the next Back checks.
@@ -31,7 +31,7 @@ current = None
 
 
 # The files the binary was built from, as cargo recorded them, so a #[cfg(test)] module a release build never reads cannot make it look stale.
-# Sample input, target/release/flea.d: "/repo/target/release/flea: /repo/keys.toml /repo/src/main.rs /repo/src/my\ dir/x.rs"
+# Sample input, target/release/bachy.d: "/repo/target/release/bachy: /repo/keys.toml /repo/src/main.rs /repo/src/my\ dir/x.rs"
 def build_inputs(binary, repo=REPO):
     glob = [*repo.glob("src/**/*.rs"), repo / "keys.toml"]
     dep_info = binary.with_name(binary.name + ".d")
@@ -86,9 +86,9 @@ def check_build_inputs():
         main, spaced, test_only = repo / "src" / "main.rs", repo / "src" / "my dir" / "x.rs", repo / "src" / "only_tests.rs"
         for path in (main, spaced, repo / "keys.toml"):
             path.write_text("")
-        binary = repo / "target" / "release" / "flea"
+        binary = repo / "target" / "release" / "bachy"
         binary.write_text("")
-        dep_info = binary.with_name("flea.d")
+        dep_info = binary.with_name("bachy.d")
         dep_info.write_text(f"{binary}: {repo}/keys.toml {main} {repo}/src/my\\ dir/x.rs\n")
         check("dep-info parses an escaped space", build_inputs(binary, repo) == ([repo / "keys.toml", main, spaced], "dep-info"))
         ns_per_second, base_stamp = 10**9, 10**18
@@ -166,7 +166,7 @@ def windows():
 
 def guard(path):
     path = Path(path)
-    if not path.is_absolute() or not str(path) or not (root / ".flea-test-sandbox").is_file():
+    if not path.is_absolute() or not str(path) or not (root / ".bachy-test-sandbox").is_file():
         raise AssertionError(f"invalid sandbox path: {path}")
     if not path.resolve().is_relative_to(root) or path.resolve() == root:
         raise AssertionError(f"outside owned sandbox: {path}")
@@ -199,7 +199,7 @@ class Request:
     def __init__(self, name, method="OpenFile", folder=None, **options):
         global current
         self.name = name
-        self.title = f"Flea picker {os.getpid()} {name}"
+        self.title = f"Bachy picker {os.getpid()} {name}"
         self.result = None
         self.responses = 0
         self.pid = None
@@ -232,9 +232,9 @@ class Request:
         window = wait(f"{self.name} window", locate)
         self.pid = window["pid"]
         environ = dict(item.split(b"=", 1) for item in Path(f"/proc/{self.pid}/environ").read_bytes().split(b"\0") if b"=" in item)
-        check(f"{self.name}: candidate binary", environ.get(b"FLEA_BIN", b"").decode() == str(BIN), environ.get(b"FLEA_BIN", b"").decode())
-        check(f"{self.name}: candidate UI", environ.get(b"FLEA_UI", b"").decode() == str(UI), environ.get(b"FLEA_UI", b"").decode())
-        self.reply_path = guard(environ[b"FLEA_PICKER_REPLY"].decode())
+        check(f"{self.name}: candidate binary", environ.get(b"BACHY_BIN", b"").decode() == str(BIN), environ.get(b"BACHY_BIN", b"").decode())
+        check(f"{self.name}: candidate UI", environ.get(b"BACHY_UI", b"").decode() == str(UI), environ.get(b"BACHY_UI", b"").decode())
+        self.reply_path = guard(environ[b"BACHY_PICKER_REPLY"].decode())
         command = Path(f"/proc/{self.pid}/cmdline").read_bytes().replace(b"\0", b" ").decode()
         check(f"{self.name}: native config", str(UI / "boot" / "picker.qml") in command, command)
         drive("focus", self.title)
@@ -259,14 +259,14 @@ class Request:
         self.until(f"viewport {width}x{height}", lambda state: state["width"] == width and state["height"] == height)
 
     def state(self):
-        return json.loads(run(["qs", "ipc", "--pid", self.pid, "call", "fleapicker", "snapshot"], picker_env))
+        return json.loads(run(["qs", "ipc", "--pid", self.pid, "call", "bachypicker", "snapshot"], picker_env))
 
     def window(self):
         found = [window for window in windows() if window.get("pid") == self.pid and window.get("title") == self.title]
         if len(found) != 1:
             raise AssertionError("owned picker window is missing or ambiguous")
         environment = Path(f"/proc/{self.pid}/environ").read_bytes().split(b"\0")
-        if b"FLEA_PICKER_REPLY=" + os.fsencode(self.reply_path) not in environment:
+        if b"BACHY_PICKER_REPLY=" + os.fsencode(self.reply_path) not in environment:
             raise AssertionError("picker window no longer belongs to this request")
         return found[0]
 
@@ -393,7 +393,7 @@ def test_multiple():
     multiple = Request("SP02-multiple", multiple=GLib.Variant("b", True), accept_label=GLib.Variant("s", "Send")).opened()
     multiple.mark("alpha.txt")
     index = multiple.row("beta.txt")
-    centre = run(["qs", "ipc", "--pid", multiple.pid, "call", "fleapicker", "rowCentre", index], picker_env)
+    centre = run(["qs", "ipc", "--pid", multiple.pid, "call", "bachypicker", "rowCentre", index], picker_env)
     # Double-clicking the row marks it and must not submit it.
     x, y = map(int, centre.split())
     window = multiple.window()
@@ -742,7 +742,7 @@ def test_sorting():
                   and state["sortable"] and not state["listingFailed"] and names(state) == by_modified)
 
     sorting.click("Recent")
-    recent = sorting.until("Recent draws no sort mark and cannot be sorted", lambda state: state["path"] == "flea:recent"
+    recent = sorting.until("Recent draws no sort mark and cannot be sorted", lambda state: state["path"] == "bachy:recent"
                            and state["state"] != "loading" and not state["sortable"] and state["listFocus"]
                            and state["headerMark"] == "" and [Path(name).name for name in names(state)] == recent_order)
     check("SP11 the header is disabled over Recent", not sorting.control("Sort by Name")["enabled"], recent["controls"])
@@ -808,8 +808,8 @@ def main():
         groups[name]()
 
 
-root = Path(tempfile.mkdtemp(prefix="flea-picker-native-", dir="/tmp")).resolve()
-(root / ".flea-test-sandbox").write_text("owned FileChooser native fixture\n")
+root = Path(tempfile.mkdtemp(prefix="bachy-picker-native-", dir="/tmp")).resolve()
+(root / ".bachy-test-sandbox").write_text("owned FileChooser native fixture\n")
 print(f"PICKER_EVIDENCE {root}", flush=True)
 try:
     drive_env = dict(os.environ)
@@ -832,16 +832,16 @@ try:
     check("strict input socket", drive_env["YDOTOOL_SOCKET"] == drive_env["XDG_RUNTIME_DIR"] + "/.ydotool_socket")
     check("strict OEM path", drive_env["OMARCHY_PATH"] == "/usr/share/omarchy")
     check("native accessibility enabled", drive_env["QT_LINUX_ACCESSIBILITY_ALWAYS_ON"] == "1")
-    display_lock = open(Path(drive_env["XDG_RUNTIME_DIR"]) / "flea-display.lock", "a")
+    display_lock = open(Path(drive_env["XDG_RUNTIME_DIR"]) / "bachy-display.lock", "a")
     fcntl.flock(display_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if not drive_env.get("QT_QPA_PLATFORMTHEME"):
         session = run(["systemctl", "--user", "show-environment"], drive_env)
         for line in session.splitlines():
             if line.startswith("QT_QPA_PLATFORMTHEME="):
                 drive_env["QT_QPA_PLATFORMTHEME"] = line.split("=", 1)[1]
-    check("no foreign Flea windows", not any("flea" in str(window.get("class", "")).lower() for window in windows()))
+    check("no foreign Bachy windows", not any("bachy" in str(window.get("class", "")).lower() for window in windows()))
     head = run(["git", "-C", REPO, "rev-parse", "HEAD"])
-    check("expected candidate HEAD", os.environ.get("FLEA_EXPECTED_SHA") == head, head)
+    check("expected candidate HEAD", os.environ.get("BACHY_EXPECTED_SHA") == head, head)
     dirty = run(["git", "-C", REPO, "status", "--porcelain"])
     check("candidate source clean", not dirty, dirty)
     check("candidate UI belongs to source tree", UI == REPO / "ui", str(UI))
@@ -859,17 +859,17 @@ try:
     for key, name in [("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state"), ("XDG_CACHE_HOME", "cache"), ("XDG_RUNTIME_DIR", "run")]:
         guard(root / name).mkdir(mode=0o700)
         picker_env[key] = str(root / name)
-    picker_env.update(FLEA_BIN=str(BIN), FLEA_UI=str(UI), WAYLAND_DISPLAY=str(Path(drive_env["XDG_RUNTIME_DIR"]) / drive_env["WAYLAND_DISPLAY"]))
+    picker_env.update(BACHY_BIN=str(BIN), BACHY_UI=str(UI), WAYLAND_DISPLAY=str(Path(drive_env["XDG_RUNTIME_DIR"]) / drive_env["WAYLAND_DISPLAY"]))
     fixture, large = root / "files", root / "large"
-    for directory in [fixture, fixture / "folder", large, root / "portals", root / "state/flea"]:
+    for directory in [fixture, fixture / "folder", large, root / "portals", root / "state/bachy"]:
         guard(directory).mkdir(parents=True, exist_ok=True)
     write(fixture / "alpha.txt", "one")
     write(fixture / "beta.txt", "four")
     for index in range(150): write(large / f"file-{index:03}.txt", "text")
     write(large / "zz-last.png", "image")
-    state_file = root / "state/flea/ui.json"
-    write(root / "portals/flea.portal", "[portal]\nDBusName=org.freedesktop.impl.portal.desktop.flea\nInterfaces=org.freedesktop.impl.portal.FileChooser;\n")
-    write(root / "portals/portals.conf", "[preferred]\norg.freedesktop.impl.portal.FileChooser=flea\n")
+    state_file = root / "state/bachy/ui.json"
+    write(root / "portals/bachy.portal", "[portal]\nDBusName=org.freedesktop.impl.portal.desktop.bachy\nInterfaces=org.freedesktop.impl.portal.FileChooser;\n")
+    write(root / "portals/portals.conf", "[preferred]\norg.freedesktop.impl.portal.FileChooser=bachy\n")
     picker_env["XDG_DESKTOP_PORTAL_DIR"] = str(root / "portals")
     daemon = subprocess.Popen(["dbus-daemon", "--session", "--nofork", "--print-address=1"], env=picker_env, stdout=subprocess.PIPE, stderr=guard(root / "bus.log").open("w"), text=True, start_new_session=True)
     processes.append(daemon)
@@ -877,7 +877,7 @@ try:
     check("private bus address", address.startswith("unix:"), address)
     picker_env["DBUS_SESSION_BUS_ADDRESS"] = address
     bus = Gio.DBusConnection.new_for_address_sync(address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None)
-    start([sys.executable, REPO / "tools/flea-portal"], "backend", picker_env)
+    start([sys.executable, REPO / "tools/bachy-portal"], "backend", picker_env)
     wait("candidate backend owns name", lambda: owner(BACKEND))
     start(["/usr/lib/xdg-desktop-portal", "--verbose"], "frontend", picker_env)
     wait("public frontend owns name", lambda: owner(FRONTEND))
@@ -890,7 +890,7 @@ try:
 finally:
     if current is not None and current.pid is not None and Path(f"/proc/{current.pid}").exists():
         environment = Path(f"/proc/{current.pid}/environ").read_bytes().split(b"\0")
-        if any(row.startswith(b"FLEA_PICKER_REPLY=" + os.fsencode(root) + b"/") for row in environment):
+        if any(row.startswith(b"BACHY_PICKER_REPLY=" + os.fsencode(root) + b"/") for row in environment):
             os.kill(current.pid, signal.SIGTERM)
     for process in reversed(processes):
         if process.poll() is None:

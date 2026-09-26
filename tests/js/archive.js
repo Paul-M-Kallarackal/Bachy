@@ -11,7 +11,7 @@ function run(check) {
               return Archive.isArchive("x" + e)
           }).join(","),
           "true,true,true,true,true,true,true")
-    // Flea reads rar and writes none: the row offers Extract, and src/backend/archive.rs never puts
+    // Bachy reads rar and writes none: the row offers Extract, and src/backend/archive.rs never puts
     // rar in the compress submenu because nothing in the Arch repositories writes one.
     check("a rar is an archive, whatever case it is spelled in",
           Archive.isArchive("holiday.rar") + "|" + Archive.isArchive("HOLIDAY.RAR"), "true|true")

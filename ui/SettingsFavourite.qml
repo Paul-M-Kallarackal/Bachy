@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // Favourite records keep their exact label/path; only the drag handle initiates reordering.
 Item {
@@ -12,7 +12,7 @@ Item {
     readonly property Item removeItem: remove
     implicitHeight: Theme.railRowHeight
 
-    Flea.Glyph {
+    Bachy.Glyph {
         id: icon
         anchors.left: parent.left
         anchors.leftMargin: Theme.spacing.rowPaddingX
@@ -50,7 +50,7 @@ Item {
     }
     // SettingsRest rule 4: an action that acts on one row reads as a mark on that row, where a button
     // under the list leaves its target to be inferred from a cursor somewhere above it.
-    Flea.Glyph {
+    Bachy.Glyph {
         id: remove
         anchors.right: parent.right
         anchors.rightMargin: Theme.spacing.rowPaddingX
@@ -70,7 +70,7 @@ Item {
         }
     }
 
-    Flea.Glyph {
+    Bachy.Glyph {
         id: grip
         anchors.right: remove.left
         anchors.rightMargin: 0

@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Focus.js" as Focus
 import "js/Nav.js" as Nav
 import "js/Tap.js" as Tap
@@ -209,7 +208,7 @@ Item {
 
         // The parent, showing where the current directory sits among its own siblings. Its own row
         // for the current directory is the cursor trail: lifted like a hover, never accented.
-        Flea.ColumnPane {
+        Bachy.ColumnPane {
             id: parentColumn
             width: root.columnWidth
             height: parent.height
@@ -223,7 +222,7 @@ Item {
         }
 
         // The pane's own listing, which is why this column and only this one takes the accent.
-        Flea.ColumnPane {
+        Bachy.ColumnPane {
             id: active
             width: root.columnWidth
             height: parent.height
@@ -244,7 +243,7 @@ Item {
             width: root.width - 2 * root.columnWidth
             height: parent.height
 
-            Flea.ColumnPane {
+            Bachy.ColumnPane {
                 id: childColumn
                 anchors.fill: parent
                 visible: root.cursorIsDir
@@ -255,7 +254,7 @@ Item {
                 onNeighbourMenuRequested: function (name) { root.menuOnNeighbour(root.childPath, name) }
             }
 
-            Flea.SelectionPreview {
+            Bachy.SelectionPreview {
                 id: preview
                 anchors.fill: parent
                 visible: root.cursorRow !== null && !root.cursorIsDir && ViewState.previewColumn

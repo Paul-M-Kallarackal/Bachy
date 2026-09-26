@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Motion.js" as Motion
 
 // Shows a bare smb://host/'s own shares as ordinary pane rows, the same instantiated-from-shell
@@ -101,7 +101,7 @@ Item {
                 // Network.dc.html draws the sidebar's own server mark and the share name, and no
                 // columns: nothing is known about a share until it is mounted, so a "-" size and a
                 // "--" date were columns of nothing. ui/MenuRow.qml is the mark-and-label row.
-                delegate: Flea.MenuRow {
+                delegate: Bachy.MenuRow {
                     id: shareRow
                     required property int index
                     required property string modelData

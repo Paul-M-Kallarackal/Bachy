@@ -1,8 +1,8 @@
 [package]
-name = "flea"
-version = "0.3.5"
+name = "bachy"
+version = "0.1.0"
 edition = "2021"
-# src/vulkan.rs uses c"..." literals, stabilised in 1.77; without this the error names rustc, not flea.
+# src/vulkan.rs uses c"..." literals, stabilised in 1.77; without this the error names rustc, not bachy.
 rust-version = "1.77"
 
 [dependencies]

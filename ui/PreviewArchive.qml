@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Facts.js" as Facts
 
 // The Archive tile's frame: the entries the wire carried, as many as the frame has room for, and the
@@ -29,7 +28,7 @@ Item {
                 height: root.lineHeight
                 spacing: Theme.spacing.gap
 
-                Flea.Glyph {
+                Bachy.Glyph {
                     anchors.verticalCenter: parent.verticalCenter
                     width: Theme.font.caption
                     height: Theme.font.caption

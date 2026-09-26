@@ -74,7 +74,7 @@ case_pdffocus() {
     local dir="$fixture_root/pdffocus" state="$fixture_root/pdffocus-state" preset mode last_row selected_row cx cy wx wy ww wh addr
     sandbox_scratch "$dir"
     sandbox_scratch "$state"
-    mkdir -p "$state/flea"
+    mkdir -p "$state/bachy"
     printf 'listing cursor guard\n' > "$dir/a.txt"
     magick \( -size 440x354 xc:white -fill black -font Liberation-Sans -pointsize 24 -annotate +30+45 PAGEONE \) \
            \( -size 440x354 xc:white -fill black -font Liberation-Sans -pointsize 24 -annotate +30+45 PAGETWO \) \
@@ -82,7 +82,7 @@ case_pdffocus() {
     [[ -s "$dir/manual.pdf" ]] || fail "PDF fixture generation failed"
     export XDG_STATE_HOME="$state"
     for preset in default vim mac windows; do
-        jq -n --arg preset "$preset" '{view:"list",keys:$preset,preview:{column:true,loadOn:"automatic"}}' > "$state/flea/ui.json"
+        jq -n --arg preset "$preset" '{view:"list",keys:$preset,preview:{column:true,loadOn:"automatic"}}' > "$state/bachy/ui.json"
         launch "$dir"
         wait_listing 2
         [[ "$(ipc keymapPreset)" == "$preset" ]] || fail "PDF preset did not load: $preset"
@@ -121,11 +121,11 @@ case_pdffocus() {
         key -M ctrl -k Tab -m ctrl >/dev/null
         pdf_expect false '(.focused | not)' "Ctrl+Tab exits inline PDF"
         printf 'PDF preset=%s overlay=ok inline=ok focus=ok activation=ok disabled=ok pages=ok zoom=ok scroll=ok isolation=ok\n' "$preset"
-        kill_flea
+        kill_bachy
     done
     # All three listing views use the same overlay; prove their native entry paths separately.
     for mode in list grid columns; do
-        jq -n --arg mode "$mode" '{view:$mode,keys:"default",preview:{column:true,loadOn:"automatic"}}' > "$state/flea/ui.json"
+        jq -n --arg mode "$mode" '{view:$mode,keys:"default",preview:{column:true,loadOn:"automatic"}}' > "$state/bachy/ui.json"
         launch "$dir"
         wait_listing 2
         if [[ "$mode" == grid ]]; then
@@ -147,11 +147,11 @@ case_pdffocus() {
         key e >/dev/null
         [[ "$(ipc previewExpanded)" == true ]] || fail "PDF e did not expand in $mode"
         # Reuse cardsizes.sh's addressed Hyprland resize, with exact owned PID and geometry checks.
-        addr=$(hyprctl -j clients | jq -er --argjson pid "$(flea_pid)" '.[] | select(.pid == $pid) | .address')
+        addr=$(hyprctl -j clients | jq -er --argjson pid "$(bachy_pid)" '.[] | select(.pid == $pid) | .address')
         [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || fail "PDF cannot identify owned window"
-        omarchy-drive window float flea >/dev/null
+        omarchy-drive window float bachy >/dev/null
         hyprctl dispatch "hl.dsp.window.resize({ x = 800, y = 480, exact = true, window = \"address:$addr\" })" >/dev/null
-        omarchy-drive window center flea >/dev/null
+        omarchy-drive window center bachy >/dev/null
         settle
         read -r wx wy ww wh < <(window_box) || fail "native window coordinates unavailable"
         [[ "$ww $wh" == '800 480' ]] || fail "PDF specimen viewport is $ww $wh"
@@ -175,7 +175,7 @@ case_pdffocus() {
             [[ "$(ipc pdfState false)" == null ]] || fail "PDF $mode unexpectedly has an inline preview"
             shot "pdf-listing-$mode-800x480"
             printf 'PDF view=%s native_entry=ok pointer=ok no_inline=ok viewport=800x480\n' "$mode"
-            kill_flea
+            kill_bachy
             continue
         fi
         pdf_expect false '.pages == 3' "$mode inline document"
@@ -189,6 +189,6 @@ case_pdffocus() {
         key -k Escape >/dev/null
         pdf_expect false '(.focused | not)' "$mode inline focus return"
         printf 'PDF view=%s native_entry=ok pointer=ok viewport=%sx%s\n' "$mode" "$ww" "$wh"
-        kill_flea
+        kill_bachy
     done
 }

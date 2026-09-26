@@ -42,7 +42,7 @@ var INVENTORY = [
     ["compress", "Compress", "archive", "F", "archive"],
     ["extract", "Extract", "archive-out", "F", "archive"],
     ["convert", "Convert", "sliders", "F", "archive"],
-    // The shelf leads the send group: it is Flea's own destination and the other two are somebody
+    // The shelf leads the send group: it is Bachy's own destination and the other two are somebody
     // else's. Governed by the Enable shelf switch in Settings, Menus, so off is absent and not grey.
     ["shelf", "Add to shelf", "file", "F", "share", "addToShelf"],
     ["taildrop", "Send with Taildrop", "tailscale", "F", "share"],
@@ -59,7 +59,7 @@ var INVENTORY = [
     ["properties", "Properties", "info", "F", "inspect"],
     ["permissions", "Permissions", "lock", "F", "inspect"],
     ["copypath", "Copy path", "file-text", "FP", "inspect"],
-    // MenuAdditions rule 2: after Copy path, one row per executable in ~/.config/flea/scripts, and
+    // MenuAdditions rule 2: after Copy path, one row per executable in ~/.config/bachy/scripts, and
     // absent rather than greyed when that directory is missing or holds none.
     ["runScript", "Run script", "terminal", "F", "inspect"],
     ["addFavourite", "Add to Favorites", "star", "FBP", "inspect"],
@@ -67,7 +67,7 @@ var INVENTORY = [
     ["sort", "Sort by", "sort", "B", "view"],
     ["toggleHidden", "Show hidden files", "eye", "FB", "view"],
     ["settings", "Settings", "sliders", "B", "settings"],
-    ["updateFlea", "Update Flea", "download", "B", "settings"],
+    ["updateBachy", "Update Bachy", "download", "B", "settings"],
     ["restoreAll", "Restore all", "undo", "T", "restore"],
     ["emptyTrash", "Empty Trash", "trash", "T", "empty"]
 ]
@@ -146,7 +146,7 @@ function availableEntry(e, p, kind) {
         // widened the menu past its own frame while the providers were still being read.
         if (e.disabled && p.taildropRefreshing !== true) e.errored = true
     }
-    if (e.action === "addToShelf") { e.mark = "flea"; delete e.glyph }
+    if (e.action === "addToShelf") { e.mark = "bachy"; delete e.glyph }
     // Absent rather than greyed when nothing is installed, the Menu board's rule for a row whose
     // whole destination is missing; the row is a plain send, so it has no submenu and no reason.
     // Directive 71: the row is Taildrop's twin, so it opens the same flyout and reads the same way.
@@ -166,7 +166,7 @@ function availableEntry(e, p, kind) {
     }
     if (e.action === "sort") e.submenu = sortEntries()
     // Present only while a check has found a newer build, whose version rides the hint slot beside the status square.
-    if (e.action === "updateFlea") {
+    if (e.action === "updateBachy") {
         if (!p.updateVersion) return false
         e.hint = p.updateVersion
         e.hintSquare = true

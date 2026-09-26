@@ -1,4 +1,4 @@
-//@ pragma ShellId flea-network-open-share-test
+//@ pragma ShellId bachy-network-open-share-test
 
 import QtQuick
 import Quickshell
@@ -50,7 +50,7 @@ ShellRoot {
 
     Process {
         id: waitForList
-        command: ["sh", "-c", "while [ ! -e \"$FLEA_TEST_LIST_STARTED\" ]; do sleep 0.01; done"]
+        command: ["sh", "-c", "while [ ! -e \"$BACHY_TEST_LIST_STARTED\" ]; do sleep 0.01; done"]
         running: root.started
         onExited: function (exitCode) {
             if (exitCode !== 0) {

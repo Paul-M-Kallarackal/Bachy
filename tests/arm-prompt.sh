@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # A dd prompt lives exactly as long as its arm and leaves nothing stale, timed on the harness's own clock; offscreen, so no display and no lock.
 set -u
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
 if ! command -v qs >/dev/null; then
@@ -9,15 +9,15 @@ if ! command -v qs >/dev/null; then
     exit 1
 fi
 
-test_root="$FIXTURE_ROOT/flea-arm-prompt-$$"
+test_root="$FIXTURE_ROOT/bachy-arm-prompt-$$"
 sandbox_make "$test_root"
 cleanup() { sandbox_remove "$test_root"; }
 trap cleanup EXIT
 
 mkdir -p "$test_root/config" "$test_root/home" "$test_root/state" "$test_root/cache" "$test_root/runtime" || exit 1
 chmod 700 "$test_root/runtime" || exit 1
-# The probe imports ui/ as Flea, and ui/'s qs.Commons resolves against this root, as it does from ui/boot.
-ln -s "$PWD/ui" "$test_root/config/flea" || exit 1
+# The probe imports ui/ as Bachy, and ui/'s qs.Commons resolves against this root, as it does from ui/boot.
+ln -s "$PWD/ui" "$test_root/config/bachy" || exit 1
 ln -s "$(readlink -f ui/boot/Commons)" "$test_root/config/Commons" || exit 1
 ln -s "$(readlink -f ui/boot/Ui)" "$test_root/config/Ui" || exit 1
 cp tests/arm-prompt.qml "$test_root/config/shell.qml" || exit 1

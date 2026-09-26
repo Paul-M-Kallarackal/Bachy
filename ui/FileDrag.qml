@@ -16,7 +16,7 @@ Item {
     property var feedback: null
 
     Drag.dragType: Drag.Automatic
-    // Foreign applications see copy only; Flea resolves its own move from the source identity and device.
+    // Foreign applications see copy only; Bachy resolves its own move from the source identity and device.
     Drag.supportedActions: Qt.CopyAction
     Drag.proposedAction: Qt.CopyAction
     Drag.mimeData: root.dragMime

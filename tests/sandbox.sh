@@ -4,7 +4,7 @@
 set -u
 set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
-. ./tools/flea-sandbox-guard
+. ./tools/bachy-sandbox-guard
 
 fail=0
 
@@ -12,7 +12,7 @@ fail=0
 # so a run that leaves one behind is a leak. The trap removes them by name and never by pattern.
 cleanup() {
   local d
-  for d in "$FIXTURE_ROOT"/flea-guard-*-$$; do
+  for d in "$FIXTURE_ROOT"/bachy-guard-*-$$; do
     [ -d "$d" ] || continue
     # No marker is planted here: planting one before deleting makes the ownership check unable to
     # refuse anything this glob matches, which is the one thing it exists to do. A directory this
@@ -43,20 +43,20 @@ echo "--- the empty and the shallow, which is what an unset variable produces --
 check "an empty path is refused" "yes" "$(refuses "")"
 check "the root directory is refused" "yes" "$(refuses "/")"
 check "a one-component path is refused" "yes" "$(refuses "/home")"
-check "a relative path is refused" "yes" "$(refuses "flea-sandbox/x")"
+check "a relative path is refused" "yes" "$(refuses "bachy-sandbox/x")"
 check "a path with a parent traversal is refused" "yes" "$(refuses "$FIXTURE_ROOT/../../etc")"
 
 # A path outside the fixture root is refused by containment alone, so the roots hard rule 9 names
 # are proven where the rule actually lives: on the root itself, which the environment can replace.
 root_refuses() {
-  ( FLEA_FIXTURE_ROOT="$1"; . ./tools/flea-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 \
+  ( BACHY_FIXTURE_ROOT="$1"; . ./tools/bachy-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 \
     && echo no || echo yes
 }
 
 echo "--- the roots hard rule 9 names, each one asked as a replacement fixture root ---"
 check "\$HOME itself is refused as a root" "yes" "$(root_refuses "$HOME")"
 check "~/Work is refused as a root" "yes" "$(root_refuses "$HOME/Work")"
-check "~/Work/claude/flea is refused as a root" "yes" "$(root_refuses "$HOME/Work/claude/flea")"
+check "~/Work/claude/bachy is refused as a root" "yes" "$(root_refuses "$HOME/Work/claude/bachy")"
 check "~/.config is refused as a root" "yes" "$(root_refuses "$HOME/.config")"
 check "~/.local is refused as a root" "yes" "$(root_refuses "$HOME/.local/share")"
 check "~/.cache is refused as a root" "yes" "$(root_refuses "$HOME/.cache")"
@@ -67,7 +67,7 @@ check "/usr/share is refused as a root" "yes" "$(root_refuses "/usr/share")"
 # override lands on the safe root rather than on "": that is the behaviour, and it is the right one.
 check "an empty root falls back to the safe default" "no" "$(root_refuses "")"
 check "/ is refused as a root" "yes" "$(root_refuses "/")"
-check "and the real fixture root is accepted" "no" "$(root_refuses "/home/flea-sandbox")"
+check "and the real fixture root is accepted" "no" "$(root_refuses "/home/bachy-sandbox")"
 
 echo "--- component-aware, so a sibling that shares a prefix is not mistaken for a child ---"
 check "a sibling of \$HOME sharing its prefix is judged on its own" "no" "$(root_refuses "${HOME}other")"
@@ -75,12 +75,12 @@ check "and a path outside the fixture root is still refused" "yes" "$(refuses "$
 
 echo "--- the fixture root, which is overridable and therefore checked ---"
 check "the fixture root itself is refused as a target" "yes" "$(refuses "$FIXTURE_ROOT")"
-check "a path outside the fixture root is refused" "yes" "$(refuses "/srv/flea-sandbox/x")"
-check "a real sandbox under the fixture root is allowed" "no" "$(refuses "$FIXTURE_ROOT/flea-guard-test-$$")"
+check "a path outside the fixture root is refused" "yes" "$(refuses "/srv/bachy-sandbox/x")"
+check "a real sandbox under the fixture root is allowed" "no" "$(refuses "$FIXTURE_ROOT/bachy-guard-test-$$")"
 
 echo "--- the marker, which is what stands between a directory and rm -rf ---"
-D="$FIXTURE_ROOT/flea-guard-test-$$"
-UNMARKED="$FIXTURE_ROOT/flea-guard-unmarked-$$"
+D="$FIXTURE_ROOT/bachy-guard-test-$$"
+UNMARKED="$FIXTURE_ROOT/bachy-guard-unmarked-$$"
 sandbox_require "$UNMARKED"; rm -rf "$UNMARKED"
 mkdir -p "$UNMARKED/keepme"; printf 'do not lose me' > "$UNMARKED/keepme/file"
 check "a directory with no marker is refused, not deleted" "yes" "$(removal_refuses "$UNMARKED")"
@@ -95,7 +95,7 @@ check "a marked sandbox is removed" "no" "$([ -e "$D" ] && echo yes || echo no)"
 check "removing a path that was never there is not an error" "0" "$(sandbox_remove "$D" >/dev/null 2>&1; echo $?)"
 
 echo "--- a scratch directory inside a marked sandbox leaves no marker of its own ---"
-SBROOT="$FIXTURE_ROOT/flea-guard-root-$$"
+SBROOT="$FIXTURE_ROOT/bachy-guard-root-$$"
 sandbox_make "$SBROOT"
 sandbox_scratch "$SBROOT/case"
 check "the scratch directory exists" "yes" "$([ -d "$SBROOT/case" ] && echo yes || echo no)"
@@ -107,7 +107,7 @@ check "a second scratch empties it" "0" "$(ls -A "$SBROOT/case" | wc -l | tr -d 
 sandbox_remove "$SBROOT/case"
 check "and a scratch is removable, because its sandbox owns it" "no" "$([ -e "$SBROOT/case" ] && echo yes || echo no)"
 scratch_refuses() { ( sandbox_scratch "$1" ) >/dev/null 2>&1 && echo no || echo yes; }
-check "a scratch outside any marked sandbox is refused" "yes" "$(scratch_refuses "$FIXTURE_ROOT/flea-guard-orphan-$$")"
+check "a scratch outside any marked sandbox is refused" "yes" "$(scratch_refuses "$FIXTURE_ROOT/bachy-guard-orphan-$$")"
 sandbox_remove "$SBROOT"
 
 cache_refuses_early() { ( sandbox_cache_require "$1" ) >/dev/null 2>&1 && echo no || echo yes; }
@@ -117,12 +117,12 @@ echo "--- an empty or unset HOME is refused before any path is judged ---"
 # With HOME empty the guard used to accept /.cache/thumbnails, which is what an unset variable
 # turns every "$HOME/.cache/..." into.
 empty_home_refuses() {
-  ( export HOME=""; . ./tools/flea-sandbox-guard; sandbox_cache_require "/.cache/thumbnails" ) \
+  ( export HOME=""; . ./tools/bachy-sandbox-guard; sandbox_cache_require "/.cache/thumbnails" ) \
     >/dev/null 2>&1 && echo no || echo yes
 }
 check "an empty HOME is refused, not treated as no forbidden root" "yes" "$(empty_home_refuses)"
 check "an unset HOME is refused too" "yes" \
-  "$( ( unset HOME; . ./tools/flea-sandbox-guard; sandbox_cache_require "/.cache/thumbnails" ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( unset HOME; . ./tools/bachy-sandbox-guard; sandbox_cache_require "/.cache/thumbnails" ) >/dev/null 2>&1 && echo no || echo yes)"
 check "and a real HOME still passes its own cache path" "no" "$(cache_refuses_early "$HOME/.cache/thumbnails")"
 
 # A trailing slash made a path compare unequal to itself and made a parent match nothing. $HOME is
@@ -130,32 +130,32 @@ check "and a real HOME still passes its own cache path" "no" "$(cache_refuses_ea
 # an environment can set, so a slash on it emptied the whole forbidden list.
 echo "--- a trailing slash, on either side of any comparison ---"
 check "a slashed parent still contains its child" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; sandbox_under "/home/gm/Work" "/home/gm/" ) && echo yes || echo no)"
+  "$( ( . ./tools/bachy-sandbox-guard; sandbox_under "/home/gm/Work" "/home/gm/" ) && echo yes || echo no)"
 check "a slashed HOME is still refused as a fixture root" "yes" \
-  "$( ( export HOME="/home/gm/"; export FLEA_FIXTURE_ROOT="/home/gm/Work"; . ./tools/flea-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( export HOME="/home/gm/"; export BACHY_FIXTURE_ROOT="/home/gm/Work"; . ./tools/bachy-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 && echo no || echo yes)"
 check "the fixture root with a trailing slash is still the fixture root" "yes" \
   "$(refuses "$FIXTURE_ROOT/")"
 check "and a real sandbox with a trailing slash is still allowed" "no" \
-  "$(refuses "$FIXTURE_ROOT/flea-guard-slash-$$/")"
+  "$(refuses "$FIXTURE_ROOT/bachy-guard-slash-$$/")"
 
 # HOME can be emptied after the guard is sourced, so the refusal cannot be source-time only.
 echo "--- an empty HOME emptied at call time, not only at source time ---"
 check "a require after HOME is emptied is refused" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; HOME=""; sandbox_require "$FIXTURE_ROOT/x" ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( . ./tools/bachy-sandbox-guard; HOME=""; sandbox_require "$FIXTURE_ROOT/x" ) >/dev/null 2>&1 && echo no || echo yes)"
 check "a cache require after HOME is emptied is refused" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; HOME=""; sandbox_cache_require "/.cache/thumbnails" ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( . ./tools/bachy-sandbox-guard; HOME=""; sandbox_cache_require "/.cache/thumbnails" ) >/dev/null 2>&1 && echo no || echo yes)"
 
 # The marker check dereferences, so a sandbox reached through a symlink deletes somewhere else.
 echo "--- a path that resolves through a symlink out of the root ---"
-LINKROOT="$FIXTURE_ROOT/flea-guard-link-$$"
-OUTSIDE="$FIXTURE_ROOT/flea-guard-outside-$$"
+LINKROOT="$FIXTURE_ROOT/bachy-guard-link-$$"
+OUTSIDE="$FIXTURE_ROOT/bachy-guard-outside-$$"
 sandbox_make "$LINKROOT"
 sandbox_make "$OUTSIDE"
 ln -s "$OUTSIDE" "$LINKROOT/escape"
 check "a sandbox inside the root is allowed" "no" "$(refuses "$LINKROOT/plain")"
-# FIXTURE_ROOT is what the guard reads; FLEA_FIXTURE_ROOT only feeds it at source time.
+# FIXTURE_ROOT is what the guard reads; BACHY_FIXTURE_ROOT only feeds it at source time.
 check "but one reached through a symlink out of the root is refused" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; FIXTURE_ROOT="$LINKROOT"; sandbox_require "$LINKROOT/escape/x" ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( . ./tools/bachy-sandbox-guard; FIXTURE_ROOT="$LINKROOT"; sandbox_require "$LINKROOT/escape/x" ) >/dev/null 2>&1 && echo no || echo yes)"
 sandbox_remove "$LINKROOT"
 sandbox_remove "$OUTSIDE"
 
@@ -163,21 +163,21 @@ sandbox_remove "$OUTSIDE"
 # emptied the forbidden list exactly the way a trailing one did.
 echo "--- an interior doubled slash, and a root that is validated before it is canonicalised ---"
 check "an interior // in the parent still contains its child" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; sandbox_under "/home/gm/Work" "/home//gm" ) && echo yes || echo no)"
+  "$( ( . ./tools/bachy-sandbox-guard; sandbox_under "/home/gm/Work" "/home//gm" ) && echo yes || echo no)"
 check "and in the cache root too" "yes" \
-  "$( ( . ./tools/flea-sandbox-guard; sandbox_under "/home/gm/.cache" "/home//gm" ) && echo yes || echo no)"
+  "$( ( . ./tools/bachy-sandbox-guard; sandbox_under "/home/gm/.cache" "/home//gm" ) && echo yes || echo no)"
 check "an interior // in HOME is still refused as a fixture root" "yes" \
-  "$( ( export HOME="/home//gm"; export FLEA_FIXTURE_ROOT="/home/gm/Work"; . ./tools/flea-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( export HOME="/home//gm"; export BACHY_FIXTURE_ROOT="/home/gm/Work"; . ./tools/bachy-sandbox-guard; sandbox_root_ok ) >/dev/null 2>&1 && echo no || echo yes)"
 # /home/ satisfies the depth test's second * with the empty string, so a raw check reads it as two
 # components deep and passes a root the canonical form refuses.
 check "a slashed top-level root is refused, not read as two components deep" "yes" \
   "$(root_refuses "/home/")"
 check "and a path under it is refused with it" "yes" \
-  "$( ( export FLEA_FIXTURE_ROOT="/home/"; . ./tools/flea-sandbox-guard; sandbox_require "/home/gm" ) >/dev/null 2>&1 && echo no || echo yes)"
+  "$( ( export BACHY_FIXTURE_ROOT="/home/"; . ./tools/bachy-sandbox-guard; sandbox_require "/home/gm" ) >/dev/null 2>&1 && echo no || echo yes)"
 
 # A check on the canonical form and an action on the raw one is not the same check.
 echo "--- every action runs on the canonical path, not on what the caller typed ---"
-SLASHROOT="$FIXTURE_ROOT/flea-guard-act-$$"
+SLASHROOT="$FIXTURE_ROOT/bachy-guard-act-$$"
 sandbox_make "$SLASHROOT"
 printf 'keep' > "$SLASHROOT/keepme"
 scratch_slash_refuses() { ( sandbox_scratch "$1" ) >/dev/null 2>&1 && echo no || echo yes; }
@@ -193,8 +193,8 @@ sandbox_remove "$SLASHROOT"
 # that lands can still exercise the wrong path.
 echo "--- an empty checked path stops the script, at the site an action reaches it from ---"
 empty_path_stops_the_script() {
-  ( . ./tools/flea-sandbox-guard
-    sandbox_require "$FIXTURE_ROOT/flea-guard-empty-$$"
+  ( . ./tools/bachy-sandbox-guard
+    sandbox_require "$FIXTURE_ROOT/bachy-guard-empty-$$"
     # Emptied after the check, which is the shape a nested call would produce.
     SANDBOX_PATH=""
     sandbox_take
@@ -216,11 +216,11 @@ check "a refusal inside a substitution does not stop its caller" "CALLER-ALIVE-W
 # Zero of the bad shape, rather than a count of the good one: a new action added later must fail
 # this if it uses a substitution, and must not fail it merely for existing.
 check "so no action takes the checked path through one" "0" \
-  "$(grep -c 'sandbox_take)' tools/flea-sandbox-guard)"
+  "$(grep -c 'sandbox_take)' tools/bachy-sandbox-guard)"
 check "and at least one action takes it by assignment" "yes" \
-  "$([ "$(grep -c 'p=\$SANDBOX_TAKEN' tools/flea-sandbox-guard)" -ge 1 ] && echo yes || echo no)"
+  "$([ "$(grep -c 'p=\$SANDBOX_TAKEN' tools/bachy-sandbox-guard)" -ge 1 ] && echo yes || echo no)"
 check "and a real path is taken unchanged" "$FIXTURE_ROOT/x" \
-  "$( . ./tools/flea-sandbox-guard; SANDBOX_PATH="$FIXTURE_ROOT/x"; sandbox_take; printf '%s' "$SANDBOX_TAKEN" )"
+  "$( . ./tools/bachy-sandbox-guard; SANDBOX_PATH="$FIXTURE_ROOT/x"; sandbox_take; printf '%s' "$SANDBOX_TAKEN" )"
 
 # realpath resolves a .. away, so checking only the canonical form leaves the raw path's own
 # defects unable to fire: the check has to see what the caller actually wrote.

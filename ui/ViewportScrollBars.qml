@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Scroll.js" as Scroll
 
 // Both axes of a pannable document, sharing the trailing corner rather than painting through it.
@@ -9,13 +9,13 @@ Item {
     anchors.fill: parent
     z: Scroll.BAR_Z
 
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         parent: root
         anchors { top: parent.top; right: parent.right }
         flickable: root.flickable
         endInset: Theme.spacing.rowPaddingX
     }
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         parent: root
         anchors { left: parent.left; bottom: parent.bottom }
         flickable: root.flickable

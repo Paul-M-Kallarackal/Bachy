@@ -11,7 +11,7 @@ function run(check) {
     runCompletionRows(check)
 }
 
-// The Display state ui/SettingsPanel.qml passes in: the stored mode, the size ui/Theme.qml resolved from it, and the two numbers Flea reads off the compositor and never writes.
+// The Display state ui/SettingsPanel.qml passes in: the stored mode, the size ui/Theme.qml resolved from it, and the two numbers Bachy reads off the compositor and never writes.
 function displayState(textSize, baseSize, monitorScale) {
     return { textSize: textSize, baseSize: baseSize,
              monitorScale: monitorScale === undefined ? 1 : monitorScale, cornerRadius: 8 }
@@ -31,14 +31,14 @@ function find(rows, id) {
 
 function runRows(check) {
     var display = Settings.rows("display", displayState(TextSize.follow(), 14))
-    // The board's Display card: the text-size mode over its effective size, then the compositor's two read-only facts. No monitor-scale control, because Flea does not step or cycle that one.
+    // The board's Display card: the text-size mode over its effective size, then the compositor's two read-only facts. No monitor-scale control, because Bachy does not step or cycle that one.
     check("the Display section is text size, then Scale, then Appearance",
           kinds(display), "group|choice|ruler|hint|fact|group|fact|hint|group|check")
-    check("its one control opens on Follow Omarchy", find(display, "textMode").value,
-          "Follow Omarchy")
+    check("its one control opens on Bachy default", find(display, "textMode").value,
+          "Bachy default")
     // The board draws the mode as both names side by side, so the row names them rather than leaving ui/SettingsRow.qml to invent a second list that could disagree with the writer.
     check("and it names both its values, in the board's own order",
-          find(display, "textMode").labels.join("|"), "Follow Omarchy|Override")
+          find(display, "textMode").labels.join("|"), "Bachy default|Override")
     // SettingsRest rule 2: the ruler carries the seven numbers, so it states the stop it marks and the hint keeps only the chords.
     check("the ruler stands for the stops themselves", display[2].stops.join(","), "9,10,11,12,14,16,20")
     check("and marks the one in force, five of the seven", display[2].index, 4)
@@ -52,15 +52,15 @@ function runRows(check) {
     check("Effective reports the size actually running", display[4].label + "|" + display[4].value + "|" + display[4].role,
           "Effective|14 px|live")
     check("and says so when the ruler cannot state it", between[4].value + "|" + between[4].caption,
-          "13 px|Omarchy's own size. The ruler marks 12, the nearest stop.")
-    check("a size that is a stop needs no such sentence", display[4].caption, "Omarchy's own size.")
+          "13 px|Bachy default size. The ruler marks 12, the nearest stop.")
+    check("a size that is a stop needs no such sentence", display[4].caption, "Bachy default size.")
     check("the monitor scale is the compositor's own number, and the row carries no control", display[6].value, "1x")
     check("a fractional one keeps its fraction",
           Settings.rows("display", displayState(TextSize.follow(), 14, 1.25))[6].value, "1.25x")
     check("and an unanswered query says so rather than claiming 1x",
           Settings.rows("display", displayState(TextSize.follow(), 14, 0))[6].value, "not reported")
     check("its hint is the board's own sentence, so no reader expects a control",
-          display[7].label, "Flea follows the compositor value and does not step or cycle it.")
+          display[7].label, "Bachy follows the compositor value and does not step or cycle it.")
     check("the board icon override defaults off", display[9].id + "|" + display[9].on, "display.hyprlandIcons|false")
 
     // Switching to Override adds the stop row, and nothing else about the section moves.
@@ -91,10 +91,10 @@ function runRows(check) {
     check("a hidden action's row is drawn unchecked, not dropped",
           find(menus, "paste").on, false)
     check("and an enabled one is checked", find(menus, "copy").on, true)
-    check("the current menu controls include Permissions, Update Flea and the retained hints preference",
+    check("the current menu controls include Permissions, Update Bachy and the retained hints preference",
           menus.filter(function (r) { return r.kind === "check" })
                .map(function (r) { return r.id }).join(","),
-          "cut,copy,paste,duplicate,rename,trash,delete,openwith,openTerminal,moveto,copyto,properties,permissions,copypath,shelf,compress,extract,convert,taildrop,localsend,dropbox,sharelink,runScript,placeMenu,updateFlea,keyHints")
+          "cut,copy,paste,duplicate,rename,trash,delete,openwith,openTerminal,moveto,copyto,properties,permissions,copypath,compress,extract,convert,taildrop,localsend,dropbox,sharelink,runScript,placeMenu,keyHints")
     // The one check that is not a menu action: it says how every row is drawn, not whether it is. GM's ruling of 2026-09-10 turns it off by default, with the rail's own detail rows, and src/uischema.rs stores that default, so an absent preference reads off and not on.
     check("the hints row defaults off, as GM ruled over the boards",
           find(menus, "keyHints").label + "|" + find(menus, "keyHints").on,
@@ -184,7 +184,7 @@ function runPresets(check) {
     }
     check("preset check denominator covers all effective bindings", total > 100, true)
     var menuRows = Settings.menuRows([], true)
-    check("SettingsMenus contains exactly 25 action switches", menuRows.filter(function (r) { return r.kind === "check" && r.id !== "keyHints" }).length, 25)
+    check("SettingsMenus contains exactly 23 action switches", menuRows.filter(function (r) { return r.kind === "check" && r.id !== "keyHints" }).length, 23)
     check("Delete permanently is visually destructive", find(menuRows, "delete").role, "error")
     check("Delete permanently explains its default", find(menuRows, "delete").value, "off by default")
 }
@@ -278,12 +278,12 @@ function runCompletionRows(check) {
     check("grid zoom and thumbnail size depend on nothing, and zoom is named for what it resizes",
           [find(shown, "preview.ctrlZoom").available === undefined, find(shown, "preview.thumbSize").available === undefined, find(shown, "preview.ctrlZoom").label].join("|"),
           "true|true|Zoom the grid with ctrl and scroll")
-    var about = Settings.rows("about", { about: { version: "0.1.6", handler: "com.thisisgm.flea.desktop" } })
+    var about = Settings.rows("about", { about: { version: "0.1.6", handler: "local.bachy.FileManager.desktop" } })
     // Rules 5 and 6: a fact is muted whole, so no row writes "status only" on itself, and the handler keeps the tail that identifies it.
     check("the handler row states the handler and nothing else",
           about.filter(function (row) { return row.label === "File manager"; })
                .map(function (row) { return row.value + "|" + row.elide; }).join(""),
-          "com.thisisgm.flea.desktop|head")
+          "local.bachy.FileManager.desktop|head")
     check("About version comes from supplied binary facts", about[1].value, "0.1.6")
     check("unreported builds never repeat a specimen commit", about[2].value, "Not recorded in this build")
     check("passive About metadata takes no focus", Settings.focusable(about[1]), false)

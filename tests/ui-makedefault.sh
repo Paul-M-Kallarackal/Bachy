@@ -1,4 +1,4 @@
-# Defines the native Make Flea the default case; tests/ui.sh supplies the guarded fixture and IPC helpers.
+# Defines the native Make Bachy the default case; tests/ui.sh supplies the guarded fixture and IPC helpers.
 
 # The row and the line under it as on|inert|note|role, the last two empty when off says nothing.
 makedefault_state() {
@@ -62,14 +62,14 @@ makedefault_wait_event() {
 # The stub speaks the binary's own sentences and guards the binary's own desktop-writing modes, all read from the source.
 makedefault_from_source() {
     local box="$1" id refusal skipped guarded
-    # Sample input: pub const DESKTOP_ID: &str = "com.thisisgm.flea.desktop";
+    # Sample input: pub const DESKTOP_ID: &str = "local.bachy.FileManager.desktop";
     id=$(grep -o 'pub const DESKTOP_ID: &str = "[^"]*"' "$repo/src/defaults.rs" | cut -d'"' -f2)
-    [[ "$id" == com.thisisgm.flea.desktop ]] || fail "makedefault: src/defaults.rs claims '$id', which this case's fixture entry does not name"
-    # Sample input: "flea: {} is not installed in any applications directory, so there is nothing to make the default; install the package first",
-    refusal=$(sed -n '/^pub fn claim() -> i32 {$/,/^}$/p' "$repo/src/defaults.rs" | grep -o '"flea: [^"]*"' | cut -d'"' -f2)
+    [[ "$id" == local.bachy.FileManager.desktop ]] || fail "makedefault: src/defaults.rs claims '$id', which this case's fixture entry does not name"
+    # Sample input: "bachy: {} is not installed in any applications directory, so there is nothing to make the default; install the package first",
+    refusal=$(sed -n '/^pub fn claim() -> i32 {$/,/^}$/p' "$repo/src/defaults.rs" | grep -o '"bachy: [^"]*"' | cut -d'"' -f2)
     [[ "$refusal" == *"{}"* && "$refusal" != *$'\n'* ]] || fail "makedefault: defaults::claim() has no one refusal to stub, found '$refusal'"
-    # Sample input: eprintln!("flea: no portal backend is installed, so the file chooser step was skipped");
-    skipped=$(sed -n '/^fn claim_both() -> i32 {$/,/^}$/p' "$repo/src/main.rs" | grep -o 'eprintln!("flea: [^"]*")' | cut -d'"' -f2)
+    # Sample input: eprintln!("bachy: no portal backend is installed, so the file chooser step was skipped");
+    skipped=$(sed -n '/^fn claim_both() -> i32 {$/,/^}$/p' "$repo/src/main.rs" | grep -o 'eprintln!("bachy: [^"]*")' | cut -d'"' -f2)
     [[ -n "$skipped" && "$skipped" != *$'\n'* ]] || fail "makedefault: claim_both() has no one skipped-chooser line to stub, found '$skipped'"
     # Sample input: if args.len() == 3 && args[1] == "--default" && args[2] == "off" {
     guarded=$(grep -B1 -E 'exit\((claim_both|release_both|claim_picker|chooser::release)\(\)\)' "$repo/src/main.rs" \
@@ -83,15 +83,15 @@ makedefault_from_source() {
 # Launches over the stubs, or on the PATH given fourth, then hands the suite its own PATH, data dirs and binary back.
 makedefault_launch() {
     local dir="$1" box="$2" real_bin="$3" path="${4:-$2/bin:$PATH}" saved_path="$PATH" saved_dirs="${XDG_DATA_DIRS-}"
-    export PATH="$path" FLEA_MAKEDEFAULT_BOX="$box" FLEA_MAKEDEFAULT_REAL="$real_bin"
-    # Prepended, so the fixture entry is found whether or not a Flea package is installed on this box.
+    export PATH="$path" BACHY_MAKEDEFAULT_BOX="$box" BACHY_MAKEDEFAULT_REAL="$real_bin"
+    # Prepended, so the fixture entry is found whether or not a Bachy package is installed on this box.
     export XDG_DATA_DIRS="$box/data:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-    flea_bin="$box/bin/flea"
+    bachy_bin="$box/bin/bachy"
     launch "$dir"
     export PATH="$saved_path"
     if [[ -n "$saved_dirs" ]]; then export XDG_DATA_DIRS="$saved_dirs"; else unset XDG_DATA_DIRS; fi
-    unset FLEA_MAKEDEFAULT_BOX FLEA_MAKEDEFAULT_REAL
-    flea_bin="$real_bin"
+    unset BACHY_MAKEDEFAULT_BOX BACHY_MAKEDEFAULT_REAL
+    bachy_bin="$real_bin"
     wait_listing 1
 }
 
@@ -99,7 +99,7 @@ makedefault_launch() {
 makedefault_path_without_mime() {
     local out="$1/nomime" dir dirs
     mkdir -p "$out"
-    cp "$1/bin/flea" "$1/bin/systemctl" "$out/"
+    cp "$1/bin/bachy" "$1/bin/systemctl" "$out/"
     IFS=: read -r -a dirs <<< "$PATH"
     for dir in "${dirs[@]}"; do
         [[ "$dir" == /* && -d "$dir" ]] || continue
@@ -110,11 +110,11 @@ makedefault_path_without_mime() {
     [[ -n "$(env PATH="$out" sh -c 'command -v qs' || true)" ]] || fail "makedefault: the PATH built without xdg-mime has no qs to launch"
 }
 
-# Stubbed at flea's desktop-writing modes, xdg-mime and systemctl, each answering only the exact calls this row makes and
+# Stubbed at bachy's desktop-writing modes, xdg-mime and systemctl, each answering only the exact calls this row makes and
 # refusing the rest into refused.log, so the box follows only the stub's handler file and nothing touches the operator's
 # mimeapps.list, bindings or portal.
 case_makedefault() {
-    local dir="$fixture_root/makedefault" box="$fixture_root/makedefault-box" real_bin="$flea_bin"
+    local dir="$fixture_root/makedefault" box="$fixture_root/makedefault-box" real_bin="$bachy_bin"
     sandbox_scratch "$dir"
     sandbox_scratch "$box"
     : > "$dir/a.txt"
@@ -133,23 +133,23 @@ case_makedefault() {
     printf 'ok\n' > "$mode"
     printf 'ok\n' > "$restart"
     makedefault_from_source "$box"
-    # The row looks for the packaged entry on the XDG data ladder before it offers a claim, as flea --default does.
-    printf '[Desktop Entry]\nType=Application\nName=Flea\nExec=flea %%U\n' > "$box/data/applications/com.thisisgm.flea.desktop"
+    # The row looks for the packaged entry on the XDG data ladder before it offers a claim, as bachy --default does.
+    printf '[Desktop Entry]\nType=Application\nName=Bachy\nExec=bachy %%U\n' > "$box/data/applications/local.bachy.FileManager.desktop"
 
     # The two --default shapes are answered, other argv of a desktop-writing mode is refused, and the rest runs the real binary.
-    cat > "$box/bin/flea" <<'STUB'
+    cat > "$box/bin/bachy" <<'STUB'
 #!/bin/sh
-# Sample input: flea --default off
-box="$FLEA_MAKEDEFAULT_BOX"
+# Sample input: bachy --default off
+box="$BACHY_MAKEDEFAULT_BOX"
 if [ "$#" -eq 1 ] && [ "$1" = --default ]; then
     shape=claim
 elif [ "$#" -eq 2 ] && [ "$1" = --default ] && [ "$2" = off ]; then
     shape=release
 elif [ "$#" -gt 0 ] && grep -q -x -F -e "$1" "$box/guarded"; then
-    printf 'REFUSED flea %s\n' "$*" >> "$box/refused.log"
+    printf 'REFUSED bachy %s\n' "$*" >> "$box/refused.log"
     exit 64
 else
-    exec "$FLEA_MAKEDEFAULT_REAL" "$@"
+    exec "$BACHY_MAKEDEFAULT_REAL" "$@"
 fi
 printf 'RAN %s\n' "$*" >> "$box/ran.log"
 printf 'RAN %s\n' "$*" >> "$box/events.log"
@@ -159,21 +159,21 @@ sleep 2
 mode=$(cat "$box/mode")
 case "$mode" in
     refuse) cat "$box/refusal" >&2; exit 1 ;;
-    fail) echo "flea: xdg-mime default exited 0 but inode/directory still resolves to org.gnome.Nautilus.desktop" >&2; exit 1 ;;
+    fail) echo "bachy: xdg-mime default exited 0 but inode/directory still resolves to org.gnome.Nautilus.desktop" >&2; exit 1 ;;
 esac
 if [ "$shape" = claim ]; then
-    echo com.thisisgm.flea.desktop > "$box/handler"
+    echo local.bachy.FileManager.desktop > "$box/handler"
     [ "$mode" != partly ] || cat "$box/skipped" >&2
-    echo "undo both with: flea --default off"
+    echo "undo both with: bachy --default off"
 else
     echo org.gnome.Nautilus.desktop > "$box/handler"
 fi
 STUB
-    chmod +x "$box/bin/flea"
+    chmod +x "$box/bin/bachy"
     cat > "$box/bin/xdg-mime" <<'STUB'
 #!/bin/sh
 # Sample input: xdg-mime query default inode/directory
-box="$FLEA_MAKEDEFAULT_BOX"
+box="$BACHY_MAKEDEFAULT_BOX"
 if [ "$#" -ne 3 ] || [ "$1" != query ] || [ "$2" != default ] || [ "$3" != inode/directory ]; then
     printf 'REFUSED xdg-mime %s\n' "$*" >> "$box/refused.log"
     exit 1
@@ -195,9 +195,9 @@ STUB
     cat > "$box/bin/systemctl" <<'STUB'
 #!/bin/sh
 # Sample input: systemctl --user try-restart xdg-desktop-portal.service
-printf 'SYSTEMCTL %s\n' "$*" >> "$FLEA_MAKEDEFAULT_BOX/systemctl.log"
+printf 'SYSTEMCTL %s\n' "$*" >> "$BACHY_MAKEDEFAULT_BOX/systemctl.log"
 [ "$*" = "--user try-restart xdg-desktop-portal.service" ] || exit 1
-[ "$(cat "$FLEA_MAKEDEFAULT_BOX/restart")" = ok ]
+[ "$(cat "$BACHY_MAKEDEFAULT_BOX/restart")" = ok ]
 STUB
     chmod +x "$box/bin/systemctl"
 
@@ -217,12 +217,12 @@ STUB
     # Keyboard: Space claims, and a second Space while the run lasts runs nothing.
     settings_focus_row makeDefault
     key -k space >/dev/null
-    makedefault_wait "false|true|Making Flea the default|muted" "Space did not start the claim"
+    makedefault_wait "false|true|Making Bachy the default|muted" "Space did not start the claim"
     key -k space >/dev/null
-    makedefault_wait "true|false|Folders, Show in folder and file dialogs open Flea.|foreground" "the claim did not settle ticked"
+    makedefault_wait "true|false|Folders, Show in folder and file dialogs open Bachy.|foreground" "the claim did not settle ticked"
     [[ "$(makedefault_ran)" == "RAN --default;" ]] \
         || fail "makedefault: the stub ran '$(makedefault_ran)', so a press during the run was not ignored"
-    makedefault_wait_handler com.thisisgm.flea.desktop
+    makedefault_wait_handler local.bachy.FileManager.desktop
     [[ "$(makedefault_restarts)" == 1 ]] || fail "makedefault: a claim that went through did not restart the portal once"
     [[ "$(grep -c . "$queries")" == 2 ]] \
         || fail "makedefault: xdg-mime was asked $(grep -c . "$queries") times, so the handler was not read again after the run"
@@ -241,8 +241,8 @@ STUB
     # Enter claims too; a build with no portal files says the file dialogs are left out.
     printf 'partly\n' > "$mode"
     key -k Return >/dev/null
-    makedefault_wait "false|true|Making Flea the default|muted" "Enter did not start the claim"
-    makedefault_wait "true|false|File dialogs need the flea package's portal files.|foreground" "a claim that skipped the chooser step did not say so"
+    makedefault_wait "false|true|Making Bachy the default|muted" "Enter did not start the claim"
+    makedefault_wait "true|false|File dialogs need the bachy package's portal files.|foreground" "a claim that skipped the chooser step did not say so"
     shot makedefault-partly
     printf 'ok\n' > "$mode"
     key -k space >/dev/null
@@ -259,31 +259,31 @@ STUB
     makedefault_wait "false|false||" "the claim with the late portal was not handed back"
     [[ "$(makedefault_restarts)" == 6 ]] || fail "makedefault: the portal was not restarted after each switch that went through"
 
-    # A failed claim shows flea's own line in the error role, and the box stays what xdg-mime answers.
+    # A failed claim shows bachy's own line in the error role, and the box stays what xdg-mime answers.
     printf 'fail\n' > "$mode"
     key -k space >/dev/null
     makedefault_wait "false|false|xdg-mime default exited 0 but inode/directory still resolves to org.gnome.Nautilus.desktop|error" \
-        "a failed claim did not show flea's own line"
+        "a failed claim did not show bachy's own line"
     [[ "$(makedefault_restarts)" == 6 ]] || fail "makedefault: a failed run restarted the portal"
     shot makedefault-failed
 
     # A refused claim, the build with no desktop entry, leaves the row inert to Space and to a click.
     printf 'refuse\n' > "$mode"
     key -k space >/dev/null
-    makedefault_wait "false|true|Install a Flea package to make it the default.|foreground" "a refused claim did not make the row inert"
+    makedefault_wait "false|true|Install a Bachy package to make it the default.|foreground" "a refused claim did not make the row inert"
     runs=$(grep -c . "$makedefault_log")
     key -k space >/dev/null
     settings_click_control makeDefault
     sleep 1
     [[ "$(grep -c . "$makedefault_log")" == "$runs" ]] || fail "makedefault: the inert row still ran '$(makedefault_ran)'"
-    makedefault_wait "false|true|Install a Flea package to make it the default.|foreground" "the inert row changed under a press"
+    makedefault_wait "false|true|Install a Bachy package to make it the default.|foreground" "the inert row changed under a press"
     [[ "$(makedefault_restarts)" == 6 ]] || fail "makedefault: a refused run restarted the portal"
     shot makedefault-unpackaged
 
     # An action with a live state, never a setting: nothing reached ui.json, at any depth, and no save was refused.
     ipc uiSettings | jq -e "$no_key" >/dev/null \
         || fail "makedefault: the session state carries makeDefault, or did not read as an object: $(ipc uiSettings)"
-    [[ ! -e "$XDG_STATE_HOME/flea/ui.json" ]] || jq -e "$no_key" "$XDG_STATE_HOME/flea/ui.json" >/dev/null \
+    [[ ! -e "$XDG_STATE_HOME/bachy/ui.json" ]] || jq -e "$no_key" "$XDG_STATE_HOME/bachy/ui.json" >/dev/null \
         || fail "makedefault: ui.json carries makeDefault, or does not parse"
     [[ "$(ipc lastMessage)" != "That setting could not be saved." ]] || fail "makedefault: a press was sent to the settings writer"
 
@@ -297,16 +297,16 @@ STUB
     settings_section about
     settings_focus_row makeDefault
     key -k space >/dev/null
-    makedefault_wait "false|true|Making Flea the default|muted" "Space did not start the claim over a held read"
+    makedefault_wait "false|true|Making Bachy the default|muted" "Space did not start the claim over a held read"
     makedefault_wait_event EXITED
     # Time for the window to take the exit in before the held answer lands.
     settle
     [[ "$(makedefault_events)" == "ASKED;RAN --default;EXITED;" ]] \
         || fail "makedefault: the claim did not exit inside the held read, the stubs logged '$(makedefault_events)'"
     : > "$box/gate"
-    makedefault_wait "true|false|Folders, Show in folder and file dialogs open Flea.|foreground" \
+    makedefault_wait "true|false|Folders, Show in folder and file dialogs open Bachy.|foreground" \
         "the answer from before the claim settled it" 200
-    [[ "$(makedefault_events)" == "ASKED;RAN --default;EXITED;ANSWERED org.gnome.Nautilus.desktop;ASKED;ANSWERED com.thisisgm.flea.desktop;" ]] \
+    [[ "$(makedefault_events)" == "ASKED;RAN --default;EXITED;ANSWERED org.gnome.Nautilus.desktop;ASKED;ANSWERED local.bachy.FileManager.desktop;" ]] \
         || fail "makedefault: the handler was not read again behind the held read, the stubs logged '$(makedefault_events)'"
     [[ "$(makedefault_restarts)" == 7 ]] || fail "makedefault: the claim behind the held read did not restart the portal"
     shot makedefault-held
@@ -328,7 +328,7 @@ STUB
     [[ "$(makedefault_handler)" == "Not reported" ]] || fail "makedefault: with no xdg-mime the File manager row states '$(makedefault_handler)'"
     settings_focus_row makeDefault
     key -k space >/dev/null
-    makedefault_wait "false|true|Making Flea the default|muted" "Space did not start the claim with no xdg-mime"
+    makedefault_wait "false|true|Making Bachy the default|muted" "Space did not start the claim with no xdg-mime"
     makedefault_wait "false|false||" "the claim stayed working behind a re-read whose xdg-mime could not start"
     [[ "$(makedefault_events)" == "RAN --default;EXITED;" ]] \
         || fail "makedefault: with no xdg-mime on PATH the stubs logged '$(makedefault_events)'"
@@ -342,5 +342,5 @@ STUB
 
     printf 'MAKEDEFAULT keyboard=ok pointer=ok enter=ok partly=ok portal=ok failed=ok unpackaged=ok stored=none held=ok nomime=ok runs=%s restarts=%s\n' \
         "$runs" "$(makedefault_restarts)"
-    kill_flea
+    kill_bachy
 }

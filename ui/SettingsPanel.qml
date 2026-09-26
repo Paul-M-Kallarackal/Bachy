@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Keymap.js" as Keymap
 import "js/Settings.js" as Settings
 
@@ -127,8 +126,8 @@ Item {
         }
         // About's two web routes carry their own destination; ui/js/SettingsAbout.js names both.
         if (row.url !== undefined) { Qt.openUrlExternally(row.url); return }
-        // Two About actions with a live state: Update Flea's value shows a check and the footer what a launch did, and Make Flea the default runs flea instead of writing ui.json.
-        if (row.id === "updateFlea") { UpdateCheck.activate(root.focusHolder); return }
+        // Two About actions with a live state: Update Bachy's value shows a check and the footer what a launch did, and Make Bachy the default runs bachy instead of writing ui.json.
+        if (row.id === "updateBachy") { UpdateCheck.activate(root.focusHolder); return }
         if (row.id === "makeDefault") { DefaultClaim.toggle(); return }
         if (row.id.indexOf("column:") === 0) { ViewState.toggleColumn(row.id.substring(7)); return }
         if (row.kind === "check" && root.section !== "menus") {
@@ -316,7 +315,7 @@ Item {
                 anchors.top: parent.top
                 height: Theme.chromeHeight
 
-                Flea.Glyph {
+                Bachy.Glyph {
                     id: titleMark
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.spacing.rowPaddingX
@@ -353,7 +352,7 @@ Item {
                     Accessible.name: "Close settings"
                     Accessible.onPressAction: root.close()
 
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         anchors.centerIn: parent
                         width: Theme.chromeMarkSize
                         height: Theme.chromeMarkSize
@@ -393,7 +392,7 @@ Item {
                 }
             }
 
-            Flea.SettingsRail {
+            Bachy.SettingsRail {
                 id: rail
                 anchors.left: parent.left
                 anchors.top: chrome.bottom
@@ -420,7 +419,7 @@ Item {
                 opacity: 0.4
             }
 
-            Flea.SettingsPane {
+            Bachy.SettingsPane {
                 id: pane
                 anchors.left: rail.right
                 anchors.right: parent.right
@@ -479,7 +478,7 @@ Item {
         function onFailed(message) { root.favouriteMoveTarget = -1; root.favouriteActionPending = false }
     }
 
-    Flea.AboutFacts { id: aboutFacts; active: root.opened && root.section === "about" }
+    Bachy.AboutFacts { id: aboutFacts; active: root.opened && root.section === "about" }
 
     Item {
         id: keys

@@ -2,7 +2,7 @@
 use crate::backend::copyfile::{copy_any, Progress};
 use crate::backend::renamecompat;
 use crate::backend::undo::{self, ItemIdentity, Step};
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -17,12 +17,12 @@ pub fn valid_name(name: &str) -> bool {
 }
 
 // Rename that refuses to overwrite. std::fs::rename alone can replace a target on Unix.
-pub fn rename_noreplace(from: &Path, to: &Path) -> Result<(), FleaError> {
+pub fn rename_noreplace(from: &Path, to: &Path) -> Result<(), BachyError> {
     renamecompat::rename_noreplace(from, to).map_err(|e| from_io("rename", &to.to_string_lossy(), &e))
 }
 
-fn named(where_: &str, path: &Path, msg: &str) -> FleaError {
-    FleaError {
+fn named(where_: &str, path: &Path, msg: &str) -> BachyError {
+    BachyError {
         where_: where_.to_string(),
         path: path.to_string_lossy().to_string(),
         msg: msg.to_string(),
@@ -30,7 +30,7 @@ fn named(where_: &str, path: &Path, msg: &str) -> FleaError {
 }
 
 // Answers the new path and the step that puts the old name back; a failure answers no step, a kept copy included, because none of undo.rs's four shapes can say which of the two names is whole.
-pub fn rename(path: &Path, to_name: &str) -> Result<(PathBuf, Vec<Step>), FleaError> {
+pub fn rename(path: &Path, to_name: &str) -> Result<(PathBuf, Vec<Step>), BachyError> {
     if !valid_name(to_name) {
         return Err(named("rename", path, "a name cannot be empty, . or .. , or contain a separator"));
     }
@@ -71,7 +71,7 @@ pub fn free_copy_path(original: &Path, word: &str) -> Option<PathBuf> {
 
 // A same-directory copy, which for a directory row is the whole tree; cancellation belongs to transfers, so this one runs to its end.
 // Answers the outcome and, either way, the steps it left on disk: the copy, or the partial a failure left for undo to remove.
-pub fn duplicate(path: &Path) -> (Result<PathBuf, FleaError>, Vec<Step>) {
+pub fn duplicate(path: &Path) -> (Result<PathBuf, BachyError>, Vec<Step>) {
     let source = match ItemIdentity::inspect(path) {
         Ok(identity) => identity,
         Err(error) => return (Err(error), Vec::new()),
@@ -109,7 +109,7 @@ pub fn duplicate(path: &Path) -> (Result<PathBuf, FleaError>, Vec<Step>) {
 
 // A given name is created exactly or refused; an empty one takes the first free default, because a
 // client holds a window of the listing, not the directory, so it cannot know which names are taken.
-pub fn mkdir(parent: &Path, name: &str) -> Result<(PathBuf, Vec<Step>), FleaError> {
+pub fn mkdir(parent: &Path, name: &str) -> Result<(PathBuf, Vec<Step>), BachyError> {
     // Relative would resolve against the backend's own working directory, which no listing ever names.
     if !parent.is_absolute() {
         return Err(named("mkdir", parent, "a parent must be an absolute path"));
@@ -253,7 +253,7 @@ mod tests {
         assert_eq!(std::fs::read_to_string(dst.join("inside.txt")).unwrap(), "body");
     }
 
-    // A file with no permission bits answers EACCES to open(2) for every uid but root, and no flea
+    // A file with no permission bits answers EACCES to open(2) for every uid but root, and no bachy
     // suite runs as root, so it forces the failure a real permission error would.
     #[test]
     fn duplicating_a_tree_that_fails_short_of_the_end_still_records_the_partial_copy() {

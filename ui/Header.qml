@@ -1,6 +1,4 @@
 import QtQuick
-import qs.Commons
-import qs.Ui
 
 // The column header renders sort state and owns none of it, so Pane stays the one state owner.
 Item {

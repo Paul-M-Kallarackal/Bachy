@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Permissions.js" as Permissions
 
 // One item, one mode; the backend owns its reviewed descriptor for this dialog's lifetime.
@@ -78,8 +77,8 @@ FocusScope {
         cancelFocus.forceActiveFocus()
         var reason = message || "the backend stopped"
         errorText = applying
-            ? "Permission change outcome is unknown because " + reason + "; restart Flea and reopen Permissions to check the current mode."
-            : "Permissions is unavailable because " + reason + "; restart Flea and reopen Permissions."
+            ? "Permission change outcome is unknown because " + reason + "; restart Bachy and reopen Permissions to check the current mode."
+            : "Permissions is unavailable because " + reason + "; restart Bachy and reopen Permissions."
     }
     function close() {
         // An issued fchmod cannot be cancelled; retain its result before allowing dismissal.
@@ -156,17 +155,17 @@ FocusScope {
                 anchors.leftMargin: Theme.spacing.rowPaddingX
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacing.gap
-                Flea.Glyph { width: Theme.chromeMarkSize; height: title.height; name: "lock"; color: Theme.color.accent }
+                Bachy.Glyph { width: Theme.chromeMarkSize; height: title.height; name: "lock"; color: Theme.color.accent }
                 Text { id: title; text: "Permissions"; color: Theme.color.foreground; textFormat: Text.PlainText; font { family: Theme.font.family; pixelSize: Theme.font.caption; bold: true } }
             }
             // Dialogs rule 7: the way out is named beside the mark that performs it, the settings panel's own corner.
-            Flea.EscapeHint {
+            Bachy.EscapeHint {
                 anchors.right: closeMark.left
                 anchors.rightMargin: Theme.spacing.gap
                 anchors.verticalCenter: closeMark.verticalCenter
             }
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 id: closeMark
                 anchors.right: parent.right
                 anchors.rightMargin: Theme.spacing.rowPaddingX
@@ -186,7 +185,7 @@ FocusScope {
             }
             Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: Theme.spacing.hairline; color: Theme.color.muted; opacity: 0.4 }
         }
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.left: parent.left
             anchors.right: parent.right
@@ -203,7 +202,7 @@ FocusScope {
                     width: parent.width
                     height: root.controlHeight
                     spacing: Theme.spacing.gap
-                    Flea.Glyph { width: Theme.markSize; height: nameLabel.height; anchors.verticalCenter: parent.verticalCenter; name: root.facts.directory ? "folder" : "file"; color: Theme.color.muted }
+                    Bachy.Glyph { width: Theme.markSize; height: nameLabel.height; anchors.verticalCenter: parent.verticalCenter; name: root.facts.directory ? "folder" : "file"; color: Theme.color.muted }
                     Text { id: nameLabel; width: parent.width - Theme.markSize - kindLabel.width - 2 * parent.spacing; anchors.verticalCenter: parent.verticalCenter; text: root.path.split("/").pop(); elide: Text.ElideMiddle; textFormat: Text.PlainText; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.body } }
                     Text { id: kindLabel; anchors.verticalCenter: parent.verticalCenter; text: root.facts.ok ? (root.facts.directory ? "directory" : "file") : ""; textFormat: Text.PlainText; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.caption } }
                 }
@@ -249,7 +248,7 @@ FocusScope {
                                 Keys.onSpacePressed: toggle()
                                 Keys.onTabPressed: function(event) { root.stepFocus((event.modifiers & Qt.ShiftModifier) !== 0) }
                                 Keys.onBacktabPressed: root.stepFocus(true)
-                                Flea.CheckBox {
+                                Bachy.CheckBox {
                                     anchors.centerIn: parent
                                     value: checkbox.checked ? "on" : "off"
                                     focused: checkbox.activeFocus
@@ -318,7 +317,7 @@ FocusScope {
                     color: Theme.color.background
                     border.width: Theme.spacing.hairline
                     border.color: Theme.color.muted
-                    Flea.Glyph { id: scopeMark; x: Theme.spacing.gap; y: Theme.spacing.gap; width: Theme.font.bodySmall; height: width; name: "check"; color: Theme.color.accent }
+                    Bachy.Glyph { id: scopeMark; x: Theme.spacing.gap; y: Theme.spacing.gap; width: Theme.font.bodySmall; height: width; name: "check"; color: Theme.color.accent }
                     Text {
                         id: directoryScope
                         x: scopeMark.x + scopeMark.width + Theme.spacing.gap
@@ -390,7 +389,7 @@ FocusScope {
                         Keys.onBacktabPressed: root.stepFocus(true)
                         Keys.onReturnPressed: root.close()
                         Keys.onSpacePressed: root.close()
-                        Flea.DialogButton {
+                        Bachy.DialogButton {
                             id: cancelButton
                             label: "Cancel"
                             primary: parent.activeFocus
@@ -409,7 +408,7 @@ FocusScope {
                         Keys.onBacktabPressed: root.stepFocus(true)
                         Keys.onReturnPressed: root.apply()
                         Keys.onSpacePressed: root.apply()
-                        Flea.DialogButton {
+                        Bachy.DialogButton {
                             id: applyButton
                             label: "Apply"
                             primary: parent.activeFocus

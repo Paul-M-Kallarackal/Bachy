@@ -10,7 +10,7 @@ use crate::backend::rows::rows_line;
 use crate::backend::scan::scan;
 use crate::backend::sort::sort_by_name;
 use crate::backend::thumbspec::Thumbnailers;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::fs::{self, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::os::unix::fs::OpenOptionsExt;
@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 const PREWARM_MODE: u32 = 0o600;
 
 // Overlaps Qt init instead of queueing behind it, see AGENTS.md "Prewarm".
-pub fn write_prewarm(path: &str, first: usize, dest: &Path) -> Result<(), FleaError> {
+pub fn write_prewarm(path: &str, first: usize, dest: &Path) -> Result<(), BachyError> {
     // The pid keeps two launchers off each other's file, see AGENTS.md "Predictable path writes".
     let tmp = PathBuf::from(format!("{}.{}.tmp", dest.display(), std::process::id()));
     let wrote = write_to_tmp(path, first, dest, &tmp);
@@ -31,7 +31,7 @@ pub fn write_prewarm(path: &str, first: usize, dest: &Path) -> Result<(), FleaEr
     wrote
 }
 
-fn write_to_tmp(path: &str, first: usize, dest: &Path, tmp: &Path) -> Result<(), FleaError> {
+fn write_to_tmp(path: &str, first: usize, dest: &Path, tmp: &Path) -> Result<(), BachyError> {
     // Prewarm never asks for dotfiles: it mirrors list's own default, see docs/protocol.md.
     let (mut listing, read_ms) = scan(path, false)?;
     let sort_ms = sort_by_name(&mut listing, false);

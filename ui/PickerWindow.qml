@@ -4,20 +4,19 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Picker.js" as Picker
 import "js/Keymap.js" as Keymap
 
 // One portal request, one window: the org.freedesktop.impl.portal.FileChooser dialog every caller on
-// the box gets, opened by flea --pick and answered through the reply file tools/flea-portal reads.
+// the box gets, opened by bachy --pick and answered through the reply file tools/bachy-portal reads.
 // The same Backend, Row, Theme and places the browser window draws with, and none of its operations:
 // a chooser that can rename or delete is a file manager wearing a dialog's clothes.
 ShellRoot {
     FloatingWindow {
         id: win
 
-        readonly property var req: Picker.request(Quickshell.env("FLEA_PICKER"))
+        readonly property var req: Picker.request(Quickshell.env("BACHY_PICKER"))
         readonly property string home: Quickshell.env("HOME")
 
         title: Picker.title(win.req)
@@ -59,7 +58,7 @@ ShellRoot {
         // Where Back goes, and it only ever goes back: Parent is its own button and pushes here too.
         property var history: []
         // The save mode's own name, which starts as the caller's suggestion only when that
-        // suggestion is a filename: tools/flea-portal passes current_name through verbatim, so a
+        // suggestion is a filename: tools/bachy-portal passes current_name through verbatim, so a
         // separator in it would put a path outside this folder in the field before anyone typed.
         property string saveName: Picker.validName(win.req.name) ? win.req.name : ""
         onSaveNameChanged: win.invalidateSave()
@@ -297,7 +296,7 @@ ShellRoot {
 
         FileView {
             id: replyFile
-            path: Quickshell.env("FLEA_PICKER_REPLY")
+            path: Quickshell.env("BACHY_PICKER_REPLY")
             atomicWrites: true
             // The reply file does not exist until this window writes it, and a preload read of a
             // path that is not there is not an error worth a line; onSaveFailed below is.
@@ -321,17 +320,17 @@ ShellRoot {
         }
 
         // The saved reply can leave once both chooser-owned read processes have exited.
-        Flea.PickerLifecycle {
+        Bachy.PickerLifecycle {
             id: lifecycle; checks: backend; listing: listing
             onStopped: Quickshell.execDetached(["kill", String(Quickshell.processId)])
         }
-        Flea.PickerListing {
+        Bachy.PickerListing {
             id: listing
             onFailed: function(reason) { backend.failed("scan", win.path, reason, 0) }
             onMessage: function(message) { backend.receive(JSON.stringify(message)) }
         }
 
-        Flea.Backend {
+        Bachy.Backend {
             id: backend
             pickerOnly: true
             // The saved order seeds the first listing only: a window re-sorting later would move the mark over rows that never moved.
@@ -408,7 +407,7 @@ ShellRoot {
 
         // The history the Recent location lists, read only when that location is opened. The listing
         // is the client's own order, so the backend is asked for these paths and never to sort them.
-        Flea.PickerRecent {
+        Bachy.PickerRecent {
             id: recents
             onRefreshed: if (win.recent) win.requestListing({c: "listpaths", paths: recents.paths, first: win.windowSize})
         }
@@ -420,7 +419,7 @@ ShellRoot {
             // The save field takes the keyboard from the list, and Escape has to refuse from there too.
             Keys.onEscapePressed: win.cancel()
 
-            Flea.PickerChrome {
+            Bachy.PickerChrome {
                 id: chrome
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -433,7 +432,7 @@ ShellRoot {
                 onChipChosen: function (index) { win.filterIndex = index }
             }
 
-            Flea.PickerPlaces {
+            Bachy.PickerPlaces {
                 id: places
                 anchors.left: parent.left
                 anchors.top: chrome.bottom
@@ -449,7 +448,7 @@ ShellRoot {
                 }
             }
 
-            Flea.PickerHeader {
+            Bachy.PickerHeader {
                 id: header
                 anchors.left: places.right
                 anchors.right: parent.right
@@ -462,7 +461,7 @@ ShellRoot {
                 height: visible ? implicitHeight : 0
             }
 
-            Flea.PickerList {
+            Bachy.PickerList {
                 id: list
                 anchors.left: places.right
                 anchors.right: parent.right
@@ -476,7 +475,7 @@ ShellRoot {
             }
 
             // The same empty hero the browser window draws, over the list area alone.
-            Flea.EmptyState {
+            Bachy.EmptyState {
                 x: list.x
                 y: list.y
                 width: list.width
@@ -514,7 +513,7 @@ ShellRoot {
                 }
             }
 
-            Flea.PickerSave {
+            Bachy.PickerSave {
                 id: save
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -582,7 +581,7 @@ ShellRoot {
                 anchors.fill: parent
                 active: false
                 sourceComponent: Component {
-                    Flea.NetworkDialog {
+                    Bachy.NetworkDialog {
                         onClosed: list.forceActiveFocus()
                         onMountRequested: function(requestId, uri, label, password) { places.retry(requestId, uri, label, password) }
                         onCancelRequested: function(requestId) { places.cancelNetwork(requestId) }
@@ -613,7 +612,7 @@ ShellRoot {
 
         // The seam tests/picker.sh drives, the same read-only shape ui/Ipc.qml has for the window.
         IpcHandler {
-            target: "fleapicker"
+            target: "bachypicker"
             function ready(): bool { return true }
             function path(): string { return win.path }
             function total(): int { return win.total }
@@ -641,7 +640,7 @@ ShellRoot {
                     canAccept: win.canAccept, saveReady: win.saveReady, collision: win.saveCollision,
                     saveName: win.saveName, saveError: win.saveError, message: win.message, messageError: win.messageError, hints: statusHints.text,
                     controls: chrome.controls().concat(header.controls(), save.controls(), places.controls()), headerMark: header.sortBy, listFocus: list.activeFocus,
-                    railFocus: places.focusItem.activeFocus, preset: Flea.ViewState.keysPreset,
+                    railFocus: places.focusItem.activeFocus, preset: Bachy.ViewState.keysPreset,
                     bodySmall: Theme.font.bodySmall, body: Theme.font.body, width: win.width, height: win.height,
                     geometry: {chrome: chrome.height, header: header.height, rail: places.width, row: Theme.rowHeight, footer: status.height,
                         save: save.height, list: list.height, saveViewport: win.bounds(save.scrollItem), saveScroll: save.scrollItem.contentY},

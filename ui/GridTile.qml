@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Drag.js" as DragOps
 import "js/Format.js" as Format
 import "js/Icons.js" as Icons
@@ -82,7 +81,7 @@ Item {
             cache: false
         }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.fill: parent
             visible: !root.thumbDrawn
             // The tile is the mark's own slot: without its own ceiling Glyph caps a 46 px tile at the 19 px row mark.
@@ -120,7 +119,7 @@ Item {
         elide: Text.ElideRight
     }
 
-    Flea.RenameField {
+    Bachy.RenameField {
         id: editor
         visible: root.renaming
         anchors { top: nameLabel.top; left: nameLabel.left; right: nameLabel.right }

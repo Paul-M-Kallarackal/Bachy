@@ -333,7 +333,7 @@ pub fn clock(seconds: f64) -> String {
 }
 fn temporary() -> io::Result<PathBuf> {
     let output = Command::new("mktemp")
-        .args(["-d", "/tmp/flea-tui-XXXXXX"])
+        .args(["-d", "/tmp/bachy-tui-XXXXXX"])
         .output()?;
     if !output.status.success() {
         return Err(io::Error::other(
@@ -345,7 +345,7 @@ fn temporary() -> io::Result<PathBuf> {
         || path.parent() != Some(Path::new("/tmp"))
         || !path
             .file_name()
-            .is_some_and(|p| p.to_string_lossy().starts_with("flea-tui-"))
+            .is_some_and(|p| p.to_string_lossy().starts_with("bachy-tui-"))
     {
         return Err(io::Error::other(
             "Preview socket directory is outside its sandbox",
@@ -354,8 +354,8 @@ fn temporary() -> io::Result<PathBuf> {
     OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(path.join(".flea-tui-owned"))?
-        .write_all(b"flea")?;
+        .open(path.join(".bachy-tui-owned"))?
+        .write_all(b"bachy")?;
     Ok(path)
 }
 fn cleanup(root: &Path) {
@@ -363,13 +363,13 @@ fn cleanup(root: &Path) {
         || root.parent() != Some(Path::new("/tmp"))
         || !root
             .file_name()
-            .is_some_and(|p| p.to_string_lossy().starts_with("flea-tui-"))
+            .is_some_and(|p| p.to_string_lossy().starts_with("bachy-tui-"))
         || !fs::symlink_metadata(root).is_ok_and(|m| m.file_type().is_dir())
-        || fs::read(root.join(".flea-tui-owned")).ok().as_deref() != Some(b"flea")
+        || fs::read(root.join(".bachy-tui-owned")).ok().as_deref() != Some(b"bachy")
     {
         return;
     }
-    for name in ["ipc", ".flea-tui-owned"] {
+    for name in ["ipc", ".bachy-tui-owned"] {
         let path = root.join(name);
         if path.is_absolute() && path.starts_with(root) && path != root {
             let _ = fs::remove_file(path);

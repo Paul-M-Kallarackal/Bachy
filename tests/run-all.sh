@@ -14,9 +14,9 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 # Both profiles unconditionally, seven suites driving the debug binary and thumbs.sh the release one: an `[ ! -x <path> ]` guard is satisfied by a stale binary from an older commit, and measured on 2026-09-05 the debug and release hashes were unchanged across a whole run-all over edited source.
-printf 'run-all: building target/debug/flea, seven suites need it\n'
+printf 'run-all: building target/debug/bachy, seven suites need it\n'
 cargo build -q || { printf 'run-all: cargo build failed, nothing else was run\n' >&2; exit 1; }
-printf 'run-all: building target/release/flea, thumbs.sh needs it\n'
+printf 'run-all: building target/release/bachy, thumbs.sh needs it\n'
 cargo build -q --release || { printf 'run-all: release build failed, nothing else was run\n' >&2; exit 1; }
 
 headless="js keymap-gen charts budget aurpush signalarity empty-state sandbox capability-ownership gio-auth gvfs ops modes update protocol portal archive thumbs thumbs-exec network-open-share network-keyless mount-listing pdf-turn pdf-first preview-decode uistate uiwriter media filemanager1 dragwire shellload settings-columns menu-settle arm-prompt acceptance-matrix"
@@ -44,12 +44,12 @@ done
 # is printed here and it is what the audit below checks, so a suite cannot be quietly excluded.
 not_run="
 picker-stall|needs Quickshell; runs offscreen read-only worker cancellation tests
-ui|needs the display, and refuses beside a Flea it did not start
+ui|needs the display, and refuses beside a Bachy it did not start
 drag|needs the display and a real pointer through uinput
 cardsizes|needs the display, a real pointer through uinput, and Hyprland to resize the window
 bench|is a separate headless benchmark-contract suite
-package|needs a real makepkg archive in FLEA_PACKAGE_FILE
-picker|needs the display, a session bus, and Flea activatable as the FileChooser backend
+package|needs a real makepkg archive in BACHY_PACKAGE_FILE
+picker|needs the display, a session bus, and Bachy activatable as the FileChooser backend
 network-live|needs live share credentials and the approved runtime bundle, controller only
 ui-tui|is a standalone native TUI proof that needs the display and owns the display lock
 themes|needs the display: it launches the candidate once per stock theme, and tests/js/themes.js is the half that runs here

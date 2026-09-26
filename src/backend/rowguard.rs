@@ -1,7 +1,7 @@
 // A row index names a file only in the numbering the client read it from; see docs/protocol.md "listing".
 use crate::backend::menu_actions;
 use crate::backend::proto::error_line;
-use crate::error::FleaError;
+use crate::error::BachyError;
 use crate::json::{field_str, field_usize};
 
 // The requests whose rows resolve to files something then acts on; thumb, dirsize, meta and window only read.
@@ -34,7 +34,7 @@ pub fn refusal(line: &str, generation: u64) -> Option<String> {
     if command == "menuaction" {
         return Some(menu_actions::response(line, Err(STALE_MENU.into())));
     }
-    Some(error_line(&FleaError { where_: "stale".into(), path: command, msg: STALE.into() }))
+    Some(error_line(&BachyError { where_: "stale".into(), path: command, msg: STALE.into() }))
 }
 
 #[cfg(test)]

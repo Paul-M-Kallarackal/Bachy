@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Ops.js" as Ops
 import "js/Transfer.js" as Transfer
 
@@ -117,7 +116,7 @@ Item {
 
             // The card is chrome, so its mark is the OEM icon token the chrome bar's own marks
             // take; the status bar's spiral is caption-sized because the bar's own text is.
-            Flea.Spinner {
+            Bachy.Spinner {
                 id: crawl
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -222,7 +221,7 @@ Item {
                 border.width: Theme.spacing.hairline
                 border.color: Theme.color.muted
 
-                Flea.Glyph {
+                Bachy.Glyph {
                     id: mark
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.spacing.gap

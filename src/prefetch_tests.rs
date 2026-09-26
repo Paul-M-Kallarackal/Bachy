@@ -43,7 +43,7 @@ fn a_list_needs_its_header_skips_bad_lines_and_is_capped() {
 #[test]
 fn the_list_is_written_whole_private_and_read_back() {
     let dir = crate::backend::testdir::TestDir::new("prefetch-write");
-    let list = dir.path().join("cache/flea/prefetch");
+    let list = dir.path().join("cache/bachy/prefetch");
     write_list(&list, "shell 4242 1234567", &[Range { path: "/usr/lib/libc.so.6".into(), offset: 0, length: 4096 }]);
     let text = read_bounded(&list).unwrap();
     let parsed: Vec<(&str, u64, u64)> = parse_list(&text).iter().map(|r| (r.path, r.offset, r.length)).collect();

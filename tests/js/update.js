@@ -1,6 +1,6 @@
 .import "../../ui/js/Update.js" as Update
 
-// The updater's row state: what each line `flea --update check` prints turns into, what Enter does next, and when an automatic trigger asks.
+// The updater's row state: what each line `bachy --update check` prints turns into, what Enter does next, and when an automatic trigger asks.
 
 var HOUR = 60 * 60 * 1000
 
@@ -32,7 +32,7 @@ function runReading(check) {
     check("available takes the accent", drawn(after(LINES.available)), "0.3.4 available|accent|true")
     check("launched has no chevron", drawn(Update.launchedFrom(after(LINES.available), true)), "Updating in terminal|live|false")
     check("offline still acts", drawn(after(LINES.offline)), "Could not check|live|true")
-    check("flea-git is rolling", drawn(after(LINES.rolling)), "flea-git · rolling|live|false")
+    check("bachy-git is rolling", drawn(after(LINES.rolling)), "bachy-git · rolling|live|false")
     check("a local build is built from source", drawn(after(LINES.source)), "Built from source|live|false")
     check("and so is a binary no package owns", Update.value(after("unchecked unowned - -")), "Built from source")
     check("only the unchecked kinds are facts, a binary no package owns among them",
@@ -41,7 +41,7 @@ function runReading(check) {
           "false/true,false/true,true/false,true/false,true/false")
     check("a rebuild of the installed release names the package release, or it would read as the same version",
           Update.value(after("available aur 0.3.3-1 0.3.3-2")), "0.3.3-2 available")
-    check("a line this build does not know is a failed check", Update.value(after("flea: unknown flag --update")), "Could not check")
+    check("a line this build does not know is a failed check", Update.value(after("bachy: unknown flag --update")), "Could not check")
     check("so is no line at all, which a binary that died prints", Update.value(after("")), "Could not check")
     check("a dash is an empty field, never a version", after(LINES.current).latest, "")
     check("the answer records when it came", after(LINES.current).checkedAt, 1000)
@@ -63,14 +63,14 @@ function runActing(check) {
           "Updating in terminal|false")
     check("an answer landing after a launch leaves the launch standing",
           Update.value(Update.answered(Update.launchedFrom(after(LINES.available), true), LINES.current, 2000)), "Updating in terminal")
-    check("the footer says what a launch did", Update.launchSentence(true).join("|"), "Opening Omarchy update · restart Flea when it finishes|false")
-    check("and says a refused one as an error", Update.launchSentence(false).join("|"), "Omarchy's updater could not be started.|true")
+    check("the footer says what a launch did", Update.launchSentence(true).join("|"), "Opening source update · restart Bachy when it finishes|false")
+    check("and says a refused one as an error", Update.launchSentence(false).join("|"), "The source build updater is unavailable.|true")
     function noted(status) { var n = Update.note(status); return n === null ? "none" : n.join("|") }
     check("the note asks for a restart in the accent after a launch",
-          noted(Update.launchedFrom(after(LINES.available), true)), "Restart Flea when the update finishes|accent")
+          noted(Update.launchedFrom(after(LINES.available), true)), "Restart Bachy when the update finishes|accent")
     check("and explains offline, rolling and source in the foreground",
           [LINES.offline, LINES.rolling, LINES.source].map(function (line) { return noted(after(line)) }).join(", "),
-          "Offline: Omarchy update still opens|foreground, Rolling build: yay -Sua --devel follows main|foreground, "
+          "Offline: source update still opens|foreground, Rolling build: yay -Sua --devel follows main|foreground, "
           + "Built locally: rebuild from the checkout|foreground")
     check("and is absent everywhere else",
           [Update.idle(), Update.checking(Update.idle()), after(LINES.current), after(LINES.available)].map(noted).join(","),

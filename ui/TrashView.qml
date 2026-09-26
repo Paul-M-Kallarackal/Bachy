@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Icons.js" as Icons
 import "js/Keymap.js" as Keymap
@@ -311,7 +310,7 @@ FocusScope {
                 anchors.leftMargin: Theme.spacing.rowPaddingX
                 anchors.rightMargin: Theme.spacing.rowPaddingX
                 spacing: Theme.spacing.gap
-                Flea.Glyph {
+                Bachy.Glyph {
                     id: backButton
                     width: Theme.hitMin; height: parent.height; maxSize: Theme.chromeMarkSize
                     name: "arrow-left"; color: Theme.color.foreground
@@ -320,7 +319,7 @@ FocusScope {
                     Accessible.onPressAction: root.close()
                     TapHandler { onTapped: root.close() }
                 }
-                Flea.Glyph {
+                Bachy.Glyph {
                     id: upButton
                     width: Theme.hitMin; height: parent.height; maxSize: Theme.chromeMarkSize
                     name: "arrow-up"; color: Theme.color.muted
@@ -350,7 +349,7 @@ FocusScope {
                     font { family: Theme.font.family; pixelSize: Theme.font.caption }
                 }
                 // Emptying the Trash was reachable only by right-clicking the rail row. It addresses the whole Trash, which is what the count beside it describes, so it belongs here. It opens the confirmation the menu row opens: the boundary is unchanged and no key is bound to it. Disabled exactly where ui/js/Menu.js disables the row.
-                Flea.ChromeAction {
+                Bachy.ChromeAction {
                     id: emptyAction
                     anchors.verticalCenter: parent.verticalCenter
                     label: "Empty Trash"
@@ -420,8 +419,8 @@ FocusScope {
                     root.contextRequested(at.x, at.y, root.selectedCount > 0)
                 }
             }
-            Flea.FastScrollHandler { flickable: listing }
-            Flea.ViewportScrollBar { parent: listing; anchors.top: parent.top; anchors.right: parent.right; flickable: listing }
+            Bachy.FastScrollHandler { flickable: listing }
+            Bachy.ViewportScrollBar { parent: listing; anchors.top: parent.top; anchors.right: parent.right; flickable: listing }
             delegate: Rectangle {
                 id: itemRow
                 required property int index
@@ -437,7 +436,7 @@ FocusScope {
                     anchors.leftMargin: Theme.spacing.rowPaddingX
                     anchors.rightMargin: Theme.spacing.rowPaddingX
                     spacing: Theme.spacing.gap
-                    Flea.Glyph { width: Theme.markSize; height: parent.height; name: itemRow.item ? (itemRow.item.directory ? "folder" : Icons.glyphFor(itemRow.item.icon)) : "file"; color: Theme.color.foreground }
+                    Bachy.Glyph { width: Theme.markSize; height: parent.height; name: itemRow.item ? (itemRow.item.directory ? "folder" : Icons.glyphFor(itemRow.item.icon)) : "file"; color: Theme.color.foreground }
                     Text { width: Math.max(0, parent.width - Theme.markSize - original.width - deleted.width - 3 * parent.spacing); anchors.verticalCenter: parent.verticalCenter; text: itemRow.item ? itemRow.item.original.split("/").pop() : ""; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.body } }
                     Text { id: original; width: locationTitle.width; anchors.verticalCenter: parent.verticalCenter; text: itemRow.item ? Trash.location(itemRow.item.original, root.home) : ""; textFormat: Text.PlainText; elide: Text.ElideLeft; horizontalAlignment: Text.AlignRight; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.body } }
                     Text { id: deleted; width: deletedTitle.width; anchors.verticalCenter: parent.verticalCenter; text: itemRow.item ? Trash.deleted(itemRow.item.deleted) : ""; textFormat: Text.PlainText; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.body } }
@@ -456,7 +455,7 @@ FocusScope {
     Text { anchors.centerIn: parent; visible: root.total === 0; text: root.errorText || (root.busy ? "Reading Trash…" : "Trash is empty"); textFormat: Text.PlainText; color: root.errorText ? Theme.color.error : Theme.color.muted; font { family: Theme.font.family; pixelSize: Theme.font.body } }
     // GIO's monitor reports top-level changes; the active confirmation also checks nested identities.
     Timer { interval: 2500; repeat: true; running: root.opened && confirmation.opened && !root.busy; onTriggered: root.send("check", {token: confirmation.snapshot.token}) }
-    Flea.TrashConfirm {
+    Bachy.TrashConfirm {
         id: confirmation
         parent: root.overlayParent || root
         z: 5

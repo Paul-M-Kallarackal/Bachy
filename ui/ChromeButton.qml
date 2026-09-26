@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 
 // A live chrome control inks in foreground; active and focused ones use the accent.
 Item {
@@ -51,7 +50,7 @@ Item {
         NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
     }
 
-    Flea.Glyph {
+    Bachy.Glyph {
         anchors.centerIn: parent
         width: root.glyphSize
         height: root.glyphSize

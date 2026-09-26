@@ -3,7 +3,7 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 repo=$PWD
-tool="$repo/tools/flea-bench-capability"
+tool="$repo/tools/bachy-bench-capability"
 test_root=$(mktemp -d) || exit 1
 case $test_root in
   /*/*) ;;
@@ -29,12 +29,12 @@ cleanup() {
     stop_named "$pid"
   done
   [ ! -e "$test_root/preexisting/nemo" ] || unlink "$test_root/preexisting/nemo"
-  [ ! -e "$test_root/post-launch/flea" ] || unlink "$test_root/post-launch/flea"
+  [ ! -e "$test_root/post-launch/bachy" ] || unlink "$test_root/post-launch/bachy"
   [ ! -e "$test_root/post-launch-cleanup" ] || unlink "$test_root/post-launch-cleanup"
-  [ ! -e "$test_root/owned/flea" ] || unlink "$test_root/owned/flea"
-  [ ! -e "$test_root/late/flea" ] || unlink "$test_root/late/flea"
-  [ ! -e "$test_root/absent-session/flea" ] || unlink "$test_root/absent-session/flea"
-  [ ! -e "$test_root/session-root/flea" ] || unlink "$test_root/session-root/flea"
+  [ ! -e "$test_root/owned/bachy" ] || unlink "$test_root/owned/bachy"
+  [ ! -e "$test_root/late/bachy" ] || unlink "$test_root/late/bachy"
+  [ ! -e "$test_root/absent-session/bachy" ] || unlink "$test_root/absent-session/bachy"
+  [ ! -e "$test_root/session-root/bachy" ] || unlink "$test_root/session-root/bachy"
   [ ! -e "$test_root/reparented/detached" ] || unlink "$test_root/reparented/detached"
   [ ! -e "$test_root/late-guardian/guardian" ] || unlink "$test_root/late-guardian/guardian"
   [ ! -e "$test_root/late-parent/parent" ] || unlink "$test_root/late-parent/parent"
@@ -46,9 +46,9 @@ cleanup() {
   [ ! -e "$test_root/rolling-child2/child2" ] || unlink "$test_root/rolling-child2/child2"
   [ ! -e "$test_root/rolling-captures" ] || unlink "$test_root/rolling-captures"
   [ ! -e "$test_root/escape-guardian/guardian" ] || unlink "$test_root/escape-guardian/guardian"
-  [ ! -e "$test_root/escape-member/flea" ] || unlink "$test_root/escape-member/flea"
-  [ ! -e "$test_root/stale-watch/flea" ] || unlink "$test_root/stale-watch/flea"
-  [ ! -e "$test_root/interrupted/flea" ] || unlink "$test_root/interrupted/flea"
+  [ ! -e "$test_root/escape-member/bachy" ] || unlink "$test_root/escape-member/bachy"
+  [ ! -e "$test_root/stale-watch/bachy" ] || unlink "$test_root/stale-watch/bachy"
+  [ ! -e "$test_root/interrupted/bachy" ] || unlink "$test_root/interrupted/bachy"
   [ ! -e "$test_root/term-state" ] || unlink "$test_root/term-state"
   [ ! -e "$test_root/term-report" ] || unlink "$test_root/term-report"
   [ ! -e "$test_root/preexisting-unit-started" ] || unlink "$test_root/preexisting-unit-started"
@@ -127,11 +127,11 @@ stop_named() {
   forget_named_pid "$pid"
 }
 
-owned_flea_tree() {
+owned_bachy_tree() {
   local child
   mkdir -p "$test_root/owned" || exit 1
-  cp "$test_root/sleeper" "$test_root/owned/flea" || exit 1
-  /bin/sh -c "'$test_root/owned/flea' & wait" >/dev/null 2>&1 &
+  cp "$test_root/sleeper" "$test_root/owned/bachy" || exit 1
+  /bin/sh -c "'$test_root/owned/bachy' & wait" >/dev/null 2>&1 &
   OWNED_TEST_ROOT=$!
   named_pids+=("$OWNED_TEST_ROOT")
   register_named_pid "$OWNED_TEST_ROOT"
@@ -140,7 +140,7 @@ owned_flea_tree() {
   [ -n "$child" ] || exit 1
   OWNED_TEST_BACKEND=$child
   named_pids+=("$OWNED_TEST_BACKEND")
-  named_comms[$OWNED_TEST_BACKEND]=flea
+  named_comms[$OWNED_TEST_BACKEND]=bachy
   register_named_pid "$OWNED_TEST_BACKEND"
 }
 
@@ -174,7 +174,7 @@ for function_name in \
   owned_matches remember_owned_pid owned_alive capture_owned_boundary require_no_foreign_processes \
   start_unit_boundary start_owned_entrant stop_unit_boundary owned_unit_stopped \
   owned_boundary_empty stop_owned_entrants kill_entrants watch_owned remember_watch stop_watches \
-  require_flea_enumeration cap_terminate
+  require_bachy_enumeration cap_terminate
 do
   function_body=$(sed -n "/^${function_name}()/,/^}/p" "$tool")
   [ -z "$function_body" ] || eval "$function_body"
@@ -307,7 +307,7 @@ begin_owned_boundary() {
   test_boundaries[$root]=$OWNED_CONTROL_GROUP
 }
 
-FLEA_UI="$test_root/ui"
+BACHY_UI="$test_root/ui"
 declare -a PROCESS_TARGETS=()
 declare -a TARGET_PIDS=()
 declare -a OWNED_PIDS=()
@@ -332,7 +332,7 @@ unit_start_marker="$test_root/preexisting-unit-started"
 check "pre-existing unit name refuses launch" 1 "$?"
 check "pre-existing unit is never started over" no "$([ -e "$unit_start_marker" ] && printf yes || printf no)"
 
-named_sleep flea post-launch
+named_sleep bachy post-launch
 post_launch_pid=$NAMED_PID
 post_launch_report="$test_root/post-launch-cleanup"
 (
@@ -386,7 +386,7 @@ sleep 0.1
 named_running "$post_launch_pid"
 check "failed post-launch cleanup stops exact process" 1 "$?"
 stop_named "$post_launch_pid"
-unlink "$test_root/post-launch/flea"
+unlink "$test_root/post-launch/bachy"
 unlink "$post_launch_report"
 rmdir "$test_root/post-launch"
 
@@ -403,7 +403,7 @@ stop_named "$nemo_pid"
 unlink "$test_root/preexisting/nemo"
 rmdir "$test_root/preexisting"
 
-CAP_ONLY=flea
+CAP_ONLY=bachy
 PROCESS_TARGETS=()
 OWNED_PIDS=()
 BOUNDARY_PIDS=()
@@ -411,7 +411,7 @@ OWNED_STARTS=()
 OWNED_ROOT_PID=
 OWNED_UNIT=
 declare -F select_process_targets >/dev/null && select_process_targets
-owned_flea_tree
+owned_bachy_tree
 if declare -F remember_owned_pid >/dev/null; then
   begin_owned_boundary "$OWNED_TEST_ROOT"
   test_boundaries[$OWNED_TEST_BACKEND]=$OWNED_CONTROL_GROUP
@@ -421,30 +421,30 @@ else
 fi
 owned_matches "$OWNED_TEST_BACKEND"
 check "scoped run records its backend descendant" 0 "$?"
-named_sleep flea late
-flea_pid=$NAMED_PID
+named_sleep bachy late
+bachy_pid=$NAMED_PID
 kill_entrants >/dev/null 2>&1
 late_status=$?
-check "scoped run refuses late unowned flea attribution" 1 "$late_status"
+check "scoped run refuses late unowned bachy attribution" 1 "$late_status"
 sleep 0.1
 named_running "$OWNED_TEST_BACKEND"
 owned_alive=$?
-check "scoped run stops its exact owned flea" 1 "$owned_alive"
-named_running "$flea_pid"
+check "scoped run stops its exact owned bachy" 1 "$owned_alive"
+named_running "$bachy_pid"
 late_alive=$?
-check "scoped run leaves the late unowned flea alive" 0 "$late_alive"
-stop_named "$flea_pid"
+check "scoped run leaves the late unowned bachy alive" 0 "$late_alive"
+stop_named "$bachy_pid"
 stop_named "$OWNED_TEST_ROOT"
 stop_named "$OWNED_TEST_BACKEND"
-unlink "$test_root/owned/flea"
-unlink "$test_root/late/flea"
+unlink "$test_root/owned/bachy"
+unlink "$test_root/late/bachy"
 rmdir "$test_root/owned" "$test_root/late"
 
-PROCESS_TARGETS=("flea|")
+PROCESS_TARGETS=("bachy|")
 OWNED_PIDS=()
 BOUNDARY_PIDS=()
 OWNED_STARTS=()
-named_sleep flea reuse
+named_sleep bachy reuse
 reuse_pid=$NAMED_PID
 begin_owned_boundary "$reuse_pid"
 capture_owned_boundary || exit 1
@@ -455,13 +455,13 @@ sleep 0.1
 named_running "$reuse_pid"
 check "reused session PID is never signaled" 0 "$?"
 stop_named "$reuse_pid"
-unlink "$test_root/reuse/flea"
+unlink "$test_root/reuse/bachy"
 rmdir "$test_root/reuse"
 
 OWNED_PIDS=()
 BOUNDARY_PIDS=()
 OWNED_STARTS=()
-named_sleep flea absent-session
+named_sleep bachy absent-session
 absent_member_pid=$NAMED_PID
 absent_session=$(( absent_member_pid + 1000000 ))
 OWNED_UNIT="test-$absent_session.service"
@@ -484,13 +484,13 @@ sleep 0.1
 named_running "$absent_member_pid"
 check "absent reused session member is never signaled" 0 "$?"
 stop_named "$absent_member_pid"
-unlink "$test_root/absent-session/flea"
+unlink "$test_root/absent-session/bachy"
 rmdir "$test_root/absent-session"
 
 OWNED_PIDS=()
 BOUNDARY_PIDS=()
 OWNED_STARTS=()
-named_sleep flea session-root
+named_sleep bachy session-root
 session_root=$NAMED_PID
 begin_owned_boundary "$session_root"
 named_sleep detached reparented
@@ -505,7 +505,7 @@ named_running "$reparented_pid"
 check "reparented session member is stopped" 1 "$?"
 stop_named "$session_root"
 stop_named "$reparented_pid"
-unlink "$test_root/session-root/flea"
+unlink "$test_root/session-root/bachy"
 unlink "$test_root/reparented/detached"
 rmdir "$test_root/session-root" "$test_root/reparented"
 
@@ -602,7 +602,7 @@ OWNED_STARTS=()
 named_sleep guardian escape-guardian
 escape_guardian_pid=$NAMED_PID
 begin_owned_boundary "$escape_guardian_pid"
-named_sleep flea escape-member
+named_sleep bachy escape-member
 escape_member_pid=$NAMED_PID
 test_boundaries[$escape_member_pid]=$OWNED_CONTROL_GROUP
 capture_owned_boundary || exit 1
@@ -617,11 +617,11 @@ check "escaped owned member is never signaled" 0 "$?"
 stop_named "$escape_guardian_pid"
 stop_named "$escape_member_pid"
 unlink "$test_root/escape-guardian/guardian"
-unlink "$test_root/escape-member/flea"
+unlink "$test_root/escape-member/bachy"
 rmdir "$test_root/escape-guardian" "$test_root/escape-member"
 
 declare -A WATCH_STARTS=()
-named_sleep flea stale-watch
+named_sleep bachy stale-watch
 stale_watch_pid=$NAMED_PID
 remember_watch "$stale_watch_pid" || exit 1
 test_starts[$stale_watch_pid]=reused-watch-incarnation
@@ -630,10 +630,10 @@ sleep 0.1
 named_running "$stale_watch_pid"
 check "stale watcher PID is not signaled" 0 "$?"
 stop_named "$stale_watch_pid"
-unlink "$test_root/stale-watch/flea"
+unlink "$test_root/stale-watch/bachy"
 rmdir "$test_root/stale-watch"
 
-named_sleep flea interrupted
+named_sleep bachy interrupted
 interrupted_pid=$NAMED_PID
 OWNED_PIDS=()
 BOUNDARY_PIDS=()
@@ -660,12 +660,12 @@ sleep 0.1
 named_running "$interrupted_pid"
 check "TERM interruption stops owned process" 1 "$?"
 stop_named "$interrupted_pid"
-unlink "$test_root/interrupted/flea"
+unlink "$test_root/interrupted/bachy"
 unlink "$term_state"
 rmdir "$test_root/interrupted"
 
 qs() { return 7; }
-require_flea_enumeration >/dev/null 2>&1
+require_bachy_enumeration >/dev/null 2>&1
 check "failed qs enumeration is refused" 1 "$?"
 
 printf '%s checks, %s failed\n' "$checks" "$failures"

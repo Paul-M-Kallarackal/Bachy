@@ -20,7 +20,7 @@ fn only_the_names_the_capture_scripts_write_are_listed() {
 #[test]
 fn a_directory_that_is_not_there_is_an_empty_tray_rather_than_an_error() {
     let mut found = Vec::new();
-    collect(Path::new("/definitely/not/here/flea-captures"), SCREENSHOT_PREFIX, SCREENSHOT_SUFFIX, &mut found);
+    collect(Path::new("/definitely/not/here/bachy-captures"), SCREENSHOT_PREFIX, SCREENSHOT_SUFFIX, &mut found);
     assert!(found.is_empty());
 }
 

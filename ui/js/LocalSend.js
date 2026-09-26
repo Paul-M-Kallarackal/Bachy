@@ -3,7 +3,7 @@
 .import "Ops.js" as Ops
 
 // Directive 71's three sentences, kept out of the QML so the wording is tested rather than read off
-// a screenshot. The dispatch, the verdict the CLI came back with, and the one refusal Flea itself
+// a screenshot. The dispatch, the verdict the CLI came back with, and the one refusal Bachy itself
 // can hit: a row whose binary left between the menu opening and the peer being chosen.
 // The one call ui/Pane.qml makes: the service either took the send or the CLI is gone.
 function send(pane, service, provider, peer, paths) {
@@ -20,7 +20,7 @@ function sending(peer, paths) {
     return "Sending " + paths.length + " items to " + peer + " with LocalSend."
 }
 
-// The CLI ends its own run when the transfer does, so this is the only result Flea ever knows.
+// The CLI ends its own run when the transfer does, so this is the only result Bachy ever knows.
 function verdict(ok, reason) {
     if (ok) return "LocalSend finished the transfer."
     return reason && reason.length > 0 ? "LocalSend · " + reason : "LocalSend could not finish the transfer."

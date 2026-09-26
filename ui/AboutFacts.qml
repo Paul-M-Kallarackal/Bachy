@@ -11,7 +11,7 @@ QtObject {
     property var known: ({})
     // What ui/js/SettingsAbout.js reads: the installed facts, with the updater's status and the default's claim beside them.
     readonly property var facts: Object.assign({ update: UpdateCheck.status, handler: DefaultClaim.handler, claim: DefaultClaim.claim }, root.known)
-    readonly property string binary: Quickshell.env("FLEA_BIN") || "flea"
+    readonly property string binary: Quickshell.env("BACHY_BIN") || "bachy"
 
     function setFact(key, value) {
         var next = Object.assign({}, root.known)
@@ -36,10 +36,10 @@ QtObject {
         stdout: StdioCollector { onStreamFinished: version.answer = this.text.trim() }
         // Sample output: "0.2.0". src/main.rs prints CARGO_PKG_VERSION and nothing else, so the
         // name is tolerated rather than required: demanding it left the Version row reading
-        // "Not reported" on every build Flea has ever shipped.
+        // "Not reported" on every build Bachy has ever shipped.
         onExited: function (code) {
             if (code !== 0) return
-            var text = version.answer.indexOf("flea ") === 0 ? version.answer.substring(5) : version.answer
+            var text = version.answer.indexOf("bachy ") === 0 ? version.answer.substring(5) : version.answer
             if (text.length > 0) root.setFact("version", text)
         }
     }
@@ -48,7 +48,7 @@ QtObject {
         command: ["pacman", "-Qqo", root.binary]
         property string answer: ""
         stdout: StdioCollector { onStreamFinished: owner.answer = this.text.trim() }
-        // Sample output: flea
+        // Sample output: bachy
         onExited: function (code) {
             if (code !== 0 || owner.answer.length === 0) {
                 root.setFact("source", About.installedFrom("", false))
@@ -61,7 +61,7 @@ QtObject {
     }
     // -Qi rather than -Q: the same query carries the build date, and the Built row had nothing
     // setting it at all, so every box read "Not recorded in this build" whatever it was running.
-    // Its Validated By line is the signature src/update.rs tells OPR's flea from a local build by.
+    // Its Validated By line is the signature src/update.rs tells OPR's bachy from a local build by.
     property var packageQuery: Process {
         id: packageVersion
         environment: ({ LC_ALL: "C" })

@@ -33,7 +33,7 @@ QtObject {
         writer.beforeRecords = root.records
         writer.expectedRecords = UiState.favouritesAfter(root.records, operation)
         root.operationActive = true
-        writer.command = [Quickshell.env("FLEA_BIN") || "flea", "--favourites", JSON.stringify(operation)]
+        writer.command = [Quickshell.env("BACHY_BIN") || "bachy", "--favourites", JSON.stringify(operation)]
         writer.pending = true
         writer.running = true
         return true
@@ -54,7 +54,7 @@ QtObject {
         var pending = indices.filter(function (index) { return root.statuses[index] === undefined })
         if (pending.length === 0 || inspector.running) return
         inspector.answer = ""
-        inspector.command = [Quickshell.env("FLEA_BIN") || "flea", "--favourites", JSON.stringify({ op: "inspect", indices: pending.slice(0, 128) })]
+        inspector.command = [Quickshell.env("BACHY_BIN") || "bachy", "--favourites", JSON.stringify({ op: "inspect", indices: pending.slice(0, 128) })]
         inspector.running = true
     }
     function finish(expected) {
@@ -109,7 +109,7 @@ QtObject {
             if (code !== 0) {
                 ViewState.refreshFavourites()
                 root.finish(writer.beforeRecords)
-                root.lastError = writer.errorText.replace(/^flea: /, "").split("\n")[0] || "Favorites could not be saved."
+                root.lastError = writer.errorText.replace(/^bachy: /, "").split("\n")[0] || "Favorites could not be saved."
                 root.failed(root.lastError)
                 root.completed(writer.requestId, false, root.lastError)
                 return

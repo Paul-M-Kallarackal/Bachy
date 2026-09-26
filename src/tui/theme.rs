@@ -16,8 +16,7 @@ pub struct Theme {
 }
 impl Theme {
     pub fn load() -> Self {
-        let path = std::env::var("HOME").unwrap_or_default()
-            + "/.local/state/omarchy/current/theme/colors.toml";
+        let path = crate::userfile::config_home().unwrap_or_default().join("bachy/theme/colors.toml");
         Self::from_text(&std::fs::read_to_string(path).unwrap_or_default())
     }
     pub(super) fn from_text(text: &str) -> Self {
@@ -104,7 +103,7 @@ fn contrast(foreground: &str, background: &str) -> String {
 mod tests {
     use super::*;
     #[test]
-    fn palette_matches_oem_precedence_and_flea_roles() {
+    fn palette_matches_oem_precedence_and_bachy_roles() {
         let theme = Theme::from_text("color7='#112233'\ncolor0='#010203'\ncolor4='#445566'\naccent='#123456'\nred='#654321'\ncolor1='#abcdef'");
         assert_eq!(theme.foreground, ansi("#112233", false));
         assert_eq!(theme.background, ansi("#010203", true));

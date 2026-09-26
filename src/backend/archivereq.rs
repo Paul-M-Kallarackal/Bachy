@@ -295,7 +295,7 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&source).unwrap(), "source");
         assert!(check_convert(std::path::Path::new("relative.png"), &destination, None).is_err());
         assert!(check_convert(&source, std::path::Path::new("relative.jpg"), None).is_err());
-        assert!(source.is_absolute() && source.starts_with(d.path()) && d.path().join(".flea-test-sandbox").is_file());
+        assert!(source.is_absolute() && source.starts_with(d.path()) && d.path().join(".bachy-test-sandbox").is_file());
         std::fs::rename(&source, d.join("original.png")).unwrap();
         d.file("photo.png", "replacement");
         assert!(check_convert(&source, &destination, Some(&selected)).unwrap_err().contains("changed"));
@@ -323,10 +323,10 @@ mod tests {
 
     #[test]
     fn missing_converter_keeps_check_and_activation_request_identity() {
-        if std::env::var_os("FLEA_CONVERT_MISSING_CHILD").is_none() {
+        if std::env::var_os("BACHY_CONVERT_MISSING_CHILD").is_none() {
             let output = std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", "backend::archivereq::tests::missing_converter_keeps_check_and_activation_request_identity"])
-                .env("PATH", "").env("FLEA_CONVERT_MISSING_CHILD", "1").output().unwrap();
+                .env("PATH", "").env("BACHY_CONVERT_MISSING_CHILD", "1").output().unwrap();
             assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
             assert!(String::from_utf8_lossy(&output.stdout).contains("1 passed; 0 failed"), "the isolated missing-helper check did not run");
             return;

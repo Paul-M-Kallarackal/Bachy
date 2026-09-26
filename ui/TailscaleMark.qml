@@ -1,10 +1,9 @@
 import QtQuick
-import qs.Commons
 
 // The Tailscale mark, reproduced from the official artwork rather than recut. GM ruled the
 // reproduction after both recuts were rendered beside the original at the sizes this actually draws
 // at: a stroked mark spends most of a small glyph on outline, and a one-weight language cannot carry
-// the mark's own emphasis. It sits where FleaMark sits, outside the cut and outside Glyph.qml.
+// the mark's own emphasis. It sits where BachyMark sits, outside the cut and outside Glyph.qml.
 Item {
     id: root
 

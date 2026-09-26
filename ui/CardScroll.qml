@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // A card body that can be taller than the window: the content keeps its own height, this viewport
 // clamps to what the card gave it and scrolls the rest, by wheel and by a focus move below the fold.
@@ -40,12 +40,12 @@ Flickable {
         function onActiveFocusItemChanged() { root.reveal(root.Window.window.activeFocusItem) }
     }
 
-    Flea.FastScrollHandler {
+    Bachy.FastScrollHandler {
         parent: root
         flickable: root
     }
 
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         parent: root
         // parent, not root: declared in the Flickable it starts in contentItem, where root is no parent or sibling.
         anchors { top: parent.top; right: parent.right }

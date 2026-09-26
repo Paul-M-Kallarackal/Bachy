@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/DirSizes.js" as DirSizes
 import "js/Filter.js" as Filter
 import "js/Tap.js" as Tap
@@ -28,31 +28,31 @@ ListView {
     // Every property the delegate draws is a binding on index, so a row leaving the buffer is re-bound rather than rebuilt.
     reuseItems: true
 
-    Flea.FastScrollHandler {
+    Bachy.FastScrollHandler {
         parent: root
         flickable: root
     }
 
     readonly property alias scrollBar: verticalScroll
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         id: verticalScroll
         parent: root
         anchors { top: parent.top; right: parent.right }
         flickable: root
     }
 
-    Flea.SelectionBand {
+    Bachy.SelectionBand {
         parent: root
         pane: root.pane
         flickable: root
     }
 
-    Flea.FileDrag {
+    Bachy.FileDrag {
         id: dragSession
         pane: root.pane
     }
 
-    delegate: Flea.Row {
+    delegate: Bachy.Row {
         id: cell
         required property int index
         // index is where the row is drawn; listingIndex is the row the backend numbers, and under a
@@ -99,7 +99,7 @@ ListView {
             }
         }
 
-        Flea.RowDrag {
+        Bachy.RowDrag {
             session: dragSession
             listingIndex: cell.listingIndex
             row: cell.row

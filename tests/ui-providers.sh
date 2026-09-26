@@ -134,7 +134,7 @@ providers_fixture() {
     local part file name target
     local -a parts
     sandbox_scratch "$menu_box"
-    : > "$menu_box/.flea-test-sandbox" || fail 'providers: sandbox marker write failed'
+    : > "$menu_box/.bachy-test-sandbox" || fail 'providers: sandbox marker write failed'
     for target in list Dropbox retired bin absent doubles state config cache data; do
         menus_guard "$menu_box/$target"
         mkdir -p "$menu_box/$target" || fail "providers: fixture directory $target failed"
@@ -170,8 +170,8 @@ providers_fixture() {
     cat > "$menu_box/doubles/provider" <<'SH'
 #!/usr/bin/env bash
 set -eu
-box=${FLEA_PROVIDERS_BOX:?}
-[[ "$box" == /* && -f "$box/.flea-test-sandbox" ]] || exit 90
+box=${BACHY_PROVIDERS_BOX:?}
+[[ "$box" == /* && -f "$box/.bachy-test-sandbox" ]] || exit 90
 guard() {
     [[ -n "$1" && "$1" == /* ]] || exit 91
     local resolved
@@ -205,7 +205,7 @@ case "$name:$#:${1:-}:${2:-}" in
             shift 2
         done
         printf '┌Devices──────────┐\r\n│Paired│\r\n│  (none)│\r\n│Discovered│\r\n│  [1] Fixture Phone (10.0.0.9)│\r\n└─────────────────┘\r\n'
-        # Enter is the send; a discovery run ends when Flea stops this process, and the pty's ICRNL turns the carriage return into a newline.
+        # Enter is the send; a discovery run ends when Bachy stops this process, and the pty's ICRNL turns the carriage return into a newline.
         while IFS= read -r -n 1 -s key; do
             [[ "$key" == "" || "$key" == $'\n' || "$key" == $'\r' ]] || continue
             # The fixture gate holds completion here until the dispatch notice has been asserted.
@@ -278,7 +278,7 @@ providers_cleanup() {
     [[ ! -d "$menu_box/Dropbox" ]] || chmod 0755 "$menu_box/Dropbox" || return 1
     providers_release tailscale || return 1
     providers_release dropbox-cli || return 1
-    kill_flea || return 1
+    kill_bachy || return 1
     exec {taildrop_fd}>&-
     exec {dropbox_fd}>&-
     exec {localsend_fd}>&-
@@ -512,8 +512,8 @@ case_providers() (
     providers_fixture
     trap 'providers_cleanup || exit 1' EXIT
     export HOME="$menu_box/home" XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
-    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" FLEA_PROVIDERS_BOX="$menu_box"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail 'providers: private settings seed failed'
+    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" BACHY_PROVIDERS_BOX="$menu_box"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail 'providers: private settings seed failed'
     launch "$menu_dir"
     wait_listing 2
     menus_expect listInFlight '. == false' 'provider fixture initial listing settles'
@@ -687,12 +687,12 @@ STATES
     printf 'PROVIDERS_UNVERIFIED worker-stage Dropbox retry, offline daemon wording, helper launch race, concurrent panes, all-preset provider combinations, matched-size pixels\n'
 )
 
-# Opt-in: real provider discovery and menu cancellation, with only Flea's own persistence redirected.
+# Opt-in: real provider discovery and menu cancellation, with only Bachy's own persistence redirected.
 case_providersinstalled() (
     local menu_box="$fixture_root/providersinstalled" menu_dir="$fixture_root/providersinstalled/list" menus_checks=0
     local name target state peer_count clipboard_before
     sandbox_scratch "$menu_box"
-    : > "$menu_box/.flea-test-sandbox" || fail 'providersinstalled: sandbox marker write failed'
+    : > "$menu_box/.bachy-test-sandbox" || fail 'providersinstalled: sandbox marker write failed'
     for target in list state config cache data; do
         menus_guard "$menu_box/$target"
         mkdir "$menu_box/$target" || fail 'providersinstalled: private directory creation failed'
@@ -705,9 +705,9 @@ case_providersinstalled() (
     done
     export XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
     export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default"}' >/dev/null \
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default"}' >/dev/null \
         || fail 'providersinstalled: private settings seed failed'
-    trap 'kill_flea || exit 1' EXIT
+    trap 'kill_bachy || exit 1' EXIT
     launch "$menu_dir"
     wait_listing 1
     clipboard_before=$(ipc keyDeliveryState | jq -c .clipboard) || fail 'providersinstalled: internal clipboard observer failed'
@@ -748,8 +748,8 @@ case_localsend() (
     providers_fixture
     trap 'providers_cleanup || exit 1' EXIT
     export HOME="$menu_box/home" XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
-    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" FLEA_PROVIDERS_BOX="$menu_box"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail 'localsend: private settings seed failed'
+    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" BACHY_PROVIDERS_BOX="$menu_box"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail 'localsend: private settings seed failed'
     launch "$menu_dir"
     wait_listing 2
     menus_expect listInFlight '. == false' 'localsend fixture initial listing settles'

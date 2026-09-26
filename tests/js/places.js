@@ -24,8 +24,8 @@ function run(check) {
     check("a moved rename target no longer has its old index", Places.railCursorAfter(oldRail, expandedRail, 3) === 3, false)
     var records = [{ label: "A", path: "/a" }, { label: "Again", path: "/a" }, 17, { label: "", path: "bad" }]
     var stored = Places.storedEntries(records, "/home/test")
-    check("Flea keeps duplicate paths", stored.length, 4)
-    check("Flea preserves each duplicate label", stored[1].label, "Again")
+    check("Bachy keeps duplicate paths", stored.length, 4)
+    check("Bachy preserves each duplicate label", stored[1].label, "Again")
     check("invalid favourite remains identifiable", stored[2].original, 17)
     check("invalid favourite is marked", stored[2].error.length > 0, true)
     check("an invalid original value keeps its identifying label", stored[2].label, "17")

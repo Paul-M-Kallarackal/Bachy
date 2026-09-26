@@ -1,7 +1,7 @@
 .pragma library
 
 // Re-reading the open listing without moving the user off it. Two callers with one mechanism: a
-// change another program made under the listing (ui/PaneWire.qml's watch) and Flea's own delete.
+// change another program made under the listing (ui/PaneWire.qml's watch) and Bachy's own delete.
 // Split out of ui/js/Nav.js, which sits at the 300-line JS cap, the same way tests/js/watch.js was
 // split out of tests/js/nav.js; ui/js/Nav.js keeps navigation and this keeps the return.
 
@@ -13,14 +13,14 @@ function busy(pane) {
 }
 
 // A change another program made under the open listing, unlike ui/js/Nav.js refresh() which follows
-// Flea's own write. The rows are read again and the cursor is put back on the file it was on by name,
+// Bachy's own write. The rows are read again and the cursor is put back on the file it was on by name,
 // because a create above it renumbers every row below and a listing that jumped back to the top
 // would move the user while they were reading it. Returns the anchor apply() resolves, or null.
 function watched(pane) {
     return anchoredRefresh(pane, false)
 }
 
-// Flea's own delete. The rows that were marked are gone, so there is usually no name to return to:
+// Bachy's own delete. The rows that were marked are gone, so there is usually no name to return to:
 // the anchor is the cursor row that was deleted and apply()'s own fallback then lands on
 // whatever took its place, which is Finder's rule. It selects that row as well, so the next delete
 // follows without reaching for the mouse; reported 2026-09-11, "deleting one refreshes the entire

@@ -1,9 +1,9 @@
 // Its own app id, so one Hyprland rule can give the chooser the floating treatment Omarchy already
-// gives xdg-desktop-portal-gtk without touching the window; flea --picker writes that rule.
-//@ pragma AppId com.thisisgm.flea.picker
-//@ pragma ShellId fleapicker
+// gives xdg-desktop-portal-gtk without touching the window; bachy --picker writes that rule.
+//@ pragma AppId local.bachy.FileManager.picker
+//@ pragma ShellId bachypicker
 //@ pragma NativeTextRendering
-//@ pragma CacheDir $BASE/flea
+//@ pragma CacheDir $BASE/bachy
 
 import Quickshell
 import QtQuick
@@ -24,14 +24,14 @@ ShellRoot {
     readonly property int windowBackstopMs: 6000
 
     // LazyLoader carries neither a status nor a usable loading edge, so no window by this point is
-    // a load that failed, and silence would leave tools/flea-portal's caller waiting out its 600 s.
+    // a load that failed, and silence would leave tools/bachy-portal's caller waiting out its 600 s.
     Timer {
         interval: root.windowBackstopMs
         repeat: false
         running: true
         onTriggered: {
             if (!chooser.item) {
-                console.warn("flea: the chooser window did not load, so there is nothing to show")
+                console.warn("bachy: the chooser window did not load, so there is nothing to show")
                 Quickshell.execDetached(["kill", String(Quickshell.processId)])
             }
         }

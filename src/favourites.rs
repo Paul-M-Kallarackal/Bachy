@@ -4,7 +4,7 @@ use crate::{uistate, uistore};
 
 pub fn command(args: &[String]) -> i32 {
     if args.len() != 3 {
-        eprintln!("flea: --favourites takes one JSON operation");
+        eprintln!("bachy: --favourites takes one JSON operation");
         return 2;
     }
     let result = jsondoc::parse(&args[2])
@@ -23,7 +23,7 @@ pub fn command(args: &[String]) -> i32 {
             0
         }
         Err(error) => {
-            eprintln!("flea: {}", error);
+            eprintln!("bachy: {}", error);
             2
         }
     }

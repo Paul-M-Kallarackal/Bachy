@@ -19,7 +19,7 @@ mod tests {
     use super::*;
 
     // The probe runs in a child behind this marker, because 127 other tests share this process's heap.
-    const CHILD_MARKER: &str = "FLEA_HEAP_PROBE";
+    const CHILD_MARKER: &str = "BACHY_HEAP_PROBE";
     const CHILD_TEST: &str = "heap::tests::a_freed_large_block_does_not_ratchet_the_mmap_threshold";
     // Larger than any threshold glibc adopts on its own, so freeing it is what would raise the threshold unpinned.
     const RATCHET_BYTES: usize = 8 * 1024 * 1024;

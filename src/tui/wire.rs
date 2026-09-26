@@ -99,7 +99,7 @@ mod tests {
         // Echo actual Wire::send output; honoring Quit also lets Wire::drop reap the child during a panic.
         let mut child = Command::new("sh").args(["-c",
             r#"while IFS= read -r line; do [ "$line" = "$1" ] && exit 0; printf '%s\n' "$line"; done"#,
-            "flea-tui-wire-test", &quit]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
+            "bachy-tui-wire-test", &quit]).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
         let input = child.stdin.take().unwrap();
         let output = child.stdout.take().unwrap();
         let (tx, events) = mpsc::channel();

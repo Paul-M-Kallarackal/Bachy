@@ -16,7 +16,7 @@ function run(check) {
     check("and nothing found still says so", Search.statusLine(false, 0, 18204, 412), "0 found in 0.4 s")
 
 
-    check("the home prefix reads as a tilde", Search.scope("/home/gm/Work/claude/flea", "/home/gm"), "~/Work/claude/flea")
+    check("the home prefix reads as a tilde", Search.scope("/home/gm/Work/claude/bachy", "/home/gm"), "~/Work/claude/bachy")
     check("home itself is the bare tilde", Search.scope("/home/gm", "/home/gm"), "~")
     check("a path outside home keeps its own form", Search.scope("/usr/share", "/home/gm"), "/usr/share")
 

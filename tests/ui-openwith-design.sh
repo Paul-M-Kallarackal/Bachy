@@ -28,7 +28,7 @@ openwith_open_dialog() {
 }
 
 openwith_search() {
-    printf '%s' "$1" | omarchy-drive key --window flea - >/dev/null || fail "openwith: typing $1 failed"
+    printf '%s' "$1" | omarchy-drive key --window bachy - >/dev/null || fail "openwith: typing $1 failed"
     settle
 }
 
@@ -44,23 +44,23 @@ case_openwithdesign() (
     local -a numbers
     sandbox_require "$fixture_root"
     menu_box=$(mktemp -d "$fixture_root/openwith-design.XXXXXXXX") || fail 'openwith: owned fixture creation failed'
-    printf 'native Open with fixture\n' > "$menu_box/.flea-test-sandbox"
+    printf 'native Open with fixture\n' > "$menu_box/.bachy-test-sandbox"
     listing="$menu_box/listing"; config="$menu_box/config"; data="$menu_box/data"; state="$menu_box/state"
     for name in "$listing" "$config" "$data" "$data/applications"; do
         menus_guard "$name"
         mkdir -p "$name" || fail 'openwith: fixture directory creation failed'
     done
     # The fixture entry execs /bin/true, so an Open that reaches the launcher starts nothing.
-    menus_guard "$data/applications/zzflea-openwith.desktop"
-    printf '[Desktop Entry]\nType=Application\nName=Zzflea Fixture\nExec=/bin/true %%f\nIcon=text-x-generic\nMimeType=text/plain;\n' \
-        > "$data/applications/zzflea-openwith.desktop"
+    menus_guard "$data/applications/zzbachy-openwith.desktop"
+    printf '[Desktop Entry]\nType=Application\nName=Zzbachy Fixture\nExec=/bin/true %%f\nIcon=text-x-generic\nMimeType=text/plain;\n' \
+        > "$data/applications/zzbachy-openwith.desktop"
     # gio resolves the id named below through the desktop database, and an applications directory
     # with no cache answers for nothing, so the default silently did not take.
     update-desktop-database "$data/applications" 2>/dev/null \
         || fail 'openwith: the fixture desktop database could not be built'
     # A default the desktop really reads back, so the board's "default" caption has something to name.
     menus_guard "$config/mimeapps.list"
-    printf '[Default Applications]\ntext/plain=zzflea-openwith.desktop\n' > "$config/mimeapps.list"
+    printf '[Default Applications]\ntext/plain=zzbachy-openwith.desktop\n' > "$config/mimeapps.list"
     export XDG_CONFIG_HOME="$config" XDG_DATA_HOME="$data"
     # The system roots stay on the path: the shared mime database names the kind, and dropping it
     # would leave the eyebrow reading "text/plain" instead of the type's own name.
@@ -69,7 +69,7 @@ case_openwithdesign() (
     printf 'a note with real bytes in it\n' > "$listing/notes.txt"
     seed_ui_state "$state" '{"view":"list","keys":"default","preview":{"column":false,"thumbnails":"off"},"menu":{"hidden":[]}}'
     mime_before=$(stat -c %Y "$config/mimeapps.list")
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     launch "$listing"
     wait_listing 1
 
@@ -83,7 +83,7 @@ case_openwithdesign() (
         || fail "openwith: the flyout is ${numbers[6]} wide, the menu is ${numbers[2]}"
     (( numbers[4] == numbers[0] + numbers[2] )) \
         || fail "openwith: the flyout starts at ${numbers[4]}, not flush at $(( numbers[0] + numbers[2] ))"
-    menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[]][0] | .id == "zzflea-openwith.desktop" and .hint == "default"' \
+    menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[]][0] | .id == "zzbachy-openwith.desktop" and .hint == "default"' \
         'the desktop default leads the flyout and says so'
     menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[]] | (.[-2].separator == true) and (.[-1].glyph == "app-window")' \
         'the tail row sits under its own separator with the app-window glyph'
@@ -92,7 +92,7 @@ case_openwithdesign() (
     # The fixture names a mimetype icon on purpose, which is exactly what that index does not hold.
     menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[] | .icon // empty] | any(startswith("/"))' \
         "an entry the app icon index places arrives as a file"
-    menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[] | select(.id == "zzflea-openwith.desktop")][0].icon == "text-x-generic"' \
+    menus_expect menuState '[.entries[] | select(.action == "openWith") | .submenu[] | select(.id == "zzbachy-openwith.desktop")][0].icon == "text-x-generic"' \
         "a name that index cannot place is left for the themed lookup"
     shot openwith-flyout
     # Two: the first closes the flyout, the second the menu holding it open behind it.
@@ -105,7 +105,7 @@ case_openwithdesign() (
     menus_expect openWithState '.kind == "Plain text document" and .name == "notes.txt"' 'the card names the file and its kind'
     menus_expect openWithState '[.rows[] | select(.eyebrow) | .eyebrow] == ["Registered for Plain text document", "All applications"]' \
         'both groups draw under their own eyebrow'
-    menus_expect openWithState '.rows[1].id == "zzflea-openwith.desktop" and .rows[1].isDefault' 'the registered group leads with the default'
+    menus_expect openWithState '.rows[1].id == "zzbachy-openwith.desktop" and .rows[1].isDefault' 'the registered group leads with the default'
     # Arithmetic on live tokens, never a pixel count: the box's own text size decides the row, and
     # a literal here passed at base-size 14 and failed at 20 without anything being wrong.
     menus_expect openWithState '(.listRect | split(" ")[3] | tonumber) == (7 * .rowHeight + 2 * .eyebrowHeight)' \
@@ -114,8 +114,8 @@ case_openwithdesign() (
     shot openwith-dialog
 
     # Rule 5: the search filters both groups, and a group that matches nothing takes its eyebrow with it.
-    openwith_search Zzflea
-    menus_expect openWithState '[.rows[] | .label // .eyebrow] == ["Registered for Plain text document", "Zzflea Fixture", "All applications", "Zzflea Fixture"]' \
+    openwith_search Zzbachy
+    menus_expect openWithState '[.rows[] | .label // .eyebrow] == ["Registered for Plain text document", "Zzbachy Fixture", "All applications", "Zzbachy Fixture"]' \
         'the search filters both groups and keeps both eyebrows'
     openwith_clear_search
     openwith_search zzqq
@@ -129,11 +129,11 @@ case_openwithdesign() (
     # Rule 7: Space toggles the always box from an empty search line, and the write lands once.
     key -k space >/dev/null
     menus_expect openWithState '.always' 'Space toggles the always box'
-    openwith_search Zzflea
-    menus_expect openWithState '.cursor == 0 and .rows[1].id == "zzflea-openwith.desktop"' 'the cursor holds the only match'
+    openwith_search Zzbachy
+    menus_expect openWithState '.cursor == 0 and .rows[1].id == "zzbachy-openwith.desktop"' 'the cursor holds the only match'
     key -k Return >/dev/null
     menus_expect openWithState '.opened | not' 'Open closes the card'
-    grep -q '^text/plain=zzflea-openwith.desktop' "$config/mimeapps.list" \
+    grep -q '^text/plain=zzbachy-openwith.desktop' "$config/mimeapps.list" \
         || fail "openwith: the default was not written: $(cat "$config/mimeapps.list")"
     [[ "$(stat -c %Y "$config/mimeapps.list")" != "$mime_before" ]] \
         || fail 'openwith: mimeapps.list was never rewritten'

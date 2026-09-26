@@ -1,4 +1,4 @@
-# The one key table. tools/flea-keymap-gen turns it into ui/js/Keymap.js, which is generated.
+# The one key table. tools/bachy-keymap-gen turns it into ui/js/Keymap.js, which is generated.
 
 # Control-modified keys are checked first, so plain d can mean cut while ctrl-d pages.
 [[ctrl]]
@@ -55,7 +55,7 @@ action = "sidebar"
 key = "L"
 action = "pathBar"
 
-# Opens the default terminal in the directory being shown, through flea --terminal
+# Opens the default terminal in the directory being shown, through bachy --terminal
 # (xdg-terminal-exec --dir=). Ctrl+T is unbound elsewhere here, and bare t below is tabNew.
 [[ctrl]]
 key = "T"
@@ -287,7 +287,7 @@ key = "Up"
 action = "cursorUp"
 
 # Issue 28: the full-size keyboard's own four. Every one names an action the vim keys already carry,
-# so ui/js/Focus.js takes them for free and tools/flea-acceptance derives each as its own driven
+# so ui/js/Focus.js takes them for free and tools/bachy-acceptance derives each as its own driven
 # item; Home and End are g and G, the page pair is Ctrl+U and Ctrl+D half a screen each, and the
 # curated sheet below draws none of those eight, so all four of cursorFirst, cursorLast, pageUp and
 # pageDown have no row on it.
@@ -711,12 +711,12 @@ keys = "?"
 action = "keymapSheet"
 label = "keys"
 
-# The pointer contract, the mouse's half of this table. tools/flea-keymap-gen turns it into
+# The pointer contract, the mouse's half of this table. tools/bachy-keymap-gen turns it into
 # Keymap.POINTER and tests/js/tap.js drives ui/js/Tap.js against every listing and neighbour row, so
 # a click cannot change meaning without this file saying so and this file cannot advertise a click
 # the code does not make.
 #
-# The effect field is "does" and not "action" on purpose. tools/flea-acceptance derives its whole key
+# The effect field is "does" and not "action" on purpose. tools/bachy-acceptance derives its whole key
 # checklist from every 'action = ' line in this file, without scoping to a table, so an action= here
 # would put a key on that checklist that nobody can press. Do not rename it back.
 #

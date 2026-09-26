@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Keymap.js" as Keymap
 import "js/PreviewKeys.js" as PreviewKeys
 
@@ -96,7 +96,7 @@ Item {
             opacity: 0.12
         }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             id: kindMark
             anchors.left: parent.left
             anchors.leftMargin: Theme.spacing.rowPaddingX
@@ -134,7 +134,7 @@ Item {
             visible: root.pageCount > 0
             spacing: Theme.spacing.gap
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: previous
                 glyph: "chevron-left"
@@ -158,7 +158,7 @@ Item {
                 textFormat: Text.PlainText
             }
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: next
                 glyph: "chevron-right"
@@ -179,7 +179,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: Theme.spacing.gap
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: zoomOut
                 glyph: "minus"
@@ -190,7 +190,7 @@ Item {
                 onActivated: root.zoomBy(-1)
             }
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: zoomIn
                 glyph: "plus"
@@ -201,7 +201,7 @@ Item {
                 onActivated: root.zoomBy(1)
             }
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: expand
                 glyph: "maximize"
@@ -212,7 +212,7 @@ Item {
                 onActivated: root.toggleExpand()
             }
 
-            Flea.ChromeButton {
+            Bachy.ChromeButton {
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 id: close
                 glyph: "x"
@@ -236,12 +236,12 @@ Item {
         contentHeight: height * root.zoom
         boundsBehavior: Flickable.StopAtBounds
 
-        Flea.FastScrollHandler {
+        Bachy.FastScrollHandler {
             parent: pageFlick
             flickable: pageFlick
         }
 
-        Flea.ViewportScrollBars {
+        Bachy.ViewportScrollBars {
             parent: pageFlick
             flickable: pageFlick
         }
@@ -251,7 +251,7 @@ Item {
             height: pageFlick.contentHeight
             color: Theme.color.background
 
-            Flea.PreviewPdf {
+            Bachy.PreviewPdf {
                 id: pdf
                 anchors.fill: parent
                 anchors.margins: 2 * Theme.spacing.rowPaddingX
@@ -269,7 +269,7 @@ Item {
         spacing: Theme.spacing.gap
         visible: root.failed
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.horizontalCenter: parent.horizontalCenter
             width: Theme.iconSize
             height: Theme.iconSize

@@ -1,5 +1,5 @@
 // gio trash is the freedesktop trash this box already shares with every GTK app; nothing about the spec is written here, only an argv and a result.
-use crate::error::FleaError;
+use crate::error::BachyError;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -59,7 +59,7 @@ pub fn list() -> Vec<Entry> {
 pub fn trash(paths: &[PathBuf]) -> (Vec<Entry>, usize) {
     match trash_checked(paths, None) {
         Ok(result) => result,
-        Err(error) => { eprintln!("flea: {}", error); (Vec::new(), paths.len()) }
+        Err(error) => { eprintln!("bachy: {}", error); (Vec::new(), paths.len()) }
     }
 }
 
@@ -109,7 +109,7 @@ fn newest_entry_for(before: &[Entry], after: &[Entry], path: &Path) -> Option<En
         .cloned()
 }
 
-pub fn restore(entry: &Entry) -> Result<(), FleaError> {
+pub fn restore(entry: &Entry) -> Result<(), BachyError> {
     if entry.uri.is_empty() {
         return Err(err("this item was trashed without a trash entry, so it cannot be restored"));
     }
@@ -123,8 +123,8 @@ pub fn restore(entry: &Entry) -> Result<(), FleaError> {
     }
 }
 
-fn err(msg: &str) -> FleaError {
-    FleaError { where_: "undo".to_string(), path: String::new(), msg: msg.to_string() }
+fn err(msg: &str) -> BachyError {
+    BachyError { where_: "undo".to_string(), path: String::new(), msg: msg.to_string() }
 }
 
 #[cfg(test)]
@@ -135,7 +135,7 @@ mod tests {
     // failure, so it never becomes a journal step that undo cannot reverse. tests/ops.sh drives the pair.
     #[test]
     fn paths_that_are_already_gone_are_failures_rather_than_trashed() {
-        let gone = vec![PathBuf::from("/nonexistent/flea-88-a.txt"), PathBuf::from("/nonexistent/flea-88-b.txt")];
+        let gone = vec![PathBuf::from("/nonexistent/bachy-88-a.txt"), PathBuf::from("/nonexistent/bachy-88-b.txt")];
         let (entries, failed) = trash_checked(&gone, None).expect("a batch of missing paths is not an error");
         assert!(entries.is_empty(), "nothing was trashed, so nothing is journaled");
         assert_eq!(failed, 2, "both are counted as failures rather than as trashed");

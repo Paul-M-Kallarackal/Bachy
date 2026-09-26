@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Standalone native TUI proof; owns flea-display.lock and preserves its marked /tmp evidence root.
+# Standalone native TUI proof; owns bachy-display.lock and preserves its marked /tmp evidence root.
 set -euo pipefail
 exec python3 - "$0" "$@" <<'PY'
 import fcntl
@@ -39,7 +39,7 @@ def command(args, **options):
 
 def guard(root, path):
     root, path = Path(root), Path(path)
-    if not root.is_absolute() or not path.is_absolute() or not (root / ".flea-test-sandbox").is_file():
+    if not root.is_absolute() or not path.is_absolute() or not (root / ".bachy-test-sandbox").is_file():
         raise RuntimeError("TUI fixture requires absolute paths and its own marker")
     path = path.resolve()
     if not path.is_relative_to(root.resolve()) or path == root.resolve():
@@ -191,9 +191,9 @@ def product_environment(case):
     for name, directory in [("XDG_STATE_HOME", "state"), ("XDG_CONFIG_HOME", "config"),
                             ("XDG_DATA_HOME", "data"), ("XDG_CACHE_HOME", "cache")]:
         environment[name] = str(guard(case, case / directory))
-    if "FLEA_TUI_PROVIDER_BIN" in environment:
+    if "BACHY_TUI_PROVIDER_BIN" in environment:
         expected = str(guard(case, case / "providers/bin"))
-        if environment["FLEA_TUI_PROVIDER_BIN"] != expected:
+        if environment["BACHY_TUI_PROVIDER_BIN"] != expected:
             raise RuntimeError("provider PATH does not belong to this native case")
         environment["PATH"] = expected
         environment["HOME"] = str(guard(case, case / "home"))
@@ -216,8 +216,8 @@ def child(case, binary):
 
 
 def provider_self_check():
-    case = Path(tempfile.mkdtemp(prefix="flea-tui-provider-check.", dir="/tmp")).resolve()
-    (case / ".flea-test-sandbox").write_text("Flea provider helper self-check\n")
+    case = Path(tempfile.mkdtemp(prefix="bachy-tui-provider-check.", dir="/tmp")).resolve()
+    (case / ".bachy-test-sandbox").write_text("Bachy provider helper self-check\n")
     for directory in ("listing", "state", "config", "data", "cache", "fallback"):
         guard(case, case / directory).mkdir()
     source = guard(case, case / "listing/source.txt")
@@ -231,7 +231,7 @@ def provider_self_check():
     before = dict(os.environ)
     try:
         os.environ["PATH"] = str(fallback.parent) + os.pathsep + before["PATH"]
-        os.environ["FLEA_TUI_PROVIDER_BIN"] = binary_path
+        os.environ["BACHY_TUI_PROVIDER_BIN"] = binary_path
         environment = product_environment(case)
     finally:
         os.environ.clear()
@@ -271,22 +271,22 @@ class Native:
         self.preset, self.terminal = preset, terminal
         self.case = guard(root, root / (terminal + "-" + preset))
         self.case.mkdir()
-        (self.case / ".flea-test-sandbox").write_text("Flea TUI native fixture\n")
-        self.title = "flea-tui-" + root.name + "-" + self.case.name
+        (self.case / ".bachy-test-sandbox").write_text("Bachy TUI native fixture\n")
+        self.title = "bachy-tui-" + root.name + "-" + self.case.name
         self.address = None
         self.product_pid = None
         self.checks = 0
         self.undriven = []
         self.separator_anchors = {}
         self.environment = os.environ.copy()
-        self.environment["FLEA_TUI_TEST_CASE"] = str(self.case)
+        self.environment["BACHY_TUI_TEST_CASE"] = str(self.case)
         self.log = open(self.case / "commands.log", "xb", buffering=0)
-        for directory in ["listing/amber", "listing/bronze", "state/flea", "config", "data", "cache", "evidence"]:
+        for directory in ["listing/amber", "listing/bronze", "state/bachy", "config", "data", "cache", "evidence"]:
             guard(self.case, self.case / directory).mkdir(parents=True, exist_ok=True)
         for name in ["charlie.txt", "delta-needleproof.txt", "echo.txt", ".hidden-proof"]:
             guard(self.case, self.case / "listing" / name).write_text(name + "\n")
         (self.case / "listing/amber/nested-proof.txt").write_text("native navigation proof\n")
-        (self.case / "state/flea/ui.json").write_text(json.dumps({"keys": preset, "hidden": False,
+        (self.case / "state/bachy/ui.json").write_text(json.dumps({"keys": preset, "hidden": False,
             "sort": {"key": "name", "reverse": False}, "preview": {"loadOn": "manual", "column": True}}))
         (self.case / "config/xdg-terminals.list").write_text(terminal + ".desktop\n")
 
@@ -303,7 +303,7 @@ class Native:
         try:
             process = Path("/proc") / str(pid)
             values = (process / "environ").read_bytes().split(b"\0")
-            return process.stat().st_uid == os.getuid() and ("FLEA_TUI_TEST_CASE=" + str(self.case)).encode() in values
+            return process.stat().st_uid == os.getuid() and ("BACHY_TUI_TEST_CASE=" + str(self.case)).encode() in values
         except (FileNotFoundError, PermissionError, ProcessLookupError):
             return False
 
@@ -341,7 +341,7 @@ class Native:
         self.identity()
         process = Path("/proc") / str(self.product_pid)
         descriptors = {str(number): os.readlink(process / "fd" / str(number)) for number in range(3)}
-        # /proc/PID/stat: 2970648 (flea) R 2970620 2970620 2970620 34817 ...; tty_nr is field seven.
+        # /proc/PID/stat: 2970648 (bachy) R 2970620 2970620 2970620 34817 ...; tty_nr is field seven.
         tty_number = int((process / "stat").read_text().rsplit(") ", 1)[1].split()[4])
         diagnostics = {"product_pid": self.product_pid, "descriptors": descriptors, "controlling_tty": tty_number}
         if diagnostics != getattr(self, "terminal_diagnostics", None):
@@ -544,7 +544,7 @@ class Native:
                 if (row := json.loads(line))["name"] == name]
 
     def providers(self):
-        self.environment["FLEA_TUI_PROVIDER_BIN"] = provider_fixture(self.case)
+        self.environment["BACHY_TUI_PROVIDER_BIN"] = provider_fixture(self.case)
         self.provider_gate = os.open(guard(self.case, self.case / "providers/status-release"), os.O_RDWR | os.O_NONBLOCK)
         source = guard(self.case, self.case / "listing/charlie.txt")
         original = source.read_bytes()
@@ -585,7 +585,7 @@ class Native:
         status("initial")
         self.start()
         self.snapshot("providers-listing", lambda text: "5 items" in text and "charlie.txt" in text)
-        expected = {"PATH": self.environment["FLEA_TUI_PROVIDER_BIN"], "HOME": str(self.case / "home"),
+        expected = {"PATH": self.environment["BACHY_TUI_PROVIDER_BIN"], "HOME": str(self.case / "home"),
                     **{name: str(self.case / directory) for name, directory in [("XDG_STATE_HOME", "state"),
                        ("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_CACHE_HOME", "cache")]}}
         actual = dict(row.decode().split("=", 1) for row in Path(f"/proc/{self.product_pid}/environ").read_bytes().split(b"\0") if b"=" in row)
@@ -805,13 +805,13 @@ class Native:
             self.key("s")
             self.snapshot("sort-" + sort, lambda text: "\u00b7 " + sort + " \u25b4" in text.splitlines()[0]
                           and self.cursor_is("charlie.txt") and "Could not save settings" not in text)
-            self.wait("sort-" + sort + "-persisted", lambda: json.loads((self.case / "state/flea/ui.json").read_text())["sort"]
+            self.wait("sort-" + sort + "-persisted", lambda: json.loads((self.case / "state/bachy/ui.json").read_text())["sort"]
                       == {"key": sort, "reverse": False})
         for label, glyph in [("reverse", "\u25be"), ("forward", "\u25b4")]:
             self.chord("S", "shift")
             self.snapshot("sort-" + label, lambda text: "name " + glyph in text.splitlines()[0]
                           and self.cursor_is("charlie.txt") and "Could not save settings" not in text)
-            self.wait("sort-" + label + "-persisted", lambda: json.loads((self.case / "state/flea/ui.json").read_text())["sort"]
+            self.wait("sort-" + label + "-persisted", lambda: json.loads((self.case / "state/bachy/ui.json").read_text())["sort"]
                       == {"key": "name", "reverse": label == "reverse"})
         self.key(".")
         self.snapshot("hidden-shown", lambda text: ".hidden-proof" in text and "6 items" in text and self.cursor_is("charlie.txt"))
@@ -1526,9 +1526,9 @@ def main():
         raise SystemExit(child(ARGS[1], ARGS[2]))
     providers = bool(ARGS and ARGS[0] == "--providers")
     presets = (ARGS[1:] if providers else ARGS) or list(PRESETS)
-    terminals = [os.environ["FLEA_TUI_TERMINAL"]] if "FLEA_TUI_TERMINAL" in os.environ else list(TERMINALS)
+    terminals = [os.environ["BACHY_TUI_TERMINAL"]] if "BACHY_TUI_TERMINAL" in os.environ else list(TERMINALS)
     if len(set(presets)) != len(presets) or any(preset not in PRESETS for preset in presets) or any(terminal not in TERMINALS for terminal in terminals):
-        raise RuntimeError("usage: [FLEA_TUI_TERMINAL=foot|kitty] tests/ui-tui.sh [--providers] [default|vim|mac|windows ...]")
+        raise RuntimeError("usage: [BACHY_TUI_TERMINAL=foot|kitty] tests/ui-tui.sh [--providers] [default|vim|mac|windows ...]")
     os.environ["PATH"] = str(Path.home() / ".local/bin") + os.pathsep + os.environ["PATH"]
     helpers = ["omarchy-drive", "xdg-terminal-exec", "script", "stty", "hyprctl", "magick", *terminals]
     if not providers:
@@ -1537,10 +1537,10 @@ def main():
         if not shutil.which(helper):
             raise RuntimeError(f"native TUI prerequisite missing: {helper}")
     repo = SCRIPT.parent.parent
-    binary = Path(os.environ.get("FLEA_BIN", repo / "target/release/flea")).resolve(strict=True)
+    binary = Path(os.environ.get("BACHY_BIN", repo / "target/release/bachy")).resolve(strict=True)
     head = command(["git", "-C", repo, "rev-parse", "HEAD"]).decode().strip()
-    if os.environ.get("FLEA_EXPECTED_SHA") != head:
-        raise RuntimeError("FLEA_EXPECTED_SHA must identify the current candidate before native testing")
+    if os.environ.get("BACHY_EXPECTED_SHA") != head:
+        raise RuntimeError("BACHY_EXPECTED_SHA must identify the current candidate before native testing")
     inputs = list((repo / "src").rglob("*.rs")) + [repo / name for name in ["Cargo.toml", "Cargo.lock", "keys.toml"]]
     if (repo / "build.rs").is_file():
         inputs.append(repo / "build.rs")
@@ -1559,10 +1559,10 @@ def main():
             or values["QT_LINUX_ACCESSIBILITY_ALWAYS_ON"] != "1" or not re.fullmatch(r"wayland-[0-9]+", values["WAYLAND_DISPLAY"]):
         raise RuntimeError("native TUI session identity is incomplete or unexpected")
     os.environ.update(values)
-    with open(Path(values["XDG_RUNTIME_DIR"]) / "flea-display.lock", "a") as lock:
+    with open(Path(values["XDG_RUNTIME_DIR"]) / "bachy-display.lock", "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        root = Path(tempfile.mkdtemp(prefix="flea-tui-native.", dir="/tmp"))
-        (root / ".flea-test-sandbox").write_text("Flea TUI native evidence\n")
+        root = Path(tempfile.mkdtemp(prefix="bachy-tui-native.", dir="/tmp"))
+        (root / ".bachy-test-sandbox").write_text("Bachy TUI native evidence\n")
         print(f"TUI_NATIVE_ROOT={root}", flush=True)
         (root / "candidate.json").write_text(json.dumps({"head": head, "binary": str(binary),
             "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(), "session": values,

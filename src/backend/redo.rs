@@ -2,7 +2,7 @@
 use super::copyfile::{copy_any, move_any, Progress};
 use super::opsreq::{OpMsg, PROGRESS_EVERY};
 use super::undo::{self, Entry, ItemIdentity, Step};
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,8 +20,8 @@ pub(crate) struct Replay {
     steps: Vec<ReplayStep>,
 }
 
-fn error(path: &Path, message: &str) -> FleaError {
-    FleaError { where_: "redo".into(), path: path.to_string_lossy().into(), msg: message.into() }
+fn error(path: &Path, message: &str) -> BachyError {
+    BachyError { where_: "redo".into(), path: path.to_string_lossy().into(), msg: message.into() }
 }
 
 fn source(step: &Step) -> Option<&Path> {
@@ -41,7 +41,7 @@ fn destination(step: &Step) -> Option<&Path> {
 }
 
 impl Replay {
-    pub fn capture(entry: Entry) -> Result<Self, FleaError> {
+    pub fn capture(entry: Entry) -> Result<Self, BachyError> {
         let mut steps = Vec::new();
         for step in entry.steps {
             if matches!(step, Step::Created { .. }) {
@@ -54,7 +54,7 @@ impl Replay {
             let parent = destination(&step).map(|path| {
                 let parent = path.parent().filter(|p| p.is_absolute())
                     .ok_or_else(|| error(path, "the destination has no absolute parent"))?;
-                Ok::<_, FleaError>((parent.to_path_buf(), ItemIdentity::inspect(parent)?))
+                Ok::<_, BachyError>((parent.to_path_buf(), ItemIdentity::inspect(parent)?))
             }).transpose()?;
             steps.push(ReplayStep { step, input, parent });
         }
@@ -73,7 +73,7 @@ impl Replay {
             saved.step = entry.steps.remove(0);
         }
     }
-    fn check(saved: &ReplayStep, vacated: bool) -> Result<(), FleaError> {
+    fn check(saved: &ReplayStep, vacated: bool) -> Result<(), BachyError> {
         if let (Some(path), Some(identity)) = (source(&saved.step), &saved.input) {
             if !path.is_absolute() || ItemIdentity::inspect(path)? != *identity {
                 return Err(error(path, "the original item changed or was replaced; redo left it in place"));
@@ -94,7 +94,7 @@ impl Replay {
         Ok(())
     }
     pub fn run(self, id: usize, cancel: &AtomicBool, tx: &Sender<OpMsg>)
-        -> (Entry, Vec<(ItemIdentity, ItemIdentity)>, Result<String, FleaError>) {
+        -> (Entry, Vec<(ItemIdentity, ItemIdentity)>, Result<String, BachyError>) {
         let mut entry = Entry { op: self.op.clone(), steps: Vec::new() };
         let mut changes = Vec::new();
         let result = (|| {
@@ -128,7 +128,7 @@ impl Replay {
     }
 }
 
-fn apply(saved: &ReplayStep, id: usize, index: usize, cancel: &AtomicBool, tx: &Sender<OpMsg>, steps: &mut Vec<Step>) -> Result<(), FleaError> {
+fn apply(saved: &ReplayStep, id: usize, index: usize, cancel: &AtomicBool, tx: &Sender<OpMsg>, steps: &mut Vec<Step>) -> Result<(), BachyError> {
     match &saved.step {
         Step::Copied { from, to, .. } | Step::Moved { from, to, .. } => {
             let identity = ItemIdentity::inspect(from)?;
@@ -184,7 +184,7 @@ mod tests {
         for path in paths {
             assert!(!path.as_os_str().is_empty() && path.is_absolute() && path.starts_with(sandbox.path()));
         }
-        assert!(sandbox.path().join(".flea-test-sandbox").is_file());
+        assert!(sandbox.path().join(".bachy-test-sandbox").is_file());
     }
     // Before Linux 6.13 ctime ticks every few milliseconds, so the rewrite repeats until the filesystem records it.
     fn rewrite_until_recorded(path: &Path, payload: &str) {
@@ -199,7 +199,7 @@ mod tests {
         }
         panic!("{} kept its ctime across {} rewrites", path.display(), TRIES);
     }
-    fn redo(journal: &mut Journal) -> Result<String, FleaError> {
+    fn redo(journal: &mut Journal) -> Result<String, BachyError> {
         let (tx, _rx) = channel();
         journal.redo(1, &AtomicBool::new(false), &tx)
     }

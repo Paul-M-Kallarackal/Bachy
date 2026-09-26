@@ -1,4 +1,4 @@
-//@ pragma ShellId flea-preview-decode-test
+//@ pragma ShellId bachy-preview-decode-test
 
 import Quickshell
 import QtQuick

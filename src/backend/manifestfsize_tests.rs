@@ -6,7 +6,7 @@ use crate::backend::copymanifest;
 use std::sync::atomic::AtomicBool;
 
 // RLIMIT_FSIZE is process-wide, so each capped test below re-executes itself in a child where the cap harms only it.
-const FSIZE_CHILD: &str = "FLEA_FSIZE_CHILD";
+const FSIZE_CHILD: &str = "BACHY_FSIZE_CHILD";
 fn child_or_spawn(test: &str) -> bool {
     if std::env::var_os(FSIZE_CHILD).is_some() {
         return true;

@@ -59,7 +59,7 @@ convert_backend_death() {
         # started simply cannot start now.
         expected='(.error | contains("conversion outcome unknown") and contains("Check the output"))'
     else
-        expected='(.error | contains("Backend stopped") and contains("reopen Flea to convert"))'
+        expected='(.error | contains("Backend stopped") and contains("reopen Bachy to convert"))'
     fi
     request=$(ipc convertState | jq -er .requestId)
     permissions_backend_owned "$pid" || fail "convert: backend identity changed before the failure signal"
@@ -89,7 +89,7 @@ case_convertdesign() (
     local -a pids
     sandbox_require "$fixture_root"
     menu_box=$(mktemp -d "$fixture_root/convert-design.XXXXXXXX") || fail "convert: fixture creation failed"
-    printf 'native Convert fixture\n' > "$menu_box/.flea-test-sandbox"
+    printf 'native Convert fixture\n' > "$menu_box/.bachy-test-sandbox"
     [[ "$menu_box" == "$(realpath -e "$menu_box")" ]] || fail "convert: fixture is not canonical"
     for path in state config cache data pictures; do menus_guard "$menu_box/$path"; mkdir "$menu_box/$path"; done
     permissions_listing="$menu_box/pictures"
@@ -97,12 +97,12 @@ case_convertdesign() (
     jpeg="$permissions_listing/photo (converted).jpg"
     webp="$permissions_listing/photo (converted).webp"
     menus_guard "$source"
-    magick -size 32x32 xc:steelblue -set comment 'Flea metadata fixture' "$source" || fail "convert: real image fixture creation failed"
+    magick -size 32x32 xc:steelblue -set comment 'Bachy metadata fixture' "$source" || fail "convert: real image fixture creation failed"
     contents=$(sha256sum < "$source")
     menus_guard "$jpeg"
     printf 'original JPEG collision\n' > "$jpeg"
     export XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config" XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail "convert: fixture settings failed"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null || fail "convert: fixture settings failed"
     launch "$permissions_listing"
     wait_listing 2
     permissions_viewport
@@ -161,8 +161,8 @@ case_convertdesign() (
     menus_expect convertState 'any(.controls[]; .name == "Convert" and .focused)' 'reverse Tab remains within the dialog'
     shot convert-ready
 
-    ui_pid=$(flea_pid)
-    mapfile -t pids < <(pgrep -P "$ui_pid" -x flea)
+    ui_pid=$(bachy_pid)
+    mapfile -t pids < <(pgrep -P "$ui_pid" -x bachy)
     [[ "${#pids[@]}" == 1 ]] || fail "convert: pending test needs one owned backend child"
     pid="${pids[0]}"
     convert_stopped="$pid"
@@ -221,6 +221,6 @@ case_convertdesign() (
     menus_expect convertState '.opened | not' 'small viewport cancels through the actual focused control'
     convert_backend_death idle
     convert_backend_death pending
-    kill_flea
+    kill_bachy
     printf 'CONVERT_DESIGN native_checks=%s collision=ok selection=ok keyboard=ok pending=ok late_collision=ok success=ok metadata=ok backend_death=ok source_preserved=ok\n' "$menus_checks"
 )

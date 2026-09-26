@@ -230,9 +230,9 @@ function run(check) {
     check("and the flag is one shot, so the next rename reveals again",
           Nav.renameRefreshTarget(clicked, "/d/new.txt"), "/d/new.txt")
 
-    // The operator's 0.1.4 ruling: Enter on an archive opens Flea's own view rather than handing the
+    // The operator's 0.1.4 ruling: Enter on an archive opens Bachy's own view rather than handing the
     // file to this box's default for every archive type it can name, which is Nautilus.
-    check("Enter on an archive opens Flea's own preview and launches nothing",
+    check("Enter on an archive opens Bachy's own preview and launches nothing",
           entered({ n: "backup.zip", i: "package-x-generic", s: 4096 }),
           "|/home/gm/backup.zip package-x-generic 4096|")
     // The two answers that must not move, or the archive route would be a rewrite rather than a route.

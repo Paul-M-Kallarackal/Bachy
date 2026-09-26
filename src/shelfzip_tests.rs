@@ -9,7 +9,7 @@ fn the_writability_probe_leaves_nothing_behind_and_refuses_a_directory_that_is_n
     let left: Vec<String> = std::fs::read_dir(dir.path())
         .unwrap()
         .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().to_string()))
-        .filter(|name| !name.starts_with(".flea-test-sandbox"))
+        .filter(|name| !name.starts_with(".bachy-test-sandbox"))
         .collect();
     assert!(left.is_empty(), "the probe cleans up after itself, found {:?}", left);
     assert!(writable(&dir.path().join("no-such-directory")).is_err(), "and a directory that is not there is not writable");

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-// An empty FLEA_UI would resolve the entry against the working directory, so it is no candidate.
+// An empty BACHY_UI would resolve the entry against the working directory, so it is no candidate.
 fn env_ui_dir() -> Option<PathBuf> {
-    let value = std::env::var("FLEA_UI").ok()?;
+    let value = std::env::var("BACHY_UI").ok()?;
     if value.is_empty() {
         return None;
     }
@@ -15,14 +15,14 @@ pub const ENTRY: &str = "boot/shell.qml";
 // The chooser's own entry, beside it; see AGENTS.md "The first window".
 pub const PICKER_ENTRY: &str = "boot/picker.qml";
 
-// The UI ships as data, so it is found the same way FLEA_BIN finds the binary.
+// The UI ships as data, so it is found the same way BACHY_BIN finds the binary.
 pub fn ui_dir() -> Option<PathBuf> {
     if let Some(p) = env_ui_dir() {
         if p.join(ENTRY).is_file() {
             return Some(p);
         }
     }
-    let packaged = PathBuf::from("/usr/share/flea/ui");
+    let packaged = PathBuf::from("/usr/share/bachy/ui");
     if packaged.join(ENTRY).is_file() {
         return Some(packaged);
     }
@@ -73,14 +73,14 @@ fn hex_digit(b: u8) -> Option<u8> {
 mod tests {
     use super::*;
 
-    // Both cases sit in one test because FLEA_UI is process wide and cargo runs tests in threads.
+    // Both cases sit in one test because BACHY_UI is process wide and cargo runs tests in threads.
     #[test]
-    fn an_empty_flea_ui_is_not_a_candidate() {
-        std::env::set_var("FLEA_UI", "");
+    fn an_empty_bachy_ui_is_not_a_candidate() {
+        std::env::set_var("BACHY_UI", "");
         assert_eq!(env_ui_dir(), None);
-        std::env::set_var("FLEA_UI", "/usr/share/flea/ui");
-        assert_eq!(env_ui_dir(), Some(PathBuf::from("/usr/share/flea/ui")));
-        std::env::remove_var("FLEA_UI");
+        std::env::set_var("BACHY_UI", "/usr/share/bachy/ui");
+        assert_eq!(env_ui_dir(), Some(PathBuf::from("/usr/share/bachy/ui")));
+        std::env::remove_var("BACHY_UI");
     }
 
     #[test]

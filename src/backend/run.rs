@@ -25,7 +25,7 @@ use crate::backend::thumbreq::{cancel_row, forget_one, report_done, thumb_rows};
 use crate::backend::thumbs::{Done, Pool};
 use crate::backend::thumbwrite::sweep_own_temps;
 use crate::backend::watch::{changed_line, Watch};
-use crate::error::FleaError;
+use crate::error::BachyError;
 use crate::heap;
 use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -62,7 +62,7 @@ pub fn run() -> i32 {
     let cache = Cache::new();
     // Every thumbnail job fails closed without these two, so the reason is said once here rather than never; see AGENTS.md "Thumbnail sandbox".
     if !sandbox::available() {
-        eprintln!("flea: thumbnails are disabled, bwrap or prlimit is not on PATH");
+        eprintln!("bachy: thumbnails are disabled, bwrap or prlimit is not on PATH");
     }
     // The workers hold senders too, so no exit can come from a disconnect and every exit is an explicit event; see AGENTS.md "Thumbnail requests".
     spawn_forwarder(done, tx.clone());
@@ -171,14 +171,14 @@ fn handle_line(
                         Ok(timing) => timing,
                         Err(msg) => {
                             watch.abandon();
-                            say(out, &error_line(&FleaError { where_: "sort".into(), path: path.clone(), msg: msg.into() }));
+                            say(out, &error_line(&BachyError { where_: "sort".into(), path: path.clone(), msg: msg.into() }));
                             return Control::Continue;
                         }
                     };
                     watch.commit();
                     // Said once per listing, because a folder nobody can watch goes stale in silence.
                     if watch.refused() {
-                        eprintln!("flea: {} will not follow outside changes, inotify refused a watch on it", path);
+                        eprintln!("bachy: {} will not follow outside changes, inotify refused a watch on it", path);
                     }
                     adopt(out, st, pool, tb, &path, l, (read_ms + pass_ms, sort_ms), &sized, first);
                 }
@@ -230,7 +230,7 @@ fn handle_line(
             // A key that names no order is refused by name, so a client's sort mark can only describe the order it got.
             match ordering::request(&mut st.listing, &st.base, &tb.mime, line) {
                 Err(msg) => {
-                    let e = FleaError { where_: "sort".to_string(), path: by.clone(), msg: msg.to_string() };
+                    let e = BachyError { where_: "sort".to_string(), path: by.clone(), msg: msg.to_string() };
                     writeln!(out, "{}", error_line(&e)).ok();
                 }
                 Ok((pass_ms, sort_ms, sized)) => {

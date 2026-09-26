@@ -2,7 +2,7 @@
 .import "../../ui/js/Sort.js" as Sort
 
 function run(check) {
-    // The shape tools/flea-portal writes for an OpenFile with two filters, taken from its request_for().
+    // The shape tools/bachy-portal writes for an OpenFile with two filters, taken from its request_for().
     var asked = JSON.stringify({
         mode: "open", title: "Send to unraid", app: "", accept: "Send", multiple: true,
         directory: false, folder: "/home/gm/Pictures", file: "", name: "", files: [],
@@ -87,7 +87,7 @@ function run(check) {
     check("a subdirectory is still a separator", Picker.validName("sub/child"), false)
     check("the reviewer's own exploit is refused", Picker.validName("../../.config/autostart/pwn.desktop"), false)
     check("an interior NUL truncates the path at the syscall", Picker.validName("nul\0byte"), false)
-    // tools/flea-portal reads current_name verbatim, so a traversal reaches Picker.request() intact
+    // tools/bachy-portal reads current_name verbatim, so a traversal reaches Picker.request() intact
     // and the window has to be the thing that refuses it.
     check("a traversal survives the request unchanged", Picker.request('{"name":"../../pwn"}').name, "../../pwn")
     check("and the request's own name is then refused", Picker.validName(Picker.request('{"name":"../../pwn"}').name), false)

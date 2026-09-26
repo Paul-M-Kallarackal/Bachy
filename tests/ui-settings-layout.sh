@@ -3,19 +3,19 @@ case_settingscompact() {
     local dir="$fixture_root/settingscompact" addr viewport section baseline before scroll last
     local wx wy ww wh cx cy cw ch rx ry
     sandbox_scratch "$dir"
-    mkdir -p "$dir/listing" "$dir/state/flea" "$dir/config"
+    mkdir -p "$dir/listing" "$dir/state/bachy" "$dir/config"
     : > "$dir/listing/proof.txt"
     export XDG_STATE_HOME="$dir/state" XDG_CONFIG_HOME="$dir/config"
-    printf '%s\n' '{"keys":"default","view":"list","display":{"textSize":{"mode":14}}}' > "$dir/state/flea/ui.json"
+    printf '%s\n' '{"keys":"default","view":"list","display":{"textSize":{"mode":14}}}' > "$dir/state/bachy/ui.json"
     launch "$dir/listing"
     wait_listing 1
-    addr=$(hyprctl -j clients | jq -er --argjson pid "$(flea_pid)" '.[] | select(.pid == $pid) | .address')
+    addr=$(hyprctl -j clients | jq -er --argjson pid "$(bachy_pid)" '.[] | select(.pid == $pid) | .address')
     [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || fail "settingscompact: missing owned window"
-    omarchy-drive window float flea >/dev/null
+    omarchy-drive window float bachy >/dev/null
 
     for viewport in 1100x800 800x600 560x400 480x240; do
         hyprctl dispatch "hl.dsp.window.resize({ x = ${viewport%x*}, y = ${viewport#*x}, exact = true, window = \"address:$addr\" })" >/dev/null
-        omarchy-drive window center flea >/dev/null
+        omarchy-drive window center bachy >/dev/null
         settle
         read -r wx wy ww wh < <(window_box) || fail "native window coordinates unavailable"
         [[ "$ww $wh" == "${viewport%x*} ${viewport#*x}" ]] || fail "settingscompact: wrong viewport $ww $wh"
@@ -82,5 +82,5 @@ case_settingscompact() {
         [[ "$(ipc focusView)" == list ]] || fail "settingscompact: close did not restore listing focus"
         printf 'SETTINGS_COMPACT viewport=%s card=%s centered=ok stable=ok columns=ok sections=7 wheel=ok focus=ok reopen=ok\n' "$viewport" "$baseline"
     done
-    kill_flea
+    kill_bachy
 }

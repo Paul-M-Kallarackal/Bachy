@@ -2,10 +2,10 @@
 
 .import "Format.js" as Format
 
-// The portal request tools/flea-portal puts in FLEA_PICKER, and the answer ui/picker.qml writes
+// The portal request tools/bachy-portal puts in BACHY_PICKER, and the answer ui/picker.qml writes
 // back. Everything here is pure so tests/js/picker.js can drive it without a window.
 
-// The portal's own response codes, mirrored from tools/flea-portal: 1 is the user's no, and this
+// The portal's own response codes, mirrored from tools/bachy-portal: 1 is the user's no, and this
 // front end never sends 2, because a window that opened at all can only pick or refuse.
 var RESPONSE_OK = 0
 var RESPONSE_CANCELLED = 1
@@ -15,7 +15,7 @@ var ALL_FILES = "All files"
 // The rail's Recent row is a location and not a directory, so it is named by a token no listing
 // path can equal: every path this window holds is absolute, and this one does not start with "/".
 // SendPicker.html draws it first in the rail and draws this word where the path would be.
-var RECENT = "flea:recent"
+var RECENT = "bachy:recent"
 var RECENT_LABEL = "Recent"
 
 function isRecent(location) {
@@ -54,7 +54,7 @@ function request(text) {
     }
 }
 
-// The caller's own title wins; the fallback says what the window is for rather than naming Flea.
+// The caller's own title wins; the fallback says what the window is for rather than naming Bachy.
 function title(req) {
     if (req.title.length > 0) {
         return req.title
@@ -214,7 +214,7 @@ function uris(list) {
     return out
 }
 
-// What tools/flea-portal reads out of the reply file. A refusal carries no URI at all.
+// What tools/bachy-portal reads out of the reply file. A refusal carries no URI at all.
 function reply(response, list, filterIndex) {
     if (response !== RESPONSE_OK) {
         return JSON.stringify({ response: response })

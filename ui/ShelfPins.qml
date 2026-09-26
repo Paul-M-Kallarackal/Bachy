@@ -5,13 +5,13 @@ import Quickshell.Io
 import "js/ShelfPile.js" as ShelfPile
 
 // SettingsRest rule 4: the pins the Settings panel lists are the shelf's own entries, read from the
-// pile the bar plugin reads and written through the same `flea shelf` calls the card makes, so the
+// pile the bar plugin reads and written through the same `bachy shelf` calls the card makes, so the
 // panel and the card can never disagree about what is pinned.
 QtObject {
     id: root
 
     readonly property string pileFile: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state")
-                                       + "/omarchy/flea-shelf/shelf.json"
+                                       + "/bachy/shelf/shelf.json"
     property var records: []
     property string lastError: ""
 
@@ -95,7 +95,7 @@ QtObject {
 
     function start(args) {
         root.running = args[1]
-        root.writer.command = [Quickshell.env("FLEA_BIN") || "flea"].concat(args)
+        root.writer.command = [Quickshell.env("BACHY_BIN") || "bachy"].concat(args)
         root.writer.running = true
     }
 }

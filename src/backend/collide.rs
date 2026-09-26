@@ -7,7 +7,7 @@ use crate::backend::opsdispatch::Ops;
 use crate::backend::opsreq::{usable_dest, OpMsg, ALREADY_THERE};
 use crate::backend::trash;
 use crate::backend::undo::{ItemIdentity, Step};
-use crate::error::FleaError;
+use crate::error::BachyError;
 use crate::json::{escape, field_str, field_usize};
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
@@ -278,10 +278,10 @@ pub fn already_there(src: &Path, name: &str, dst: &Path, dest_real: &Path) -> bo
 }
 
 // Replace is Trash and then the transfer, journaled as one entry: undo removes the new item, then restores the old.
-pub fn replacing(dst: &Path, steps: &mut Vec<Step>, land: impl FnOnce(&mut Vec<Step>) -> Result<(), FleaError>) -> Result<(), FleaError> {
+pub fn replacing(dst: &Path, steps: &mut Vec<Step>, land: impl FnOnce(&mut Vec<Step>) -> Result<(), BachyError>) -> Result<(), BachyError> {
     let (mut entries, failed) = trash::trash(&[dst.to_path_buf()]);
     if failed != 0 || entries.len() != 1 {
-        return Err(FleaError { where_: "transfer".into(), path: dst.to_string_lossy().into(), msg: TRASH_REFUSED.into() });
+        return Err(BachyError { where_: "transfer".into(), path: dst.to_string_lossy().into(), msg: TRASH_REFUSED.into() });
     }
     let entry = entries.remove(0);
     let at = steps.len();
@@ -294,7 +294,7 @@ pub fn replacing(dst: &Path, steps: &mut Vec<Step>, land: impl FnOnce(&mut Vec<S
 }
 
 // Nothing took the name, a cancel included, so the old item goes straight back instead of waiting on an undo.
-fn put_back(entry: &trash::Entry, dst: &Path, steps: &mut Vec<Step>, at: usize, error: &mut FleaError) {
+fn put_back(entry: &trash::Entry, dst: &Path, steps: &mut Vec<Step>, at: usize, error: &mut BachyError) {
     let vacant = matches!(dst.symlink_metadata(), Err(e) if e.kind() == std::io::ErrorKind::NotFound);
     if !vacant || steps.len() != at + 1 {
         return;

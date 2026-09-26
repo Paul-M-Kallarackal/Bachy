@@ -119,7 +119,7 @@ fn pinning_a_path_the_shelf_is_not_holding_puts_it_on_the_shelf() {
     let (dir, shelf) = shelf("shelfpinnew");
     let one = file(&dir, "one.txt");
     shelf.pin(&[one.clone()], true).unwrap();
-    assert_eq!(shelf.pile(), vec![one.clone()], "Flea's own menu row pins a path the shelf never held");
+    assert_eq!(shelf.pile(), vec![one.clone()], "Bachy's own menu row pins a path the shelf never held");
     shelf.pin(&[one.clone()], false).unwrap();
     assert_eq!(shelf.pile(), vec![one], "unpinning leaves the row on the shelf, loose");
     let text = std::fs::read_to_string(shelf.pile_file()).unwrap();
@@ -166,7 +166,7 @@ fn a_pile_that_cannot_be_parsed_is_never_written_over() {
     assert!(kept.contains("truncated"), "the operator's own file stayed exactly as it was");
 }
 
-// A pinned row whose file was deleted outside Flea is exactly the row that has to be unpinnable.
+// A pinned row whose file was deleted outside Bachy is exactly the row that has to be unpinnable.
 #[test]
 fn a_pin_can_be_taken_off_a_file_that_is_gone() {
     let (dir, shelf) = shelf("shelfghostpin");

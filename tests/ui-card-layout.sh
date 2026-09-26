@@ -63,24 +63,24 @@ case_cardsizes() {
     done
     # Geometry tests never open a file; refuse an accidental opener before it can reach an operator application.
     [[ "$open_handoff" == gio ]] || fail "cardsizes: unsupported file opener $open_handoff"
-    FLEA_CARDSIZE_REAL_OPENER=$(command -v "$open_handoff") || fail "cardsizes: gio is missing"
-    [[ "$FLEA_CARDSIZE_REAL_OPENER" == /* && -x "$FLEA_CARDSIZE_REAL_OPENER" ]] || fail "cardsizes: gio path is invalid"
-    export FLEA_CARDSIZE_REAL_OPENER
-    export FLEA_CARDSIZE_OPENER_RECEIPT="$dir/unexpected-opener"
+    BACHY_CARDSIZE_REAL_OPENER=$(command -v "$open_handoff") || fail "cardsizes: gio is missing"
+    [[ "$BACHY_CARDSIZE_REAL_OPENER" == /* && -x "$BACHY_CARDSIZE_REAL_OPENER" ]] || fail "cardsizes: gio path is invalid"
+    export BACHY_CARDSIZE_REAL_OPENER
+    export BACHY_CARDSIZE_OPENER_RECEIPT="$dir/unexpected-opener"
     cat > "$dir/bin/$open_handoff" <<'OPENER' || fail "cardsizes: opener refusal could not be written"
 #!/usr/bin/env bash
 if [[ "${1:-}" != open ]]; then
-    exec "$FLEA_CARDSIZE_REAL_OPENER" "$@"
+    exec "$BACHY_CARDSIZE_REAL_OPENER" "$@"
 fi
-[[ -n "$FLEA_CARDSIZE_OPENER_RECEIPT" && "$FLEA_CARDSIZE_OPENER_RECEIPT" == /* && -f "${FLEA_CARDSIZE_OPENER_RECEIPT%/*}/.flea-test-sandbox" ]] || exit 64
-printf '%s\n' "$*" > "$FLEA_CARDSIZE_OPENER_RECEIPT"
+[[ -n "$BACHY_CARDSIZE_OPENER_RECEIPT" && "$BACHY_CARDSIZE_OPENER_RECEIPT" == /* && -f "${BACHY_CARDSIZE_OPENER_RECEIPT%/*}/.bachy-test-sandbox" ]] || exit 64
+printf '%s\n' "$*" > "$BACHY_CARDSIZE_OPENER_RECEIPT"
 exit 1
 OPENER
     chmod +x "$dir/bin/$open_handoff" || fail "cardsizes: opener refusal could not be installed"
     export PATH="$dir/bin:$PATH"
     launch "$dir/listing"
     wait_listing 17
-    addr=$(hyprctl clients -j | jq -er --argjson pid "$(flea_pid)" '.[] | select(.pid == $pid) | .address') \
+    addr=$(hyprctl clients -j | jq -er --argjson pid "$(bachy_pid)" '.[] | select(.pid == $pid) | .address') \
         || fail "cardsizes: owned native window is missing"
     [[ "$addr" =~ ^0x[0-9a-fA-F]+$ ]] || fail "cardsizes: invalid native window address"
     box=$(cardsize_window_box) || fail "cardsizes: initial viewport is missing"
@@ -210,8 +210,8 @@ OPENER
         key -M shift -k Tab -m shift >/dev/null || fail "cardsizes: restored rail Shift+Tab failed"
         cardsize_expect focusView list
         cardsize_focus "tab-cycle-$index"
-        [[ ! -e "$FLEA_CARDSIZE_OPENER_RECEIPT" ]] || fail "cardsizes: unexpected file opener was refused"
+        [[ ! -e "$BACHY_CARDSIZE_OPENER_RECEIPT" ]] || fail "cardsizes: unexpected file opener was refused"
         printf 'CARDSIZES viewport=%s network=ok protocols=5 scroll=ok keymap=ok convert=ok menu=ok\n' "$viewport"
     done
-    kill_flea
+    kill_bachy
 }

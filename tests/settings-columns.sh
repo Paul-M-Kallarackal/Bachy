@@ -2,7 +2,7 @@
 # Every settings hint and the Display ruler start on their control's label column; 0.3.4 indented them.
 # Offscreen and with no compositor, so this needs neither the display nor the display lock.
 set -u
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
 if ! command -v qs >/dev/null; then
@@ -10,15 +10,15 @@ if ! command -v qs >/dev/null; then
     exit 1
 fi
 
-test_root="$FIXTURE_ROOT/flea-settings-columns-$$"
+test_root="$FIXTURE_ROOT/bachy-settings-columns-$$"
 sandbox_make "$test_root"
 cleanup() { sandbox_remove "$test_root"; }
 trap cleanup EXIT
 
 mkdir -p "$test_root/config" "$test_root/home" "$test_root/state" "$test_root/runtime" || exit 1
 chmod 700 "$test_root/runtime" || exit 1
-# The probe imports ui/ as Flea, and ui/'s qs.Commons resolves against this root, as it does from ui/boot.
-ln -s "$PWD/ui" "$test_root/config/flea" || exit 1
+# The probe imports ui/ as Bachy, and ui/'s qs.Commons resolves against this root, as it does from ui/boot.
+ln -s "$PWD/ui" "$test_root/config/bachy" || exit 1
 ln -s "$(readlink -f ui/boot/Commons)" "$test_root/config/Commons" || exit 1
 ln -s "$(readlink -f ui/boot/Ui)" "$test_root/config/Ui" || exit 1
 cp tests/settings-columns.qml "$test_root/config/shell.qml" || exit 1

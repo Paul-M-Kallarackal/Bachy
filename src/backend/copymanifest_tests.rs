@@ -42,7 +42,7 @@ fn records_encode_and_decode_with_their_identity() {
 
 #[test]
 fn containment_never_leaves_the_root() {
-    let root = Path::new("/scratch/tmp/flea-test-x/root");
+    let root = Path::new("/scratch/tmp/bachy-test-x/root");
     assert!(contained(root, Path::new("")).is_some(), "the empty rel is the root itself");
     assert!(contained(root, Path::new("a/b.bin")).is_some());
     assert!(contained(root, Path::new("/abs")).is_none(), "absolute smuggles nothing in");

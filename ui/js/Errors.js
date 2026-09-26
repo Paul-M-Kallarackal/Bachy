@@ -17,7 +17,7 @@ function sentence(where, message, named) {
         return "Sorting by that column is not available."
     }
     if (where === "read") {
-        return "The backend stopped responding; reopen Flea and try again."
+        return "The backend stopped responding; reopen Bachy and try again."
     }
     // The write operations say what they were doing, because the operator is about to try it again.
     if (where === "undo" || where === "redo") {

@@ -12,12 +12,12 @@ preview_selection_expect() {
 case_previewvisibility() {
     local dir="$fixture_root/previewvisibility" preset mode
     sandbox_scratch "$dir"
-    mkdir -p "$dir/listing" "$dir/state/flea" "$dir/config"
+    mkdir -p "$dir/listing" "$dir/state/bachy" "$dir/config"
     printf 'first preview\n' > "$dir/listing/a.txt"
     printf 'second preview\n' > "$dir/listing/b.txt"
     export XDG_STATE_HOME="$dir/state" XDG_CONFIG_HOME="$dir/config"
     for preset in default vim mac windows; do
-        jq -n --arg preset "$preset" '{keys:$preset,view:"list",preview:{column:true,loadOn:"manual",thumbnails:"off"}}' > "$dir/state/flea/ui.json"
+        jq -n --arg preset "$preset" '{keys:$preset,view:"list",preview:{column:true,loadOn:"manual",thumbnails:"off"}}' > "$dir/state/bachy/ui.json"
         launch "$dir/listing"
         wait_listing 2
         for mode in list grid; do
@@ -77,6 +77,6 @@ case_previewvisibility() {
         preview_selection_expect '(.focused | not)'
         shot "preview-$preset-columns-automatic"
         printf 'PREVIEW_VISIBILITY preset=%s no_list_grid_column=ok quicklook=ok manual=ok selection_clear=ok hidden=ok automatic=ok focus=ok\n' "$preset"
-        kill_flea
+        kill_bachy
     done
 }

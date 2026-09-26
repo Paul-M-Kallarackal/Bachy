@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Drag.js" as DragOps
 
 // A directory as a drop target, named by path: the listing's floor in ui/PaneWire.qml and each tab in
@@ -20,7 +20,7 @@ DropArea {
 
     keys: [DragOps.ROWS_MIME, DragOps.SHELF_MIME, "text/uri-list"]
 
-    Flea.FileDrag {
+    Bachy.FileDrag {
         id: feedback
         pane: root.pane
     }

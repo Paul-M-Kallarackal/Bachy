@@ -1,4 +1,4 @@
-use crate::error::FleaError;
+use crate::error::BachyError;
 use crate::json::{escape, field_bool, field_str, field_str_array, field_usize, field_usize_array};
 
 // The one spelling of the token the reader thread also matches; see src/backend/events.rs.
@@ -249,7 +249,7 @@ pub fn paths_line(paths: &[String]) -> String {
     out
 }
 
-pub fn error_line(e: &FleaError) -> String {
+pub fn error_line(e: &BachyError) -> String {
     format!(
         r#"{{"t":"error","where":"{}","path":"{}","msg":"{}"}}"#,
         escape(&e.where_),
@@ -261,7 +261,7 @@ pub fn error_line(e: &FleaError) -> String {
 // A denied listing is the only failure a pane draws more than a sentence for: States.dc.html gives
 // it the directory's own mode string. The field is written only when the mode is known, so every
 // other error line on this wire keeps exactly the three fields it has always had.
-pub fn error_line_with_mode(e: &FleaError, mode: u32) -> String {
+pub fn error_line_with_mode(e: &BachyError, mode: u32) -> String {
     if mode == 0 {
         return error_line(e);
     }

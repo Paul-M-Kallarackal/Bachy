@@ -6,7 +6,7 @@ import "js/Recent.js" as Recent
 
 // The desktop's own recent history, read and never written. Qt's XML reader does the parsing, so
 // this file has no parser of its own: XmlListModel is QXmlStreamReader behind a query, and a
-// history Flea hand-parsed would be a second XBEL implementation on a file it does not own.
+// history Bachy hand-parsed would be a second XBEL implementation on a file it does not own.
 // The read is lazy, so a picker whose user never asks for Recent never opens the file at all.
 QtObject {
     id: root

@@ -54,7 +54,7 @@ function run(check) {
     // Not stricter than the truth: a theme that sets one role is still a parsed theme.
     check("one colour is already a palette",
           Palette.isPalette(Palette.parse("accent = \"#b38956\"\n")), true)
-    check("a palette naming no role Flea models is still a palette",
+    check("a palette naming no role Bachy models is still a palette",
           Palette.isPalette(Palette.parse("wallpaper_tint = \"#1b1f21\"\n")), true)
 
     var live = Palette.parse(VERNIER)
@@ -71,7 +71,7 @@ function run(check) {
           Palette.pick(Palette.parse(NO_DARK_BACKGROUND), SURFACE, SURFACE_FALLBACK), "#1a1b26")
     check("selection answers only when neither ladder key is set",
           Palette.pick(Palette.parse(NEITHER_LADDER_KEY), SURFACE, SURFACE_FALLBACK), "#292e42")
-    check("a body with none of the three keeps Flea's own surface",
+    check("a body with none of the three keeps Bachy's own surface",
           Palette.pick(Palette.parse("accent = \"#7aa2f7\"\n"), SURFACE, SURFACE_FALLBACK), SURFACE_FALLBACK)
     check("cyan is the symlink role", Palette.pick(live, ["cyan", "color6"], "#94e2d5"), "#27a6a2")
     // green is in the real file but not in this fixture, which is the per-role fallback pick() owns.

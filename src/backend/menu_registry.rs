@@ -147,8 +147,8 @@ impl OwnedChild {
 impl Drop for OwnedChild {
     fn drop(&mut self) {
         if self.child.is_none() { return; }
-        if let Err(error) = self.registry.cancel() { eprintln!("flea: {}", error); }
-        if let Err(error) = self.reap() { eprintln!("flea: {}", error); }
+        if let Err(error) = self.registry.cancel() { eprintln!("bachy: {}", error); }
+        if let Err(error) = self.reap() { eprintln!("bachy: {}", error); }
     }
 }
 

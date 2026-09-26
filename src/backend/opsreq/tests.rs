@@ -67,7 +67,7 @@ fn menu_workers_refuse_replacement_sources_before_helpers_or_mutations() {
     let outside_selection = d.file("other.txt", "other");
     let captured = vec![Selected::inspect(path.to_str().unwrap()).unwrap()];
     assert!(validate_sources(Some(&captured), std::slice::from_ref(&outside_selection)).is_err());
-    assert!(d.path().is_absolute() && d.path().join(".flea-test-sandbox").is_file());
+    assert!(d.path().is_absolute() && d.path().join(".bachy-test-sandbox").is_file());
     assert!(path.is_absolute() && path.starts_with(d.path()));
     std::fs::rename(&path, d.join("original-moved")).unwrap();
     d.file("source.txt", "replacement");
@@ -146,7 +146,7 @@ fn a_destination_that_is_not_an_existing_directory_is_refused_before_any_item_is
     assert_eq!(error.where_, "transfer");
     assert_eq!(error.path, missing.to_string_lossy());
     assert_eq!(error.msg, "file or folder not found");
-    assert!(!missing.exists(), "Flea does not create the destination");
+    assert!(!missing.exists(), "Bachy does not create the destination");
 }
 
 #[test]
@@ -395,7 +395,7 @@ fn failed_transfer_retry_retains_only_original_sources_after_permission_repair()
     assert_eq!(std::fs::read_to_string(&collision).unwrap(), "occupied");
     assert_eq!(std::fs::read_to_string(dest.join("good.txt")).unwrap(), "copied");
 
-    assert!(failed_source.is_absolute() && failed_source.starts_with(d.path()) && d.path().join(".flea-test-sandbox").is_file());
+    assert!(failed_source.is_absolute() && failed_source.starts_with(d.path()) && d.path().join(".bachy-test-sandbox").is_file());
     std::fs::rename(&failed_source, d.join("original-moved.txt")).unwrap();
     d.file("failed.txt", "replacement");
     let mut replaced = vec![(failed_source.to_str().unwrap(), 3)];
@@ -415,7 +415,7 @@ fn retry_preserves_a_symlink_identity_without_following_its_target() {
     let mut matches = vec![(link.to_str().unwrap(), 2)];
     retain_retry(&retry, &mut matches);
     assert_eq!(matches.len(), 1);
-    assert!(link.is_absolute() && link.starts_with(d.path()) && d.path().join(".flea-test-sandbox").is_file());
+    assert!(link.is_absolute() && link.starts_with(d.path()) && d.path().join(".bachy-test-sandbox").is_file());
     std::fs::rename(&link, d.join("original-link")).unwrap();
     std::os::unix::fs::symlink(&target, &link).unwrap();
     retain_retry(&retry, &mut matches);

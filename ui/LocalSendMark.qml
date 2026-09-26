@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Commons
 
 // The LocalSend mark, reproduced from the official artwork rather than recut, the same ruling that
 // brought TailscaleMark and DropboxMark back: a solid disc inside a ring of eight dashes, monochrome
-// and palette-tinted, no brand teal. Outside the cut and outside Glyph.qml, where FleaMark sits.
+// and palette-tinted, no brand teal. Outside the cut and outside Glyph.qml, where BachyMark sits.
 Item {
     id: root
 
@@ -13,7 +12,7 @@ Item {
     property real iconSize: Theme.markSize
     property color color: "transparent"
 
-    // Measured off docs/design/flea-shelf/export/localsend-96.png at alpha 128: the disc ends at
+    // Measured off docs/design/bachy-shelf/export/localsend-96.png at alpha 128: the disc ends at
     // 20 px, the dash band runs 31.25 to 36.25 px, and the ink is eight runs of 31 degrees whose
     // centres are 45 degrees apart. The logo's own ink box is 72.5 px of that 96 px file, and this
     // mark fills its slot rather than keeping the file's padding, which is the AdGuard lesson, so

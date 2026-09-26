@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Swap.js" as Swap
 
 // What a pane draws instead of rows: the empty hero, the reading spiral and the failure block. All
@@ -14,7 +14,7 @@ Item {
     readonly property alias emptyItem: emptyState
     readonly property alias messageItem: paneMessage
 
-    Flea.EmptyState {
+    Bachy.EmptyState {
         id: emptyState
         // The hero belongs over the listing that is empty, which in the columns view is the active
         // column and not the whole area right of the parent. Measured on this box, spanning the
@@ -34,7 +34,7 @@ Item {
             : ViewState.keyHints ? "Press Ctrl+Shift+N for a new folder." : ""
     }
 
-    Flea.LoadingState {
+    Bachy.LoadingState {
         x: root.pane.listSlot.x
         y: root.pane.listSlot.y
         width: root.pane.listSlot.width
@@ -55,7 +55,7 @@ Item {
         onWheel: function (wheel) { wheel.accepted = true }
     }
 
-    Flea.StateMessage {
+    Bachy.StateMessage {
         id: paneMessage
         active: !root.trashOpen
         x: root.pane.listSlot.x + Theme.spacing.rowPaddingX

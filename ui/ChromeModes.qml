@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // The chrome's four view modes, one choice hairline-separated from the contextual actions beside it.
 // The chosen one is foreground and its three neighbours are muted, which is brightness and survives
@@ -28,7 +28,7 @@ Row {
         model: ["list", "columns", "grid", "dual"]
 
         // No box and no plate: four glyphs in a strip are Tier A, where a box would be furniture.
-        delegate: Flea.ChromeButton {
+        delegate: Bachy.ChromeButton {
             required property string modelData
             glyph: modelData
             inputLive: root.inputLive

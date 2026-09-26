@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import "js/Scripts.js" as Model
 
-// MenuAdditions rule 2: the scripts a menu can run, read out of ~/.config/flea/scripts when a menu
+// MenuAdditions rule 2: the scripts a menu can run, read out of ~/.config/bachy/scripts when a menu
 // opens rather than watched, and run with the selected paths as arguments in the first one's folder.
 // The one thing here that touches the outside world, the way ui/NetworkMounts.qml is for gio.
 Item {
@@ -14,7 +14,7 @@ Item {
     property var entries: []
     property bool loaded: false
     readonly property string directory: (Quickshell.env("XDG_CONFIG_HOME") && Quickshell.env("XDG_CONFIG_HOME").length > 0
-                                         ? Quickshell.env("XDG_CONFIG_HOME") : Quickshell.env("HOME") + "/.config") + "/flea/scripts"
+                                         ? Quickshell.env("XDG_CONFIG_HOME") : Quickshell.env("HOME") + "/.config") + "/bachy/scripts"
 
     signal said(string text, bool isError)
 

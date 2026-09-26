@@ -7,13 +7,13 @@ set -u
 set -o pipefail
 # Hard rule 9's own guard owns every create and delete here, the way tests/mount-listing.sh does it:
 # a fixture lives outside $HOME and carries a marker, and nothing unmarked is ever removed.
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 repo=$PWD
 themes_dir=${THEMES_DIR:-/usr/share/omarchy/themes}
-flea_ui="$repo/ui"
-flea_bin=${FLEA_BIN:-$repo/target/debug/flea}
-class=com.thisisgm.flea
+bachy_ui="$repo/ui"
+bachy_bin=${BACHY_BIN:-$repo/target/debug/bachy}
+class=local.bachy.FileManager
 failures=0
 # The same floors tests/js/themes.js names, and the same rules behind them.
 text_min=4.5      # body text on its own ground, WCAG AA
@@ -23,7 +23,7 @@ role_steps=4      # how far a screenshot's round trip may move a role, measured 
 
 command -v omarchy-drive >/dev/null || { echo "themes.sh: omarchy-drive is not installed"; exit 1; }
 command -v magick >/dev/null || { echo "themes.sh: magick is not installed, and the pixel reads need it"; exit 1; }
-[ -x "$flea_bin" ] || { echo "themes.sh: no candidate at $flea_bin"; exit 1; }
+[ -x "$bachy_bin" ] || { echo "themes.sh: no candidate at $bachy_bin"; exit 1; }
 eval "$(omarchy-drive env)"
 
 # The pure suite pins the same list; a theme shipped since then reddens here rather than being skipped.
@@ -37,11 +37,11 @@ if [ "$installed" != "$pinned" ]; then
     failures=$((failures + 1))
 fi
 
-sandbox="$FIXTURE_ROOT/flea-themes-$$"
+sandbox="$FIXTURE_ROOT/bachy-themes-$$"
 sandbox_make "$sandbox"
 # The PNGs outlive the run as its record, so they take one path the next run replaces rather than a
 # fresh mktemp nobody ever removes.
-shots="$FIXTURE_ROOT/flea-themeshots"
+shots="$FIXTURE_ROOT/bachy-themeshots"
 sandbox_make "$shots"
 # Only what this run launched: the candidate is started with setsid, so its own process group holds
 # it and the qs it spawns, and nothing the operator started is signalled.
@@ -86,11 +86,11 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-mkdir -p "$sandbox/files" "$sandbox/state/flea" "$sandbox/config"
+mkdir -p "$sandbox/files" "$sandbox/state/bachy" "$sandbox/config"
 printf 'one\n' > "$sandbox/files/alpha.txt"
 printf 'two\n' > "$sandbox/files/beta.txt"
 printf 'three\n' > "$sandbox/files/gamma-needle.txt"
-printf '{"view":"list","places":{"driveSize":true,"trashCount":true}}\n' > "$sandbox/state/flea/ui.json"
+printf '{"view":"list","places":{"driveSize":true,"trashCount":true}}\n' > "$sandbox/state/bachy/ui.json"
 # A palette that sets no muted of its own, which no installed theme does and a third-party theme can:
 # it is the one way to drive ui/Theme.qml's darkened-foreground fallback through the real window.
 synthetic="$sandbox/no-muted/colors.toml"
@@ -104,9 +104,9 @@ printf 'background = "#1e1e2e"\nforeground = "#cdd6f4"\naccent = "#89b4fa"\nred 
 # literal: the two halves meeting on this value is what binds that mirror to the running window.
 no_muted_caption="#9299ae"
 
-ipc() { omarchy-drive ipc -p "$flea_ui/boot" flea "$@"; }
+ipc() { omarchy-drive ipc -p "$bachy_ui/boot" bachy "$@"; }
 # Filtered to the window under test, as tests/ui.sh does: an unfiltered send goes wherever focus is.
-key() { omarchy-drive key --window flea "$@" >/dev/null; }
+key() { omarchy-drive key --window bachy "$@" >/dev/null; }
 window_xy() { hyprctl clients -j | jq -r --arg c "$class" '[.[]|select(.class==$c)][0] | "\(.at[0]) \(.at[1])"'; }
 fail() { printf 'FAIL %s\n' "$1"; failures=$((failures + 1)); }
 
@@ -192,8 +192,8 @@ for colours in "$themes_dir"/*/colors.toml "$synthetic"; do
     stop
     real_home=$HOME
     export HOME="$home"
-    FLEA_UI="$flea_ui" FLEA_BIN="$flea_bin" XDG_STATE_HOME="$sandbox/state" XDG_CONFIG_HOME="$sandbox/config" \
-        setsid nohup "$flea_bin" --gui "$sandbox/files" >"$sandbox/flea-$theme.log" 2>&1 </dev/null &
+    BACHY_UI="$bachy_ui" BACHY_BIN="$bachy_bin" XDG_STATE_HOME="$sandbox/state" XDG_CONFIG_HOME="$sandbox/config" \
+        setsid nohup "$bachy_bin" --gui "$sandbox/files" >"$sandbox/bachy-$theme.log" 2>&1 </dev/null &
     launched=$!
     export HOME="$real_home"
     if ! omarchy-drive wait window "$class" --timeout 20 >/dev/null; then
@@ -253,7 +253,7 @@ for colours in "$themes_dir"/*/colors.toml "$synthetic"; do
     key j
     key v
     key j
-    if ! omarchy-drive wait ipc -p "$flea_ui/boot" flea cursor 2 --timeout 10 >/dev/null; then
+    if ! omarchy-drive wait ipc -p "$bachy_ui/boot" bachy cursor 2 --timeout 10 >/dev/null; then
         fail "$theme: the cursor never reached row 2, so no shot of it can be measured"
         continue
     fi
@@ -280,7 +280,7 @@ for colours in "$themes_dir"/*/colors.toml "$synthetic"; do
         fails_before=$failures
         same_colour "$theme" "the cursor's accent edge" "$edge" "$accent"
         if [ "$failures" -gt "$fails_before" ]; then
-            # Sample input, clients -j: [{"class":"com.thisisgm.flea","workspace":{"id":1},"mapped":true,"hidden":false,"focusHistoryID":0}], activeworkspace -j: {"id":1,"name":"1"}
+            # Sample input, clients -j: [{"class":"local.bachy.FileManager","workspace":{"id":1},"mapped":true,"hidden":false,"focusHistoryID":0}], activeworkspace -j: {"id":1,"name":"1"}
             printf 'NOTE %s: model cursor %s, window %s, active workspace %s\n' "$theme" "$(ipc cursor)" \
                 "$(hyprctl clients -j | jq -c --arg c "$class" '[.[] | select(.class == $c) | {ws: .workspace.id, mapped, hidden, focus: .focusHistoryID}]')" \
                 "$(hyprctl activeworkspace -j | jq .id)"

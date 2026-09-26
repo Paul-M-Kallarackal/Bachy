@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Convert.js" as Convert
 
 // The one popup in the whole design. Every other operation answers in the status bar; this one asks two questions first, so it is the exception the operations design names rather than a pattern.
@@ -169,7 +168,7 @@ Item {
             cancelButton.forceActiveFocus()
             root.errorText = pending
                 ? "Backend stopped; conversion outcome unknown. Check the output."
-                : "Backend stopped; reopen Flea to convert."
+                : "Backend stopped; reopen Bachy to convert."
         }
     }
 
@@ -209,7 +208,7 @@ Item {
             onWheel: function (wheel) { wheel.accepted = true }
         }
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.topMargin: Theme.spacing.rowPaddingX
@@ -224,7 +223,7 @@ Item {
                 width: parent.width
                 height: header.implicitHeight + Theme.spacing.gap
 
-                Flea.DialogTitle {
+                Bachy.DialogTitle {
                     id: header
                     anchors.left: parent.left
                     anchors.right: parent.right
@@ -245,7 +244,7 @@ Item {
             Repeater {
                 id: formatRows
                 model: root.formats
-                delegate: Flea.MenuRow {
+                delegate: Bachy.MenuRow {
                     required property string modelData
                     required property int index
                     width: body.width
@@ -297,7 +296,7 @@ Item {
                     border.width: Theme.spacing.hairline * 2
                     border.color: root.strip || root.focusPart === 1 ? Theme.color.accent : Theme.color.muted
 
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         anchors.centerIn: parent
                         width: parent.width / 2
                         height: width
@@ -376,7 +375,7 @@ Item {
                     anchors.rightMargin: Theme.spacing.rowPaddingX
                     spacing: Theme.spacing.gap
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         id: cancelButton
                         label: "Cancel"
                         primary: root.focusPart === 2
@@ -386,7 +385,7 @@ Item {
                         onActivated: root.close()
                     }
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         id: convertButton
                         label: root.busy ? "Converting..." : "Convert"
                         primary: root.canConvert

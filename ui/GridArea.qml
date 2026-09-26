@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/DirSizes.js" as DirSizes
 import "js/Filter.js" as Filter
 import "js/Focus.js" as Focus
@@ -64,14 +64,14 @@ GridView {
     boundsBehavior: Flickable.StopAtBounds
     reuseItems: true
 
-    Flea.FastScrollHandler {
+    Bachy.FastScrollHandler {
         parent: root
         flickable: root
         ctrlWheelAction: function (wheel) { return root.zoomWheel(wheel) }
     }
 
     readonly property alias scrollBar: verticalScroll
-    Flea.ViewportScrollBar {
+    Bachy.ViewportScrollBar {
         id: verticalScroll
         parent: root
         anchors { top: parent.top; right: parent.right }
@@ -79,7 +79,7 @@ GridView {
         ctrlWheelAction: function (wheel) { return root.zoomWheel(wheel) }
     }
 
-    Flea.SelectionBand {
+    Bachy.SelectionBand {
         parent: root
         pane: root.pane
         flickable: root
@@ -88,12 +88,12 @@ GridView {
         cellHeight: root.cellHeight
     }
 
-    Flea.FileDrag {
+    Bachy.FileDrag {
         id: dragSession
         pane: root.pane
     }
 
-    delegate: Flea.GridTile {
+    delegate: Bachy.GridTile {
         id: cell
         required property int index
         // A filtered tile position still acts on the backend row whose identity it displays.
@@ -130,7 +130,7 @@ GridView {
             }
         }
 
-        Flea.RowDrag {
+        Bachy.RowDrag {
             session: dragSession
             listingIndex: cell.listingIndex
             row: cell.row

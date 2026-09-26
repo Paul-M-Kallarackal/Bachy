@@ -67,8 +67,8 @@ case_dropboxroots() (
     record=$(jq -cn --arg personal "$personal" --arg business "$business" '{personal:{path:$personal},business:{path:$business}}')
     dropbox_roots_account "$record"
     export HOME="$menu_box/home" XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
-    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" FLEA_PROVIDERS_BOX="$menu_box"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null \
+    export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data" PATH="$menu_box/bin" BACHY_PROVIDERS_BOX="$menu_box"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null \
         || fail 'dropboxroots: private settings seed failed'
     started=$(date +%s%3N)
     launch "$menu_dir"
@@ -126,7 +126,7 @@ case_dropboxroots() (
     dropbox_roots_account "$record"
     dropbox_roots_rail "$personal" 'recreated account directory updates the live rail'
 
-    kill_flea
+    kill_bachy
     menus_guard "$menu_box/home/.dropbox"
     menus_guard "$menu_box/retired/account-state"
     mv -- "$menu_box/home/.dropbox" "$menu_box/retired/account-state" || fail 'dropboxroots: account directory retirement failed'

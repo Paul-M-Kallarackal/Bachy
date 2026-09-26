@@ -42,13 +42,13 @@ case_railorder() {
         || fail "railorder: native section labels/order differ from the ruled rail"
     trash_shot trash-rail-order
     printf 'TRASH_RAIL_ORDER entries=%s home_y=%s trash_y=%s\n' "$entries" "$home_y" "$trash_y"
-    kill_flea
+    kill_bachy
 }
 
 trash_guard() {
     local path="$1" canonical
     [[ -n "$path" && "$path" == /* ]] || fail "trash: empty or relative mutation path"
-    [[ -f "$trash_box/.flea-test-sandbox" ]] || fail "trash: missing owned fixture marker"
+    [[ -f "$trash_box/.bachy-test-sandbox" ]] || fail "trash: missing owned fixture marker"
     canonical=$(realpath -m -- "$path") || fail "trash: could not resolve mutation path"
     [[ "$canonical" == "$trash_box/"* && "$canonical" != "$trash_box" ]] \
         || fail "trash: mutation path is outside this case's sandbox"
@@ -89,7 +89,7 @@ PY
 trash_cleanup() {
     local result="$1" pid end
     trap - EXIT HUP INT TERM
-    (kill_flea) || result=1
+    (kill_bachy) || result=1
     for pid in $(trash_private_pids); do
         trash_owned_pid "$pid" && kill -TERM "$pid" 2>/dev/null
     done
@@ -157,7 +157,7 @@ trash_private() {
         || fail "trash: no attributable private gvfsd-trash process"
     [[ "$(cat "/proc/$pid/comm")" == gvfsd-trash ]] || fail "trash: wrong provider process"
     trash_owned_pid "$pid" || fail "trash: provider belongs to another bus, data root, or user"
-    candidate=$(flea_pid)
+    candidate=$(bachy_pid)
     trash_owned_pid "$candidate" || fail "trash: candidate belongs to another bus, data root, or user"
 }
 
@@ -233,12 +233,12 @@ trash_click() {
 
 trash_shot() {
     local name="$1" path="$evidence_dir/${trash_case_label:+$trash_case_label-}$1.png" canonical
-    [[ -f "$run_root/.flea-test-sandbox" ]] || fail "trash: native evidence root is not marked"
+    [[ -f "$run_root/.bachy-test-sandbox" ]] || fail "trash: native evidence root is not marked"
     canonical=$(realpath -m -- "$path") || fail "trash: evidence path did not resolve"
     [[ "$canonical" == "$run_root/"* && "$canonical" != "$run_root" ]] || fail "trash: evidence escaped its sandbox"
     mkdir -p "$evidence_dir" || fail "trash: evidence directory creation failed"
     [[ ! -e "$path" ]] || fail "trash: refusing to reuse an old screenshot"
-    omarchy-drive shot "$path" flea >/dev/null || fail "trash: screenshot failed"
+    omarchy-drive shot "$path" bachy >/dev/null || fail "trash: screenshot failed"
     [[ -s "$path" ]] || fail "trash: screenshot is empty"
     printf 'TRASH_SHOT path=%s viewport=%q\n' "$path" "$(window_box)"
 }
@@ -300,14 +300,14 @@ case_trasharm() {
     [[ "$(realpath -e "$(command -v gio)")" == /usr/bin/gio ]] || fail "trasharm: product gio resolves to a stub"
     sandbox_require "$fixture_root"
     trash_box=$(mktemp -d "$fixture_root/trash.XXXXXXXX") || fail "trasharm: fixture creation failed"
-    printf 'native private Trash\n' > "$trash_box/.flea-test-sandbox"
+    printf 'native private Trash\n' > "$trash_box/.bachy-test-sandbox"
     export XDG_DATA_HOME="$trash_box/data" XDG_CONFIG_HOME="$trash_box/config"
     export XDG_STATE_HOME="$trash_box/state" XDG_CACHE_HOME="$trash_box/cache"
     for root in "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME"; do
         trash_guard "$root"
         mkdir -p "$root" || fail "trasharm: writable root creation failed"
     done
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","preview":{"column":false},"menu":{"hidden":[]}}' >/dev/null \
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","preview":{"column":false},"menu":{"hidden":[]}}' >/dev/null \
         || fail "trasharm: preferences could not be stored inside the fixture"
     payload="$trash_box/payload"
     trash_guard "$payload"
@@ -383,9 +383,9 @@ trash_key_alternatives() {
 trash_confirmation_controls() {
     local mode="${1:-controls}" preset move token
     for preset in default vim mac windows; do
-        kill_flea
+        kill_bachy
         trash_guard "$XDG_STATE_HOME"
-        "$flea_bin" --ui-state "{\"keys\":\"$preset\"}" >/dev/null \
+        "$bachy_bin" --ui-state "{\"keys\":\"$preset\"}" >/dev/null \
             || fail "trash: could not persist the $preset preset"
         launch "$payload"
         wait_listing 1
@@ -472,9 +472,9 @@ trash_confirmation_controls() {
         done
         trash_guard_store 1
     done
-    kill_flea
+    kill_bachy
     trash_guard "$XDG_STATE_HOME"
-    "$flea_bin" --ui-state '{"keys":"default"}' >/dev/null || fail "trash: could not restore fixture preset"
+    "$bachy_bin" --ui-state '{"keys":"default"}' >/dev/null || fail "trash: could not restore fixture preset"
     launch "$payload"
     wait_listing 1
     trash_rail
@@ -686,19 +686,19 @@ trash_sweep_case() {
             || fail "trash: sweep fixture could not be backdated"
     done
     [[ "$(/usr/bin/gio trash --list | wc -l)" == 3 ]] || fail "trash: sweep fixture is not three items"
-    "$flea_bin" --ui-state '{"trashAutoEmpty":true}' >/dev/null \
+    "$bachy_bin" --ui-state '{"trashAutoEmpty":true}' >/dev/null \
         || fail "trash: the sweep could not be switched on inside the fixture"
     launch "$payload"
     wait_listing 0
     # The two backdated items go and the recent one stays. This is the whole product promise, and it
-    # is asserted against the provider rather than against Flea's own count alone.
+    # is asserted against the provider rather than against Bachy's own count alone.
     trash_wait '.count == 1' 'the sweep took the two items older than 30 days'
     [[ "$(/usr/bin/gio trash --list | wc -l)" == 1 ]] || fail "trash: the sweep left the wrong number of items"
     [[ "$(/usr/bin/gio trash --list | cut -f2)" == *keep.txt ]] || fail "trash: the sweep took the recent item"
     trash_guard_store 1
     trash_shot trash-sweep-done
     # The once-a-day guard: the day it ran is recorded, so a second launch today sweeps nothing.
-    swept=$("$flea_bin" --ui-state 2>/dev/null | jq -er '.trashSweptOn') \
+    swept=$("$bachy_bin" --ui-state 2>/dev/null | jq -er '.trashSweptOn') \
         || fail "trash: the sweep day could not be read back"
     # The same number ui/js/TrashDates.js dayNumber computes: whole days since the epoch at LOCAL
     # midnight, so a run either side of UTC midnight cannot disagree with the product.
@@ -714,7 +714,7 @@ case_trash() {
     [[ "$(realpath -e "$(command -v gio)")" == /usr/bin/gio ]] || fail "trash: product gio resolves to a stub"
     sandbox_require "$fixture_root"
     trash_box=$(mktemp -d "$fixture_root/trash.XXXXXXXX") || fail "trash: fixture creation failed"
-    printf 'native private Trash\n' > "$trash_box/.flea-test-sandbox"
+    printf 'native private Trash\n' > "$trash_box/.bachy-test-sandbox"
     [[ "$trash_box" == "$(realpath -e -- "$trash_box")" ]] || fail "trash: fixture root is not canonical"
     export XDG_DATA_HOME="$trash_box/data" XDG_CONFIG_HOME="$trash_box/config"
     export XDG_STATE_HOME="$trash_box/state" XDG_CACHE_HOME="$trash_box/cache"
@@ -722,7 +722,7 @@ case_trash() {
         trash_guard "$root"
         mkdir -p "$root" || fail "trash: writable root creation failed"
     done
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","preview":{"column":false},"menu":{"hidden":[]}}' >/dev/null \
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","preview":{"column":false},"menu":{"hidden":[]}}' >/dev/null \
         || fail "trash: initial preferences could not be stored inside the fixture"
     payload="$trash_box/payload"
     trash_guard "$payload"

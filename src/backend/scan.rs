@@ -1,12 +1,12 @@
 use crate::backend::listing::Listing;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::fs;
 use std::os::unix::fs::MetadataExt;
 use std::time::Instant;
 
 // Phase 1 never stats: d_type is free, see AGENTS.md "Two-phase listing".
 // hidden:false is the shell's own dotfile convention, matched here rather than left to the client.
-pub fn scan(path: &str, hidden: bool) -> Result<(Listing, f64), FleaError> {
+pub fn scan(path: &str, hidden: bool) -> Result<(Listing, f64), BachyError> {
     let t = Instant::now();
     let rd = match fs::read_dir(path) {
         Ok(rd) => rd,

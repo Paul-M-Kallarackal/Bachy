@@ -1,5 +1,5 @@
 // LocalSend ships a CLI, and it is a full-screen program: it draws what it discovered in a panel and
-// takes arrow keys and Enter. Directive 71 is that Flea drives that CLI rather than opening the app,
+// takes arrow keys and Enter. Directive 71 is that Bachy drives that CLI rather than opening the app,
 // so this opens a pty of its own and drives it there. No shell is involved at any point, which is
 // what keeps a file name with a quote or a space in it an argument rather than somebody else's word.
 use super::localsendtext::{parse_peers, refusal, strip_ansi, Peer};
@@ -94,7 +94,7 @@ fn spawn(program: &str, args: &[String], slave: &std::fs::File) -> Result<Child,
     let parent = std::process::id();
     unsafe {
         // A session of its own, then this pty as its controlling terminal: without one the CLI reads
-        // no keys at all, and with Flea's own session it would take Flea's.
+        // no keys at all, and with Bachy's own session it would take Bachy's.
         command.pre_exec(move || {
             if prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0) < 0 { return Err(std::io::Error::last_os_error()) }
             if getppid() != parent as i32 { return Err(std::io::Error::from_raw_os_error(ESRCH)) }
@@ -341,8 +341,8 @@ mod tests {
         drop(master);
         assert!(inherited.is_empty(), "the CLI holds the terminal master at {:?}", inherited);
     }
-    const LIFECYCLE_MARKER: &str = "FLEA_LOCALSEND_LIFECYCLE_PROBE";
-    const LIFECYCLE_TOKEN: &str = "FLEA_LOCALSEND_LIFECYCLE_TOKEN";
+    const LIFECYCLE_MARKER: &str = "BACHY_LOCALSEND_LIFECYCLE_PROBE";
+    const LIFECYCLE_TOKEN: &str = "BACHY_LOCALSEND_LIFECYCLE_TOKEN";
     const LIFECYCLE_TEST: &str = "backend::localsend::tests::a_child_cli_does_not_outlive_its_parent";
 
     // A zombie is a killed process waiting to be reaped, which is not a CLI that survived.

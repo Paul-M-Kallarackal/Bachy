@@ -2,15 +2,14 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.Commons
 import "js/Keymap.js" as Keymap
 import "js/Settings.js" as Settings
 import "js/TextSize.js" as TextSize
 import "js/UiState.js" as UiState
 
-// The per-user state that outlives a window, `~/.local/state/flea/ui.json`. Read once here with a
+// The per-user state that outlives a window, `~/.local/state/bachy/ui.json`. Read once here with a
 // blocking FileView so the first paint already has it, and never written from QML: every change
-// goes back out through `flea --ui-state`, the one Rust path that takes the lock, validates each
+// goes back out through `bachy --ui-state`, the one Rust path that takes the lock, validates each
 // key, merges the caller's and renames a temp into place. main() settles this file before the
 // window, so whenever that settle succeeded on a document it could read, what is read here has
 // already been through that same validation; one it could not read is left alone and lands in the
@@ -48,7 +47,7 @@ QtObject {
     }
 
     // The Display section's text size, `display.textSize` in src/uischema.rs: {"mode":"system"}
-    // follows Omarchy and is the default, and an override pins one of TextSize.js's seven stops as
+    // uses the Bachy default and is the default, and an override pins one of TextSize.js's seven stops as
     // {"mode":N}. ui/Theme.qml is the only consumer, and the monitor scale beside it in the panel is
     // the compositor's alone.
     readonly property var display: root.state.display || ({})
@@ -56,7 +55,7 @@ QtObject {
 
     // Omarchy's own size, held here so the Ctrl+Shift chords and the panel's own rows step away
     // from and back to one anchor rather than each resolving their own.
-    readonly property int omarchyBase: Style.font.baseSize
+    readonly property int appBase: Style.font.baseSize
 
     // The context-menu actions switched off in the settings panel's Menus section, by action id, and
     // the section's only state: ui/js/Menu.js applyHidden is the consumer and ui/ContextMenu.qml the
@@ -64,7 +63,7 @@ QtObject {
     readonly property var menu: root.state.menu || ({})
     // B1, GM's ruling: "Enable shelf" is one switch, so the Menus row is not a stored menu id at all.
     // It reads the shelf's own boolean, which is what src/shelfplugin.rs installs the bar plugin on.
-    readonly property bool shelfEnabled: (root.state.shelf || ({})).enabled === true
+    readonly property bool shelfEnabled: false
     readonly property var menuHidden: (Array.isArray(root.menu.hidden) ? root.menu.hidden
                                                                        : root.defaultMenuHidden)
                                       .filter(function (id) { return id !== "shelf" })
@@ -101,8 +100,8 @@ QtObject {
     }
 
     // One leaf inside a group. The leaf merges into whatever else the group holds so the document
-    // keeps a sub-key a newer Flea left there, and the patch carries the leaf ALONE: a sub-key this
-    // Flea has no rule for is one src/uistate.rs refuses, and it refuses the whole patch with it.
+    // keeps a sub-key a newer Bachy left there, and the patch carries the leaf ALONE: a sub-key this
+    // Bachy has no rule for is one src/uistate.rs refuses, and it refuses the whole patch with it.
     function changeLeaf(key, leaf) {
         root.owe(key, UiState.withGroup(root.state, key, leaf), UiState.withGroup(root.unsaved, key, leaf))
     }
@@ -149,7 +148,7 @@ QtObject {
     readonly property int trashSweptOn: root.state.trashSweptOn || 0
 
     // Settings > About's "Check automatically", `updates.autoCheck` in src/uischema.rs, on until switched off.
-    readonly property bool updateAutoCheck: (root.state.updates || ({})).autoCheck !== false
+    readonly property bool updateAutoCheck: false
 
     // Written by the sweep when it finishes, so the next launch on the same day does not run it
     // again. A sweep that failed records nothing and is retried on the next launch.
@@ -197,12 +196,12 @@ QtObject {
     }
 
     function stepTextSize(direction) {
-        root.setTextSize(TextSize.stepped(root.textSize, root.omarchyBase, direction))
+        root.setTextSize(TextSize.stepped(root.textSize, root.appBase, direction))
     }
 
     function toggleTextFollow() {
         root.setTextSize(TextSize.following(root.textSize)
-                         ? TextSize.pin(root.textSize, root.omarchyBase) : TextSize.follow())
+                         ? TextSize.pin(root.textSize, root.appBase) : TextSize.follow())
     }
 
     // The Menus section's own two writers. Both write the hidden set alone, because a group's master is Settings.masterState of that set rather than a value of its own.
@@ -241,7 +240,7 @@ QtObject {
         root.changeKey("columns", shown)
     }
 
-    // A patch flea refused, or a state file it could not write. The pane turns it into the status
+    // A patch bachy refused, or a state file it could not write. The pane turns it into the status
     // bar's one sentence: the change is on screen and the file does not have it.
     signal saveFailed()
     signal favouritesReadFailed(string message)
@@ -280,7 +279,7 @@ QtObject {
     }
 
     function run(patch) {
-        patcher.command = [Quickshell.env("FLEA_BIN") || "flea", "--ui-state", patch]
+        patcher.command = [Quickshell.env("BACHY_BIN") || "bachy", "--ui-state", patch]
         patcher.running = true
     }
 
@@ -316,7 +315,7 @@ QtObject {
     property var store: FileView {
         id: stateFile
         path: (Quickshell.env("XDG_STATE_HOME") && Quickshell.env("XDG_STATE_HOME").length > 0
-               ? Quickshell.env("XDG_STATE_HOME") : Quickshell.env("HOME") + "/.local/state") + "/flea/ui.json"
+               ? Quickshell.env("XDG_STATE_HOME") : Quickshell.env("HOME") + "/.local/state") + "/bachy/ui.json"
         blockLoading: true
         watchChanges: true
         onFileChanged: reload()

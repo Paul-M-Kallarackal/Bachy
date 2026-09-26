@@ -1,10 +1,10 @@
-//@ pragma ShellId flea-settings-columns-test
+//@ pragma ShellId bachy-settings-columns-test
 
 import QtQuick
 import Quickshell
-import "flea" as Flea
-import "flea/js/Settings.js" as Settings
-import "flea/js/TextSize.js" as TextSize
+import "bachy" as Bachy
+import "bachy/js/Settings.js" as Settings
+import "bachy/js/TextSize.js" as TextSize
 
 // Every row each settings section builds, drawn by the real ui/SettingsRow.qml at the pane's width:
 // a hint and the Display ruler start on their control's label column, HANDOFF rules 3 and 8, and
@@ -19,12 +19,12 @@ ShellRoot {
 
     Item {
         id: holder
-        width: Flea.Theme.settings.paneWidth
+        width: Bachy.Theme.settings.paneWidth
     }
 
     Component {
         id: rowComponent
-        Flea.SettingsRow {}
+        Bachy.SettingsRow {}
     }
 
     // The x a row's text starts at: its label, a hint's own line, or the ruler; null when nothing drawn matches.
@@ -76,8 +76,8 @@ ShellRoot {
         expect(found.hint, labelX, "the label column")
         expect(found.ruler, labelX, "the label column")
         // The control that proves the reader tells two columns apart: the footer sits at the row's edge.
-        expect(found.footer, Flea.Theme.spacing.rowPaddingX, "the row edge")
-        if (labelX === null || labelX === Flea.Theme.spacing.rowPaddingX || found.hint.length === 0
+        expect(found.footer, Bachy.Theme.spacing.rowPaddingX, "the row edge")
+        if (labelX === null || labelX === Bachy.Theme.spacing.rowPaddingX || found.hint.length === 0
                 || found.ruler.length === 0 || found.footer.length === 0)
             failures.push("nothing to compare: label " + labelX + ", " + found.hint.length + " hints, "
                           + found.ruler.length + " rulers, " + found.footer.length + " footers")

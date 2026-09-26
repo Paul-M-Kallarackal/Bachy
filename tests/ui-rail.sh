@@ -41,8 +41,8 @@ rail_path_box() {
     cat > "$rail_box/bin/lsblk" <<'SH'
 #!/usr/bin/env bash
 set -eu
-box=${FLEA_RAIL_BOX:?}
-[[ "$box" == /* && -f "$box/.flea-test-sandbox" ]] || exit 90
+box=${BACHY_RAIL_BOX:?}
+[[ "$box" == /* && -f "$box/.bachy-test-sandbox" ]] || exit 90
 cat "$box/lsblk.json"
 SH
     # Only the two calls this case owns are answered here; the trash count, the mount listing and the
@@ -52,8 +52,8 @@ SH
     cat > "$rail_box/bin/gio" <<SH
 #!/usr/bin/env bash
 set -eu
-box=\${FLEA_RAIL_BOX:?}
-[[ "\$box" == /* && -f "\$box/.flea-test-sandbox" ]] || exit 90
+box=\${BACHY_RAIL_BOX:?}
+[[ "\$box" == /* && -f "\$box/.bachy-test-sandbox" ]] || exit 90
 jq -cn --args '{args:\$ARGS.positional}' -- "\$@" >> "\$box/calls.jsonl"
 case "\$*" in
     "mount -d /dev/sdb1")
@@ -94,7 +94,7 @@ case_unmounted() (
     local rail_box="$fixture_root/unmounted" rail_dir="$fixture_root/unmounted/home"
     local index before
     sandbox_scratch "$rail_box"
-    : > "$rail_box/.flea-test-sandbox" || fail 'rail: sandbox marker write failed'
+    : > "$rail_box/.bachy-test-sandbox" || fail 'rail: sandbox marker write failed'
     mkdir -p "$rail_box/state" "$rail_box/config" "$rail_box/cache" "$rail_box/data" || fail 'rail: private directories failed'
     fixture_home_make "$rail_dir"
     : > "$rail_box/calls.jsonl"
@@ -102,12 +102,12 @@ case_unmounted() (
     rail_path_box
     export HOME="$rail_dir" XDG_STATE_HOME="$rail_box/state" XDG_CONFIG_HOME="$rail_box/config"
     export XDG_CACHE_HOME="$rail_box/cache" XDG_DATA_HOME="$rail_box/data"
-    export PATH="$rail_box/bin" FLEA_RAIL_BOX="$rail_box"
+    export PATH="$rail_box/bin" BACHY_RAIL_BOX="$rail_box"
 
     echo "-- a 0.3.2 state file that stored the switch off reads on from the first 0.3.3 launch --"
-    # Written raw, because any write through flea --ui-state already carries 0.3.3's stamp.
-    local stored="$rail_box/state/flea/ui.json"
-    mkdir -m 700 "$rail_box/state/flea" || fail 'rail: private state directory failed'
+    # Written raw, because any write through bachy --ui-state already carries 0.3.3's stamp.
+    local stored="$rail_box/state/bachy/ui.json"
+    mkdir -m 700 "$rail_box/state/bachy" || fail 'rail: private state directory failed'
     # A key off its default beside the switch, so a migration that reset the file reads differently from one that did not.
     printf '{"view":"list","keys":"default","density":"comfortable","places":{"showUnmounted":false}}\n' > "$stored" \
         || fail 'rail: the 0.3.2 state file could not be written'
@@ -116,20 +116,20 @@ case_unmounted() (
     [[ "$(jq -c '[.places.showUnmounted, .stateVersion, .density]' "$stored")" == '[true,1,"comfortable"]' ]] \
         || fail "rail: the launch did not write the migration down beside the file's own choice, ui.json holds $(jq -c '[.places.showUnmounted, .stateVersion, .density]' "$stored")"
     printf 'RAIL migrated=%s\n' "$(ipc deviceEntries | tr '\n' ' ')"
-    kill_flea
+    kill_bachy
 
     echo "-- switched off after the migration, the rail is the one 0.2.1 drew --"
-    "$flea_bin" --ui-state '{"places":{"showUnmounted":false}}' >/dev/null || fail 'rail: switch-off seed failed'
+    "$bachy_bin" --ui-state '{"places":{"showUnmounted":false}}' >/dev/null || fail 'rail: switch-off seed failed'
     launch "$rail_dir"
     wait_rail 2
     settle
     [[ "$(ipc deviceEntries)" != *"Archive"* ]] \
         || fail "rail: the switch is off and the rail still carries $(ipc deviceEntries)"
     printf 'RAIL off=%s\n' "$(ipc deviceEntries | tr '\n' ' ')"
-    kill_flea
+    kill_bachy
 
     echo "-- switched on, the volume nothing mounted is a row of its own --"
-    "$flea_bin" --ui-state '{"places":{"showUnmounted":true}}' >/dev/null || fail 'rail: switch seed failed'
+    "$bachy_bin" --ui-state '{"places":{"showUnmounted":true}}' >/dev/null || fail 'rail: switch seed failed'
     launch "$rail_dir"
     rail_wait_entry false
     printf 'RAIL on=%s\n' "$(ipc deviceEntries | tr '\n' ' ')"
@@ -182,7 +182,7 @@ case_unmounted() (
     # The board's second theme is not this harness's to shoot: launch() refuses a window painting
     # anything but the live theme, which is the guard that keeps a colour claim honest. The rail's
     # own squares are Theme.color.executable and muted, which tests/themes.sh sweeps on all 22.
-    kill_flea
+    kill_bachy
 )
 
 # The window this case owns, floated so its width is this case's to set and nobody else's.
@@ -240,7 +240,7 @@ case_sidebar() (
     : > "$dir/a.txt"
     : > "$dir/b.txt"
     seed_ui_state "$state" '{"view":"list"}'
-    stored="$state/flea/ui.json"
+    stored="$state/bachy/ui.json"
 
     launch "$dir"
     wait_listing 2
@@ -261,7 +261,7 @@ case_sidebar() (
     sidebar_stored hidden "$stored"
 
     echo "-- and it is remembered, because a state is not a setting --"
-    kill_flea
+    kill_bachy
     launch "$dir"
     wait_listing 2
     sidebar_wait true
@@ -341,5 +341,5 @@ case_sidebar() (
     key -M ctrl -k b -m ctrl >/dev/null
     sidebar_wait false
     printf 'SIDEBAR autohide=ok remembered=%s\n' "$(jq -r '.places.rail' "$stored")"
-    kill_flea
+    kill_bachy
 )

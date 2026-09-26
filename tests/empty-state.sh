@@ -2,7 +2,7 @@
 set -eu
 cd "$(dirname "$0")/.." || exit 1
 
-ui_dir=${FLEA_EMPTY_STATE_UI_DIR:-ui}
+ui_dir=${BACHY_EMPTY_STATE_UI_DIR:-ui}
 # The hint used to be bound in shell.qml, then on the pane, and now on the states tile it draws. The file
 # is named here rather than in each check, and the check below fails loudly when it moves again
 # rather than matching nothing and passing.

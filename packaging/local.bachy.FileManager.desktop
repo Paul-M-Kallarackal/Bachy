@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Bachy
+GenericName=File Manager
+Comment=Fast, keyboard-first file manager
+# --gui states the mode rather than choosing it: bare bachy opens the window too, so the flag is a contract, not a correction.
+Exec=bachy --gui %f
+Icon=local.bachy.FileManager
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+Keywords=files;folder;manager;browser;bachy;
+StartupWMClass=local.bachy.FileManager

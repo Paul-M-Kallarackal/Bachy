@@ -1,9 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.Commons
-import qs.Ui
-import "." as Flea
+import "." as Bachy
 import "js/Mounts.js" as Mounts
 import "js/Protocols.js" as Protocols
 import "js/Motion.js" as Motion
@@ -263,10 +261,9 @@ Item {
         dropboxCheck.running = true
     }
 
-    // omarchy-launch-terminal runs its argv directly in a real terminal, so the sudo prompt
-    // omarchy-pkg-add may need and the install's own progress are both visible to the user.
+    // Open package information; installation remains under the user's package manager.
     function installDropbox() {
-        Quickshell.execDetached(["omarchy-launch-terminal", "omarchy", "install", "service", "dropbox"])
+        Qt.openUrlExternally("https://aur.archlinux.org/packages/dropbox")
         root.close()
     }
 
@@ -339,7 +336,7 @@ Item {
             onWheel: function (wheel) { wheel.accepted = true }
         }
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.topMargin: card.contentTopInset
@@ -357,7 +354,7 @@ Item {
                 width: parent.width
                 spacing: Style.space(12)
 
-                Flea.DialogTitle {
+                Bachy.DialogTitle {
                     width: parent.width
                     text: root.dialogTitle
                 }
@@ -380,7 +377,7 @@ Item {
                     height: Theme.rowHeight
                     spacing: Theme.spacing.gap
 
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         visible: root.statusText.length > 0
                         width: Theme.font.caption
                         height: Theme.font.caption
@@ -406,13 +403,13 @@ Item {
                     anchors.right: parent.right
                     spacing: Theme.spacing.gap
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         label: "Cancel"
                         available: !root.saving
                         onActivated: root.close()
                     }
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         label: root.formAction()
                         primary: true
                         available: !root.busy
@@ -435,7 +432,7 @@ Item {
                     text: "DROPBOX"
                 }
 
-                Flea.DialogButton {
+                Bachy.DialogButton {
                     label: "Install Dropbox"
                     available: !root.busy
                     onActivated: root.installDropbox()

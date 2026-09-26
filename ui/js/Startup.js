@@ -7,7 +7,7 @@
 
 // Sample state, as ui/ViewState.qml holds it:
 // {startIn: "folder", startFolder: "/home/gm/Work", lastPath: "/home/gm/Pictures", newTab: "home"}
-// argvPath is FLEA_PATH, which ui/shell.qml reads off the command line.
+// argvPath is BACHY_PATH, which ui/shell.qml reads off the command line.
 function startPath(state, home, argvPath) {
     // A path the caller named outranks every setting: a file manager asked to open somewhere opens
     // there, and this is the same precedence the --select flag already has over the remembered pair.

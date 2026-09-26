@@ -32,7 +32,7 @@ fn fixture(d: &TestDir, child: Option<&str>, destination: Option<&Path>) -> (Rev
     let metadata = source.symlink_metadata().unwrap();
     let mut reviewed = Reviewed::inspect(source.clone(), &format!("l{}:{}", metadata.dev(), metadata.ino())).unwrap();
     reviewed.snapshot(&mut Manifest::new(d.path()).unwrap(), d.path(), &Cancellation::default()).unwrap();
-    let quarantine = d.dir("files/.flea-delete-test");
+    let quarantine = d.dir("files/.bachy-delete-test");
     let recovery_root = d.dir("recovery");
     for path in [&source, &reviewed.info, &quarantine, &recovery_root] { guard(d, path); }
     if let Some(destination) = destination { guard(d, destination); }
@@ -231,15 +231,15 @@ fn recovery_cleans_restore_metadata_only_for_its_verified_destination() {
 fn recovery_keeps_malformed_and_nonregular_records() {
     let d = TestDir::new("recovery-malformed");
     d.dir("recovery");
-    d.file("recovery/.flea-delete-truncated.review", "short");
-    let malformed = d.join("recovery/.flea-delete-malformed.review");
+    d.file("recovery/.bachy-delete-truncated.review", "short");
+    let malformed = d.join("recovery/.bachy-delete-malformed.review");
     let mut record = Manifest::create(&malformed).unwrap();
     record.append(b"{}").unwrap();
     drop(record);
-    d.dir("recovery/.flea-delete-directory.review");
+    d.dir("recovery/.bachy-delete-directory.review");
     let target = d.file("link-target", "keep");
-    std::os::unix::fs::symlink(&target, d.join("recovery/.flea-delete-link.review")).unwrap();
-    assert!(std::process::Command::new("mkfifo").arg(d.join("recovery/.flea-delete-pipe.review")).status().unwrap().success());
+    std::os::unix::fs::symlink(&target, d.join("recovery/.bachy-delete-link.review")).unwrap();
+    assert!(std::process::Command::new("mkfifo").arg(d.join("recovery/.bachy-delete-pipe.review")).status().unwrap().success());
     let report = replay(&d);
     assert_eq!(report.recovered, 0);
     assert_eq!(report.failures.len(), 5);
@@ -354,8 +354,8 @@ fn recovery_keeps_its_record_when_the_source_parent_was_replaced() {
     drop(journal);
     assert_eq!(replay(&d).failures.len(), 1);
     assert!(record.exists());
-    assert_eq!(std::fs::read_to_string(d.join("saved-files/.flea-delete-test/payload")).unwrap(), "payload");
-    assert!(d.join("saved-files/.flea-delete-test/metadata").exists());
+    assert_eq!(std::fs::read_to_string(d.join("saved-files/.bachy-delete-test/payload")).unwrap(), "payload");
+    assert!(d.join("saved-files/.bachy-delete-test/metadata").exists());
 }
 
 #[test]

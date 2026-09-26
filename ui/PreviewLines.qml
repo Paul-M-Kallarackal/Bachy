@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell.Io
-import qs.Commons
 
 // The first lines of a text file, in the preview column's frame. The canvas is explicit that this
 // invents no highlighting: "first lines verbatim, mono" for text, "line numbers muted, text

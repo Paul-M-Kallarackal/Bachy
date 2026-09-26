@@ -16,6 +16,10 @@ Item {
     // The OEM Tailscale service's pollWatchdog bounds status queries at fifteen seconds.
     readonly property int statusTimeoutSeconds: 15
     signal refreshed()
+    signal sendFinished(string message, bool failed)
+    property bool sending: false
+    property bool _sendAwaitingStart: false
+    property string _sendLabel: ""
     // onExited can race the StdioCollector's own text, see ui/NetworkMounts.qml's header comment.
     property string _statusOutput: ""
     property string _statusError: ""
@@ -36,12 +40,16 @@ Item {
         return true
     }
 
-    // argv-direct and detached: the script owns its own success/failure notification, see
-    // docs/superpowers/specs/2026-08-31-flea-operations-design.md "4.1 Taildrop".
+    // Keep the CLI process observable so its result reaches the pane status bar.
     function send(peerId, paths) {
         var peer = TaildropJs.byId(root.peers, peerId)
-        if (!peer || !sendCommand || checking) return false
-        Quickshell.execDetached([sendCommand, peer.address].concat(paths))
+        if (sending) { reason = "a send is already in progress"; return false }
+        if (!peer || !sendCommand || checking || !paths.length) return false
+        _sendLabel = peer.label
+        sending = true
+        _sendAwaitingStart = true
+        sendProcess.command = [sendCommand, "file", "cp", "--"].concat(paths).concat([peer.address + ":"])
+        sendProcess.running = true
         return true
     }
 
@@ -49,6 +57,24 @@ Item {
     function labelFor(peerId) {
         var peer = TaildropJs.byId(root.peers, peerId)
         return peer ? peer.label : "that peer"
+    }
+
+    Process {
+        id: sendProcess
+        onStarted: root._sendAwaitingStart = false
+        onRunningChanged: {
+            if (root._sendAwaitingStart && !running) {
+                root._sendAwaitingStart = false
+                root.sending = false
+                root.sendFinished("Tailscale could not start.", true)
+            }
+        }
+        onExited: function(exitCode) {
+            root._sendAwaitingStart = false
+            root.sending = false
+            root.sendFinished(exitCode === 0 ? "Sent to " + root._sendLabel + "."
+                : "Taildrop to " + root._sendLabel + " failed (exit " + exitCode + ").", exitCode !== 0)
+        }
     }
 
     Process {

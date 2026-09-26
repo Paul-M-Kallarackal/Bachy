@@ -1,20 +1,22 @@
 #!/bin/bash
 # Drives the real binary and asserts the mode contract, since main() is only reachable here.
 set -u
+# script(1) must interpret the generated POSIX shell commands consistently.
+export SHELL=/bin/bash
 # Hard rule 9's guard, which owns FIXTURE_ROOT and every create and delete below.
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
-BIN=./target/debug/flea
+BIN=./target/debug/bachy
 # Without this every case below drives a missing binary and reports the result as a product failure.
 [ -x "$BIN" ] || { echo "modes.sh: $BIN is missing, run cargo build" >&2; exit 1; }
 # current_exe() answers with the kernel's own resolved path, so the expectation is resolved the same way.
 BIN_REAL=$(readlink -f "$BIN")
-# Named, not re-derived from ui_dir's own walk, which an installed /usr/share/flea/ui outranks.
+# Named, not re-derived from ui_dir's own walk, which an installed /usr/share/bachy/ui outranks.
 UI_REAL=$(readlink -f .)/ui
 # An operator exporting any of these would answer for src/gui.rs, which is the thing under test here.
-unset QSG_RHI_BACKEND FLEA_RENDERER_AUTOMATIC QT_VK_PHYSICAL_DEVICE_INDEX VK_DRIVER_FILES VK_ICD_FILENAMES QS_ICON_THEME FLEA_QT_THEME \
-  FLEA_PREFETCH FLEA_PREFETCH_SHELL
+unset QSG_RHI_BACKEND BACHY_RENDERER_AUTOMATIC QT_VK_PHYSICAL_DEVICE_INDEX VK_DRIVER_FILES VK_ICD_FILENAMES QS_ICON_THEME BACHY_QT_THEME \
+  BACHY_PREFETCH BACHY_PREFETCH_SHELL
 fail=0
 
 check() {
@@ -62,14 +64,14 @@ check "--version is still read before the other modes" "1" "$(echo "$out" | grep
 
 # --pick refuses before any window and writes no reply, and an exported-but-empty request is absent
 # the way an empty display is: a wrapper's unset variable must not open a chooser with no request.
-D="$FIXTURE_ROOT/flea-pick-test-$$"
+D="$FIXTURE_ROOT/bachy-pick-test-$$"
 sandbox_make "$D"
-out=$(env -u FLEA_PICKER $BIN --pick "$D/reply.json" 2>&1 </dev/null); rc=$?
+out=$(env -u BACHY_PICKER $BIN --pick "$D/reply.json" 2>&1 </dev/null); rc=$?
 check "--pick with no request refuses" "2" "$rc"
-check "--pick with no request names FLEA_PICKER" "1" "$(echo "$out" | grep -c 'needs FLEA_PICKER')"
-out=$(env FLEA_PICKER= $BIN --pick "$D/reply.json" 2>&1 </dev/null); rc=$?
+check "--pick with no request names BACHY_PICKER" "1" "$(echo "$out" | grep -c 'needs BACHY_PICKER')"
+out=$(env BACHY_PICKER= $BIN --pick "$D/reply.json" 2>&1 </dev/null); rc=$?
 check "--pick with an empty request refuses" "2" "$rc"
-check "--pick with an empty request gives the same sentence" "1" "$(echo "$out" | grep -c 'needs FLEA_PICKER')"
+check "--pick with an empty request gives the same sentence" "1" "$(echo "$out" | grep -c 'needs BACHY_PICKER')"
 # The request guard is read before the display one, so a headless run cannot pass this case by
 # refusing for the other reason: with a display, that is the branch that would open a window.
 check "--pick with an empty request refuses on the request, not the display" "0" "$(echo "$out" | grep -c 'no graphical session')"
@@ -81,27 +83,27 @@ out=$(env -u WAYLAND_DISPLAY -u DISPLAY $BIN --gui 2>&1 </dev/null)
 check "no display refuses" "1" "$(echo "$out" | grep -c 'no graphical session')"
 
 # An exported-but-empty display is absent and must not reach qs.
-out=$(env WAYLAND_DISPLAY= DISPLAY= PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY= DISPLAY= PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "an empty display refuses" "1" "$(echo "$out" | grep -c 'no graphical session')"
-out=$(env -u DISPLAY WAYLAND_DISPLAY= PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env -u DISPLAY WAYLAND_DISPLAY= PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "an empty WAYLAND_DISPLAY alone refuses" "1" "$(echo "$out" | grep -c 'no graphical session')"
-out=$(env -u WAYLAND_DISPLAY DISPLAY= PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env -u WAYLAND_DISPLAY DISPLAY= PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "an empty DISPLAY alone refuses" "1" "$(echo "$out" | grep -c 'no graphical session')"
 
 # Each display variable independently permits launch, and an empty peer must not mask it.
-out=$(env -u DISPLAY WAYLAND_DISPLAY=flea-modes-test-display PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env -u DISPLAY WAYLAND_DISPLAY=bachy-modes-test-display PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "a non-empty WAYLAND_DISPLAY is accepted" "1" "$(echo "$out" | grep -c 'could not start the shell')"
-out=$(env -u WAYLAND_DISPLAY DISPLAY=:99 PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env -u WAYLAND_DISPLAY DISPLAY=:99 PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "a non-empty DISPLAY is accepted" "1" "$(echo "$out" | grep -c 'could not start the shell')"
-out=$(env WAYLAND_DISPLAY= DISPLAY=:99 PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY= DISPLAY=:99 PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "an empty WAYLAND_DISPLAY does not mask DISPLAY" "1" "$(echo "$out" | grep -c 'could not start the shell')"
-out=$(env WAYLAND_DISPLAY=flea-modes-test-display DISPLAY= PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY=bachy-modes-test-display DISPLAY= PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "an empty DISPLAY does not mask WAYLAND_DISPLAY" "1" "$(echo "$out" | grep -c 'could not start the shell')"
-out=$(env WAYLAND_DISPLAY=flea-modes-test-display DISPLAY=:99 PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY=bachy-modes-test-display DISPLAY=:99 PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "two non-empty displays are accepted" "1" "$(echo "$out" | grep -c 'could not start the shell')"
 
 # qs missing from PATH is what a bad launcher or .desktop install hits; no errno may leak.
-out=$(env WAYLAND_DISPLAY=flea-modes-test-display PATH=/nonexistent-flea-test-path $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY=bachy-modes-test-display PATH=/nonexistent-bachy-test-path $BIN --gui 2>&1 </dev/null)
 check "missing qs is elided" "1" "$(echo "$out" | grep -c 'could not start the shell')"
 check "missing qs carries no errno" "0" "$(echo "$out" | grep -c 'os error')"
 
@@ -109,7 +111,7 @@ check "missing qs carries no errno" "0" "$(echo "$out" | grep -c 'os error')"
 out=$(env -u WAYLAND_DISPLAY -u DISPLAY $BIN . 2>&1 </dev/null)
 check "no flag defaults to the window" "1" "$(echo "$out" | grep -c 'no graphical session')"
 
-# A shell PTY proves bare flea still means the product that exists, not the reserved terminal interface.
+# A shell PTY proves bare bachy still means the product that exists, not the reserved terminal interface.
 out=$(env -u WAYLAND_DISPLAY -u DISPLAY script -qec "$BIN ." /dev/null 2>&1)
 check "no flag at a terminal defaults to the window" "1" "$(echo "$out" | grep -c 'no graphical session')"
 
@@ -124,39 +126,39 @@ check "--tui --gui is a usage error" "2" "$rc"
 check "--tui --gui names the conflict" "1" "$(echo "$out" | grep -c 'mutually exclusive')"
 
 # The prctl and renderer choice have to survive exec, so a stub qs reports the launched child.
-D="$FIXTURE_ROOT/flea-thp-test-$$"
+D="$FIXTURE_ROOT/bachy-thp-test-$$"
 sandbox_make "$D"
 # One stub reports everything the launch has to carry across exec, huge pages and target included.
 cat > "$D/qs" <<'STUB'
 #!/bin/sh
 grep -i "^THP_enabled" /proc/self/status
-printf 'FLEA_BIN %s\n' "$FLEA_BIN"
+printf 'BACHY_BIN %s\n' "$BACHY_BIN"
 printf 'RENDERER %s\n' "$QSG_RHI_BACKEND"
-printf 'AUTOMATIC %s\n' "${FLEA_RENDERER_AUTOMATIC-unset}"
+printf 'AUTOMATIC %s\n' "${BACHY_RENDERER_AUTOMATIC-unset}"
 printf 'ICD %s\n' "${VK_ICD_FILENAMES-unset}"
 printf 'DRIVER_FILES %s\n' "${VK_DRIVER_FILES-unset}"
 printf 'ARGV %s\n' "$*"
-printf 'FLEA_PATH %s\n' "${FLEA_PATH-unset}"
-printf 'FLEA_SELECT %s\n' "${FLEA_SELECT-unset}"
+printf 'BACHY_PATH %s\n' "${BACHY_PATH-unset}"
+printf 'BACHY_SELECT %s\n' "${BACHY_SELECT-unset}"
 printf 'PLATFORM_THEME %s\n' "${QT_QPA_PLATFORMTHEME-unset}"
-printf 'PREFETCH %s\n' "${FLEA_PREFETCH-unset}"
-printf 'PREFETCH_SHELL %s %s\n' "${FLEA_PREFETCH_SHELL-unset}" "$$"
+printf 'PREFETCH %s\n' "${BACHY_PREFETCH-unset}"
+printf 'PREFETCH_SHELL %s %s\n' "${BACHY_PREFETCH_SHELL-unset}" "$$"
 printf 'ICON_THEME %s\n' "${QS_ICON_THEME-unset}"
-printf 'THEME_MARKER %s\n' "${FLEA_QT_THEME-unset}"
+printf 'THEME_MARKER %s\n' "${BACHY_QT_THEME-unset}"
 STUB
 chmod +x "$D/qs"
-out=$(env FLEA_BIN=stale FLEA_UI="$UI_REAL" WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env BACHY_BIN=stale BACHY_UI="$UI_REAL" WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "the launched shell has transparent huge pages off" "1" \
   "$(echo "$out" | grep -c 'THP_enabled:[[:space:]]*0')"
 check "the launched shell reported its THP state at all" "1" "$(echo "$out" | grep -c 'THP_enabled')"
 # The entry is ui/boot/shell.qml and not the ui directory, because a document imports its own.
 check "the launch targets the boot entry" "ARGV -p $UI_REAL/boot/shell.qml" "$(echo "$out" | grep '^ARGV ')"
-# 24003ab made an explicit FLEA_BIN the operator's choice, the rule FLEA_UI and QSG_RHI_BACKEND
+# 24003ab made an explicit BACHY_BIN the operator's choice, the rule BACHY_UI and QSG_RHI_BACKEND
 # already follow, and this check was left asserting the behaviour that commit replaced. The launch
 # above sets one deliberately, so the operator's own value is what must reach the shell; the unset
 # case further down is the one that derives the running binary.
-check "an explicit FLEA_BIN is the operator's, and reaches the shell" "FLEA_BIN stale" \
-  "$(echo "$out" | grep '^FLEA_BIN ')"
+check "an explicit BACHY_BIN is the operator's, and reaches the shell" "BACHY_BIN stale" \
+  "$(echo "$out" | grep '^BACHY_BIN ')"
 check "the automatic renderer starts with Vulkan" "1" "$(echo "$out" | grep -c '^RENDERER vulkan$')"
 check "the automatic renderer permits one fallback" "1" "$(echo "$out" | grep -c '^AUTOMATIC 1$')"
 # The downgrade below says why, so its silence here is what proves this arm took the probe's other branch.
@@ -184,119 +186,119 @@ else
     check "and leaves the driver file list alone" "1" "$(echo "$out" | grep -c '^DRIVER_FILES unset$')"
   fi
 fi
-out=$(env VK_ICD_FILENAMES=/tmp/flea-operator-icd.json WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "an explicit ICD list is preserved" "1" "$(echo "$out" | grep -c '^ICD /tmp/flea-operator-icd.json$')"
+out=$(env VK_ICD_FILENAMES=/tmp/bachy-operator-icd.json WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+check "an explicit ICD list is preserved" "1" "$(echo "$out" | grep -c '^ICD /tmp/bachy-operator-icd.json$')"
 check "and an explicit ICD list is not announced as a pin" "0" "$(echo "$out" | grep -c 'GPU with no display')"
-out=$(env VK_DRIVER_FILES=/tmp/flea-operator-driver.json WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "an explicit driver file list is preserved" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/flea-operator-driver.json$')"
+out=$(env VK_DRIVER_FILES=/tmp/bachy-operator-driver.json WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+check "an explicit driver file list is preserved" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/bachy-operator-driver.json$')"
 check "and an explicit driver file list is not announced as a pin" "0" "$(echo "$out" | grep -c 'GPU with no display')"
-out=$(env QSG_RHI_BACKEND=opengl FLEA_RENDERER_AUTOMATIC=stale WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env QSG_RHI_BACKEND=opengl BACHY_RENDERER_AUTOMATIC=stale WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an explicit renderer is preserved" "1" "$(echo "$out" | grep -c '^RENDERER opengl$')"
 check "an explicit renderer cannot trigger fallback" "1" "$(echo "$out" | grep -c '^AUTOMATIC unset$')"
 # An exported-but-empty renderer is a wrapper script's unset variable, absent as WAYLAND_DISPLAY is.
-out=$(env QSG_RHI_BACKEND= WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env QSG_RHI_BACKEND= WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an empty renderer is absent, not a choice" "1" "$(echo "$out" | grep -c '^RENDERER vulkan$')"
 check "and an empty renderer still permits the one fallback" "1" "$(echo "$out" | grep -c '^AUTOMATIC 1$')"
 
 # Issue #14: a loader that cannot build an instance kills the shell before it can raise a scene-graph error.
-out=$(env VK_DRIVER_FILES=/nonexistent-flea-icd VK_ICD_FILENAMES=/nonexistent-flea-icd \
-  WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env VK_DRIVER_FILES=/nonexistent-bachy-icd VK_ICD_FILENAMES=/nonexistent-bachy-icd \
+  WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an unusable Vulkan loader launches the shell on OpenGL" "1" "$(echo "$out" | grep -c '^RENDERER opengl$')"
 check "and OpenGL is marked as final, since it has nowhere left to fall" "1" "$(echo "$out" | grep -c '^AUTOMATIC unset$')"
 # Only the probe's own branch prints this, so the pair above cannot come from an explicit renderer.
 check "and the operator is told which call refused" "1" \
-  "$(echo "$out" | grep -c 'flea: Vulkan is unusable, vkCreateInstance answered ')"
+  "$(echo "$out" | grep -c 'bachy: Vulkan is unusable, vkCreateInstance answered ')"
 check "and the sentence names the extensions it asked for" "1" "$(echo "$out" | grep -c 'VK_KHR_surface')"
 check "and it is said once, not dumped" "1" "$(echo "$out" | grep -c 'Vulkan is unusable')"
 
 # The operator's own choice is not a guess to be corrected, even when the loader cannot honour it.
-out=$(env VK_DRIVER_FILES=/nonexistent-flea-icd VK_ICD_FILENAMES=/nonexistent-flea-icd \
-  QSG_RHI_BACKEND=vulkan WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env VK_DRIVER_FILES=/nonexistent-bachy-icd VK_ICD_FILENAMES=/nonexistent-bachy-icd \
+  QSG_RHI_BACKEND=vulkan WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an explicit Vulkan survives an unusable loader" "1" "$(echo "$out" | grep -c '^RENDERER vulkan$')"
 check "and an explicit choice still marks no fallback" "1" "$(echo "$out" | grep -c '^AUTOMATIC unset$')"
 check "and the probe never ran, so nothing was said about it" "0" "$(echo "$out" | grep -c 'Vulkan is unusable')"
 
 # Nothing but the renderer may differ between the two arms, so both are launched on the same target.
-good=$(env WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" \
+good=$(env WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" \
   $BIN --gui --select /etc/hostname 2>&1 </dev/null)
-broken=$(env VK_DRIVER_FILES=/nonexistent-flea-icd VK_ICD_FILENAMES=/nonexistent-flea-icd \
-  WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" \
+broken=$(env VK_DRIVER_FILES=/nonexistent-bachy-icd VK_ICD_FILENAMES=/nonexistent-bachy-icd \
+  WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" \
   $BIN --gui --select /etc/hostname 2>&1 </dev/null)
-check "the working arm opens the selected file's directory" "FLEA_PATH /etc" "$(echo "$good" | grep '^FLEA_PATH ')"
-check "the working arm selects the file itself" "FLEA_SELECT /etc/hostname" "$(echo "$good" | grep '^FLEA_SELECT ')"
-check "the fallback arm opens the same directory" "$(echo "$good" | grep '^FLEA_PATH ')" "$(echo "$broken" | grep '^FLEA_PATH ')"
-check "the fallback arm selects the same file" "$(echo "$good" | grep '^FLEA_SELECT ')" "$(echo "$broken" | grep '^FLEA_SELECT ')"
+check "the working arm opens the selected file's directory" "BACHY_PATH /etc" "$(echo "$good" | grep '^BACHY_PATH ')"
+check "the working arm selects the file itself" "BACHY_SELECT /etc/hostname" "$(echo "$good" | grep '^BACHY_SELECT ')"
+check "the fallback arm opens the same directory" "$(echo "$good" | grep '^BACHY_PATH ')" "$(echo "$broken" | grep '^BACHY_PATH ')"
+check "the fallback arm selects the same file" "$(echo "$good" | grep '^BACHY_SELECT ')" "$(echo "$broken" | grep '^BACHY_SELECT ')"
 check "the fallback arm passes the same UI root" "$(echo "$good" | grep '^ARGV ')" "$(echo "$broken" | grep '^ARGV ')"
 check "and the fallback arm is the one that changed renderer" "1" "$(echo "$broken" | grep -c '^RENDERER opengl$')"
 check "and it is the only arm that reported a downgrade" "0" "$(echo "$good" | grep -c 'Vulkan is unusable')"
 
 
-# A launch with no FLEA_BIN in the environment is the ordinary one, and it must still name this binary.
-out=$(env -u FLEA_BIN WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "an unset FLEA_BIN is derived from the running binary" "FLEA_BIN $BIN_REAL" \
-  "$(echo "$out" | grep '^FLEA_BIN ')"
+# A launch with no BACHY_BIN in the environment is the ordinary one, and it must still name this binary.
+out=$(env -u BACHY_BIN WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+check "an unset BACHY_BIN is derived from the running binary" "BACHY_BIN $BIN_REAL" \
+  "$(echo "$out" | grep '^BACHY_BIN ')"
 
-# The icon theme name is the one thing Flea took from gtk3, and Omarchy writes it here too.
+# A legacy Omarchy theme file must not override the user's Qt settings.
 theme_home="$D/home"
 mkdir -p "$theme_home/.local/state/omarchy/current/theme"
 printf 'Yaru-blue\n' > "$theme_home/.local/state/omarchy/current/theme/icons.theme"
-out=$(env -u XDG_CACHE_HOME HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env -u XDG_CACHE_HOME HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "the icon theme name reaches the shell" "ICON_THEME Yaru-blue" "$(echo "$out" | grep '^ICON_THEME ')"
-check "the prefetch list is named for the backend" "PREFETCH $theme_home/.cache/flea/prefetch" "$(echo "$out" | grep '^PREFETCH ')"
+check "legacy theme files are ignored" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
+check "the prefetch list is named for the backend" "PREFETCH $theme_home/.cache/bachy/prefetch" "$(echo "$out" | grep '^PREFETCH ')"
 # Sample line: "PREFETCH_SHELL 4242 4242", the pid the launcher named and the pid the stub runs as.
 own=$(echo "$out" | grep '^PREFETCH_SHELL ' | cut -d' ' -f3)
 check "and the shell is named by the pid exec kept" "PREFETCH_SHELL $own $own" "$(echo "$out" | grep '^PREFETCH_SHELL ')"
-check "and gtk3 does not" "PLATFORM_THEME unset" "$(echo "$out" | grep '^PLATFORM_THEME ')"
+check "the platform theme is preserved" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 
-out=$(env HOME="$theme_home" XDG_CACHE_HOME="$D/xdg-cache" WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" XDG_CACHE_HOME="$D/xdg-cache" WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "an operator's XDG_CACHE_HOME holds the prefetch list" "PREFETCH $D/xdg-cache/flea/prefetch" "$(echo "$out" | grep '^PREFETCH ')"
+check "an operator's XDG_CACHE_HOME holds the prefetch list" "PREFETCH $D/xdg-cache/bachy/prefetch" "$(echo "$out" | grep '^PREFETCH ')"
 
 # An operator who named an icon theme keeps whatever platform theme they chose with it.
 out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 QS_ICON_THEME=Papirus \
-  WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+  WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an operator's own icon theme is untouched" "ICON_THEME Papirus" "$(echo "$out" | grep '^ICON_THEME ')"
 check "and their platform theme survives with it" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and no trade was marked over it" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 
 # Only gtk3 is traded. Another engine is the operator's own choice and must survive untouched.
-out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=qt6ct WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=qt6ct WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "another platform theme is the operator's and survives" "PLATFORM_THEME qt6ct" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and no icon theme is named over it" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
 check "and nothing is marked as traded" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 
 # The trade marks itself, which is what open.rs and terminal.rs read to hand the theme back.
-out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
-check "a traded theme says what it traded" "THEME_MARKER gtk3" "$(echo "$out" | grep '^THEME_MARKER ')"
+check "no platform theme trade is recorded" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 
 # An unreadable icons.theme is a read that failed, so the launch must be exactly today's.
 chmod 000 "$theme_home/.local/state/omarchy/current/theme/icons.theme"
-out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an unreadable icons.theme keeps the platform theme" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and names no icon theme from it" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
 check "and marks no trade it did not make" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 chmod 644 "$theme_home/.local/state/omarchy/current/theme/icons.theme"
 
-# No HOME: no icons.theme, no cache for a list, and the prefetch pair a Flea terminal passes on never reaches the shell.
-out=$(env -u HOME -u XDG_CACHE_HOME FLEA_PREFETCH="$D/stale-list" FLEA_PREFETCH_SHELL=1 QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+# No HOME: no icons.theme, no cache for a list, and the prefetch pair a Bachy terminal passes on never reaches the shell.
+out=$(env -u HOME -u XDG_CACHE_HOME BACHY_PREFETCH="$D/stale-list" BACHY_PREFETCH_SHELL=1 QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "no HOME keeps the platform theme" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and names no prefetch list" "PREFETCH unset" "$(echo "$out" | grep '^PREFETCH ')"
 check "and no shell to record it" "1" "$(echo "$out" | grep -c '^PREFETCH_SHELL unset ')"
 
-# A chooser started from a Flea terminal inherits both variables and must not record over the main window's list.
-out=$(env FLEA_PICKER='{"stub":true}' FLEA_PREFETCH="$D/stale-list" FLEA_PREFETCH_SHELL=1 FLEA_UI="$UI_REAL" \
-  WAYLAND_DISPLAY=flea-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --pick "$D/reply.json" 2>&1 </dev/null)
+# A chooser started from a Bachy terminal inherits both variables and must not record over the main window's list.
+out=$(env BACHY_PICKER='{"stub":true}' BACHY_PREFETCH="$D/stale-list" BACHY_PREFETCH_SHELL=1 BACHY_UI="$UI_REAL" \
+  WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D:/usr/bin:/bin" $BIN --pick "$D/reply.json" 2>&1 </dev/null)
 check "a chooser drops the prefetch list" "PREFETCH unset" "$(echo "$out" | grep '^PREFETCH ')"
 check "and the shell pid with it" "1" "$(echo "$out" | grep -c '^PREFETCH_SHELL unset ')"
 
 # No icons.theme is not an invitation to guess: the launch must be exactly today's.
 rm -f "$theme_home/.local/state/omarchy/current/theme/icons.theme"
-out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "a box with no icons.theme keeps its platform theme" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and gets no icon theme of its own" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
@@ -304,7 +306,7 @@ check "and marks no trade it did not make" "THEME_MARKER unset" "$(echo "$out" |
 
 # An empty icons.theme is absent, the rule every other empty variable follows here.
 printf '\n' > "$theme_home/.local/state/omarchy/current/theme/icons.theme"
-out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=flea-modes-test-display \
+out=$(env HOME="$theme_home" QT_QPA_PLATFORMTHEME=gtk3 WAYLAND_DISPLAY=bachy-modes-test-display \
   PATH="$D:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 check "an empty icons.theme keeps the platform theme" "PLATFORM_THEME gtk3" "$(echo "$out" | grep '^PLATFORM_THEME ')"
 check "and names no icon theme" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
@@ -341,7 +343,7 @@ done
 
 # --open resolves the target, refuses a directory, and hands anything else to gio open, which is
 # the route that reads the desktop database and so honours Terminal=true; see "Opening a file".
-D="$FIXTURE_ROOT/flea-open-test-$$"
+D="$FIXTURE_ROOT/bachy-open-test-$$"
 sandbox_make "$D"
 mkdir -p "$D/dir" "$D/bin" "$D/failbin" "$D/lingerbin"
 printf 'hello' > "$D/file.txt"
@@ -357,7 +359,7 @@ printf 'hello' > "$D/$newline_name"
 opened="$D/opened.log"
 # The last argument on its own, because a name with a newline in it cannot be read back off a line.
 last_arg="$D/last-arg"
-# Sample input: gio open /home/flea-sandbox/flea-open-test-123/file.txt
+# Sample input: gio open /home/bachy-sandbox/bachy-open-test-123/file.txt
 # No strip-to-paren here: cut reads its OWN stat, comm is bare "cut", and its pgid is the stub's by fork.
 {
   printf '#!/bin/sh\n'
@@ -367,10 +369,10 @@ last_arg="$D/last-arg"
   printf 'printf "NARGS %%s\\n" "$#"\n'
   printf 'printf "ICD %%s\\n" "${VK_ICD_FILENAMES-unset}"\n'
   printf 'printf "DRIVER_FILES %%s\\n" "${VK_DRIVER_FILES-unset}"\n'
-  printf 'printf "PIN %%s\\n" "${FLEA_VK_PIN-unset}"\n'
+  printf 'printf "PIN %%s\\n" "${BACHY_VK_PIN-unset}"\n'
   printf 'printf "THEME %%s\\n" "${QT_QPA_PLATFORMTHEME-unset}"\n'
   printf 'printf "ICON_THEME %%s\\n" "${QS_ICON_THEME-unset}"\n'
-  printf 'printf "THEME_MARKER %%s\\n" "${FLEA_QT_THEME-unset}"\n'
+  printf 'printf "THEME_MARKER %%s\\n" "${BACHY_QT_THEME-unset}"\n'
   printf 'printf "ARGV %%s\\n" "$*"\n'
   printf 'shift $(($# - 1)); printf "%%s" "$1" > %q\n' "$last_arg"
   printf 'P=$(cut -d" " -f5 /proc/self/stat)\n'
@@ -384,14 +386,14 @@ printf '#!/bin/sh\nexit 3\n' > "$D/failbin/$open_handoff"
 chmod +x "$D/failbin/$open_handoff"
 
 : > "$opened"
-# Quickshell hands flea --open a pipe and closes it, so a pipe is exactly what the handler must not inherit.
+# Quickshell hands bachy --open a pipe and closes it, so a pipe is exactly what the handler must not inherit.
 PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 # THP_enabled is the stub's last line, so waiting for it is waiting for the whole record.
 wait_for_line "$opened" '^THP_enabled'
 out=$(cat "$opened")
 check "--open hands the file to gio open" "1" "$(echo "$out" | grep -c "^ARGV open $D/file.txt$")"
 check "and gio is given the subcommand and the path and nothing else" "1" "$(echo "$out" | grep -c '^NARGS 2$')"
-# A pipe here dies with the flea that made it, and the handler dies with it on its first write.
+# A pipe here dies with the bachy that made it, and the handler dies with it on its first write.
 check "the opened program got no inherited pipe" "1" "$(echo "$out" | grep -c '^FD1 /dev/null$')"
 check "and the stub reported its first descriptor at all" "1" "$(echo "$out" | grep -c '^FD1 ')"
 # Field five of /proc/self/stat is the process group; it equals the pid only after setpgid(0, 0).
@@ -422,8 +424,8 @@ check "and --open waited for a launcher that outlived its own last write" "1" \
   "$([ -n "$lingering_pid" ] && ! kill -0 "$lingering_pid" 2>/dev/null && echo 1 || echo 0)"
 
 : > "$opened"
-# Flea's own pin carries a marker, and only a marked pin is taken back off a program Flea opens.
-VK_ICD_FILENAMES=/tmp/flea-pin-icd.json VK_DRIVER_FILES=/tmp/flea-pin-driver.json FLEA_VK_PIN=1 \
+# Bachy's own pin carries a marker, and only a marked pin is taken back off a program Bachy opens.
+VK_ICD_FILENAMES=/tmp/bachy-pin-icd.json VK_DRIVER_FILES=/tmp/bachy-pin-driver.json BACHY_VK_PIN=1 \
   PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 # The status wanted is the launcher's own, not cat's, which is 0 whatever happened upstream.
 check "the marked-pin open returned success" "0" "${PIPESTATUS[0]}"
@@ -435,33 +437,33 @@ check "and the marker itself does not leak onward" "1" "$(echo "$out" | grep -c 
 
 : > "$opened"
 # An operator's own list carries no marker, so it must survive into the program they open.
-VK_ICD_FILENAMES=/tmp/flea-operator-icd.json VK_DRIVER_FILES=/tmp/flea-operator-driver.json \
+VK_ICD_FILENAMES=/tmp/bachy-operator-icd.json VK_DRIVER_FILES=/tmp/bachy-operator-driver.json \
   PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 check "the operator-list open returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$opened" '^THP_enabled'
 out=$(cat "$opened")
-check "an operator's own ICD list reaches the opened program" "1" "$(echo "$out" | grep -c '^ICD /tmp/flea-operator-icd.json$')"
-check "and so does their own driver file list" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/flea-operator-driver.json$')"
+check "an operator's own ICD list reaches the opened program" "1" "$(echo "$out" | grep -c '^ICD /tmp/bachy-operator-icd.json$')"
+check "and so does their own driver file list" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/bachy-operator-driver.json$')"
 
 : > "$opened"
 # An exported but empty marker is absent, so it must not turn an operator's own list into a pin.
-VK_ICD_FILENAMES=/tmp/flea-operator-icd.json VK_DRIVER_FILES=/tmp/flea-operator-driver.json FLEA_VK_PIN= \
+VK_ICD_FILENAMES=/tmp/bachy-operator-icd.json VK_DRIVER_FILES=/tmp/bachy-operator-driver.json BACHY_VK_PIN= \
   PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 check "the empty-marker open returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$opened" '^THP_enabled'
 out=$(cat "$opened")
-check "an empty marker leaves an operator's ICD list alone" "1" "$(echo "$out" | grep -c '^ICD /tmp/flea-operator-icd.json$')"
-check "and leaves their driver file list alone" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/flea-operator-driver.json$')"
+check "an empty marker leaves an operator's ICD list alone" "1" "$(echo "$out" | grep -c '^ICD /tmp/bachy-operator-icd.json$')"
+check "and leaves their driver file list alone" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/bachy-operator-driver.json$')"
 
 : > "$opened"
 # What the launcher traded for its own startup, the program it opens gets back, and nothing else.
-env -u QT_QPA_PLATFORMTHEME QS_ICON_THEME=Yaru-blue FLEA_QT_THEME=gtk3 \
+env -u QT_QPA_PLATFORMTHEME QS_ICON_THEME=Yaru-blue BACHY_QT_THEME=gtk3 \
   PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 check "the traded-theme open returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$opened" '^THP_enabled'
 out=$(cat "$opened")
 check "an opened program gets the traded platform theme back" "THEME gtk3" "$(echo "$out" | grep '^THEME ')"
-check "and not the icon theme Flea named for Quickshell" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
+check "and not the icon theme Bachy named for Quickshell" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
 check "and not the marker that said so" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 
 : > "$opened"
@@ -476,7 +478,7 @@ check "and leaves an operator's own icon theme alone" "ICON_THEME Papirus" "$(ec
 
 : > "$opened"
 # An exported but empty marker is absent, the rule the pin marker beside it already follows.
-env QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Papirus FLEA_QT_THEME= \
+env QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Papirus BACHY_QT_THEME= \
   PATH="$D/bin:/usr/bin:/bin" $BIN --open "$D/file.txt" 2>&1 | cat >/dev/null
 check "the empty-theme-marker open returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$opened" '^THP_enabled'
@@ -514,7 +516,7 @@ check "a broken symlink is an error status" "2" "$rc"
 check "and one sentence, with no errno" "0" "$(echo "$out" | grep -c 'os error')"
 check "and that sentence names the file" "1" "$(echo "$out" | grep -c 'could not be opened')"
 
-out=$(env PATH=/nonexistent-flea-test-path $BIN --open "$D/file.txt" 2>&1)
+out=$(env PATH=/nonexistent-bachy-test-path $BIN --open "$D/file.txt" 2>&1)
 rc=$?
 check "a missing gio is an error status" "2" "$rc"
 check "and is elided too" "0" "$(echo "$out" | grep -c 'os error')"
@@ -562,7 +564,7 @@ done
 printf '#!/bin/sh\ngrep -i "^THP_enabled" /proc/self/status | sed "s/^/QS /"\nexec %s --open %s\n' "$PWD/$BIN" "$D/file.txt" > "$D/bin/qs"
 chmod +x "$D/bin/qs"
 : > "$opened"
-out=$(env WAYLAND_DISPLAY=flea-modes-test-display PATH="$D/bin:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
+out=$(env WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D/bin:/usr/bin:/bin" $BIN --gui 2>&1 </dev/null)
 # src/open.rs:43 waits for the launcher, so the stub's record is whole when the chain returns and this wait returns at once.
 wait_for_line "$opened" '^THP_enabled'
 check "the shell inherited huge pages off" "1" "$(echo "$out" | grep -c '^QS THP_enabled:[[:space:]]*0')"
@@ -573,7 +575,7 @@ sandbox_remove "$D"
 # to xdg-terminal-exec as one --dir= argument. src/terminal.rs is its own copy of the stdio, process
 # group and huge page guards --open carries, so each one is pinned here rather than assumed to have
 # travelled with the code; see "Opening a file".
-D="$FIXTURE_ROOT/flea-terminal-test-$$"
+D="$FIXTURE_ROOT/bachy-terminal-test-$$"
 sandbox_make "$D"
 mkdir -p "$D/dir" "$D/bin"
 printf 'hello' > "$D/file.txt"
@@ -581,7 +583,7 @@ ln -s "$D/dir" "$D/linkdir"
 ln -s "$D/nowhere" "$D/broken"
 # Its stdio is detached, so everything the terminal has to say goes to this log, not to our stdout.
 ran="$D/ran.log"
-# Sample input: xdg-terminal-exec --dir=/home/flea-sandbox/flea-terminal-test-123/dir
+# Sample input: xdg-terminal-exec --dir=/home/bachy-sandbox/bachy-terminal-test-123/dir
 # No strip-to-paren here: cut reads its OWN stat, comm is bare "cut", and its pgid is the stub's by fork.
 {
   printf '#!/bin/sh\n'
@@ -590,10 +592,10 @@ ran="$D/ran.log"
   printf 'printf "NARGS %%s\\n" "$#"\n'
   printf 'printf "ICD %%s\\n" "${VK_ICD_FILENAMES-unset}"\n'
   printf 'printf "DRIVER_FILES %%s\\n" "${VK_DRIVER_FILES-unset}"\n'
-  printf 'printf "PIN %%s\\n" "${FLEA_VK_PIN-unset}"\n'
+  printf 'printf "PIN %%s\\n" "${BACHY_VK_PIN-unset}"\n'
   printf 'printf "THEME %%s\\n" "${QT_QPA_PLATFORMTHEME-unset}"\n'
   printf 'printf "ICON_THEME %%s\\n" "${QS_ICON_THEME-unset}"\n'
-  printf 'printf "THEME_MARKER %%s\\n" "${FLEA_QT_THEME-unset}"\n'
+  printf 'printf "THEME_MARKER %%s\\n" "${BACHY_QT_THEME-unset}"\n'
   printf 'printf "ARGV %%s\\n" "$*"\n'
   printf 'P=$(cut -d" " -f5 /proc/self/stat)\n'
   printf '[ "$$" = "$P" ] && printf "PGID MATCH pid=%%s pgid=%%s\\n" "$$" "$P" || printf "PGID MISMATCH pid=%%s pgid=%%s\\n" "$$" "$P"\n'
@@ -602,7 +604,7 @@ ran="$D/ran.log"
 chmod +x "$D/bin/$terminal_handoff"
 
 : > "$ran"
-# Quickshell hands flea --terminal a pipe and closes it, so a pipe is what the terminal must not inherit.
+# Quickshell hands bachy --terminal a pipe and closes it, so a pipe is what the terminal must not inherit.
 PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 # --terminal spawns and returns without waiting: against a stub that slept half a second before its
 # first write it returned with the log still empty, so every line below arrives after it has exited.
@@ -610,7 +612,7 @@ wait_for_line "$ran" '^THP_enabled'
 out=$(cat "$ran")
 check "--terminal hands the directory to xdg-terminal-exec" "1" "$(echo "$out" | grep -c -- "^ARGV --dir=$D/dir$")"
 check "and it is given that one argument and nothing else" "1" "$(echo "$out" | grep -c '^NARGS 1$')"
-# A pipe here dies with the flea that made it, and the terminal dies with it on its first write.
+# A pipe here dies with the bachy that made it, and the terminal dies with it on its first write.
 check "the terminal got no inherited pipe" "1" "$(echo "$out" | grep -c '^FD1 /dev/null$')"
 check "and the stub reported its first descriptor at all" "1" "$(echo "$out" | grep -c '^FD1 ')"
 # Field five of /proc/self/stat is the process group; it equals the pid only after setpgid(0, 0).
@@ -621,8 +623,8 @@ check "a plain --terminal leaves huge pages on" "1" "$(echo "$out" | grep -c '^T
 check "and the stub reported its THP state at all" "1" "$(echo "$out" | grep -c 'THP_enabled')"
 
 : > "$ran"
-# Flea's own pin carries a marker, and only a marked pin is taken back off a terminal Flea opens.
-VK_ICD_FILENAMES=/tmp/flea-pin-icd.json VK_DRIVER_FILES=/tmp/flea-pin-driver.json FLEA_VK_PIN=1 \
+# Bachy's own pin carries a marker, and only a marked pin is taken back off a terminal Bachy opens.
+VK_ICD_FILENAMES=/tmp/bachy-pin-icd.json VK_DRIVER_FILES=/tmp/bachy-pin-driver.json BACHY_VK_PIN=1 \
   PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 # Same reason as the open path's marker arms: cat's status says nothing about the launcher.
 check "the marked-pin terminal returned success" "0" "${PIPESTATUS[0]}"
@@ -634,33 +636,33 @@ check "and the marker does not leak into the terminal" "1" "$(echo "$out" | grep
 
 : > "$ran"
 # An operator's own list carries no marker, so it must survive into the terminal they open.
-VK_ICD_FILENAMES=/tmp/flea-operator-icd.json VK_DRIVER_FILES=/tmp/flea-operator-driver.json \
+VK_ICD_FILENAMES=/tmp/bachy-operator-icd.json VK_DRIVER_FILES=/tmp/bachy-operator-driver.json \
   PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 check "the operator-list terminal returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$ran" '^THP_enabled'
 out=$(cat "$ran")
-check "an operator's own ICD list reaches the terminal" "1" "$(echo "$out" | grep -c '^ICD /tmp/flea-operator-icd.json$')"
-check "and so does their own driver file list" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/flea-operator-driver.json$')"
+check "an operator's own ICD list reaches the terminal" "1" "$(echo "$out" | grep -c '^ICD /tmp/bachy-operator-icd.json$')"
+check "and so does their own driver file list" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/bachy-operator-driver.json$')"
 
 : > "$ran"
 # Both spawn sites reach one shared guard, pin_is_marked, so each needs this arm of its own.
-VK_ICD_FILENAMES=/tmp/flea-operator-icd.json VK_DRIVER_FILES=/tmp/flea-operator-driver.json FLEA_VK_PIN= \
+VK_ICD_FILENAMES=/tmp/bachy-operator-icd.json VK_DRIVER_FILES=/tmp/bachy-operator-driver.json BACHY_VK_PIN= \
   PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 check "the empty-marker terminal returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$ran" '^THP_enabled'
 out=$(cat "$ran")
-check "an empty marker leaves an operator's ICD list alone in a terminal" "1" "$(echo "$out" | grep -c '^ICD /tmp/flea-operator-icd.json$')"
-check "and leaves their driver file list alone in a terminal" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/flea-operator-driver.json$')"
+check "an empty marker leaves an operator's ICD list alone in a terminal" "1" "$(echo "$out" | grep -c '^ICD /tmp/bachy-operator-icd.json$')"
+check "and leaves their driver file list alone in a terminal" "1" "$(echo "$out" | grep -c '^DRIVER_FILES /tmp/bachy-operator-driver.json$')"
 
 : > "$ran"
 # The same hand-back on the terminal path, which carries its own copy of these guards.
-env -u QT_QPA_PLATFORMTHEME QS_ICON_THEME=Yaru-blue FLEA_QT_THEME=gtk3 \
+env -u QT_QPA_PLATFORMTHEME QS_ICON_THEME=Yaru-blue BACHY_QT_THEME=gtk3 \
   PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 check "the traded-theme terminal returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$ran" '^THP_enabled'
 out=$(cat "$ran")
 check "a terminal gets the traded platform theme back" "THEME gtk3" "$(echo "$out" | grep '^THEME ')"
-check "and not the icon theme Flea named for Quickshell" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
+check "and not the icon theme Bachy named for Quickshell" "ICON_THEME unset" "$(echo "$out" | grep '^ICON_THEME ')"
 check "and not the marker that said so" "THEME_MARKER unset" "$(echo "$out" | grep '^THEME_MARKER ')"
 
 : > "$ran"
@@ -674,7 +676,7 @@ check "an unmarked terminal keeps the platform theme" "THEME qt6ct" "$(echo "$ou
 check "and keeps an operator's own icon theme" "ICON_THEME Papirus" "$(echo "$out" | grep '^ICON_THEME ')"
 
 : > "$ran"
-env QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Papirus FLEA_QT_THEME= \
+env QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Papirus BACHY_QT_THEME= \
   PATH="$D/bin:/usr/bin:/bin" $BIN --terminal "$D/dir" 2>&1 | cat >/dev/null
 check "the empty-theme-marker terminal returned success" "0" "${PIPESTATUS[0]}"
 wait_for_line "$ran" '^THP_enabled'
@@ -702,7 +704,7 @@ check "a path that resolves to nothing is an error status" "2" "$rc"
 check "and one sentence, with no errno" "0" "$(echo "$out" | grep -c 'os error')"
 check "and that sentence names the directory too" "1" "$(echo "$out" | grep -c 'that directory could not be opened')"
 
-out=$(env PATH=/nonexistent-flea-test-path $BIN --terminal "$D/dir" 2>&1)
+out=$(env PATH=/nonexistent-bachy-test-path $BIN --terminal "$D/dir" 2>&1)
 rc=$?
 check "a missing xdg-terminal-exec is an error status" "2" "$rc"
 check "and is elided too" "0" "$(echo "$out" | grep -c 'os error')"
@@ -717,7 +719,7 @@ check "--terminal with no path is a usage error" "1" "$(echo "$out" | grep -c --
 printf '#!/bin/sh\nexec %s --terminal %s\n' "$PWD/$BIN" "$D/dir" > "$D/bin/qs"
 chmod +x "$D/bin/qs"
 : > "$ran"
-env WAYLAND_DISPLAY=flea-modes-test-display PATH="$D/bin:/usr/bin:/bin" $BIN --gui >/dev/null 2>&1 </dev/null
+env WAYLAND_DISPLAY=bachy-modes-test-display PATH="$D/bin:/usr/bin:/bin" $BIN --gui >/dev/null 2>&1 </dev/null
 # The sandbox is removed below and src/terminal.rs:40 is a spawn, so this wait is what keeps the stub
 # from being deleted out from under the chain that is still starting it.
 wait_for_line "$ran" '^THP_enabled'
@@ -725,15 +727,15 @@ check "the terminal got its huge pages back through the shell" "1" "$(grep -c '^
 sandbox_remove "$D"
 
 # Issue 41. A handler declaring Terminal=true has to be run inside a terminal or it maps no window
-# at all, and which programs need one is the desktop database's judgement, never Flea's. This drives
+# at all, and which programs need one is the desktop database's judgement, never Bachy's. This drives
 # the real gio against an isolated XDG_DATA_HOME and XDG_CONFIG_HOME, so the operator's own MIME
 # state is neither read nor written, and a stub xdg-terminal-exec records whether it was reached.
-T="$FIXTURE_ROOT/flea-terminal-entry-$$"
+T="$FIXTURE_ROOT/bachy-terminal-entry-$$"
 sandbox_make "$T"
 mkdir -p "$T/data/applications" "$T/config" "$T/bin"
 terminal_log="$T/ran.log"
-{ printf '#!/bin/sh\n'; printf 'printf "HANDLER %%s\\n" "$*" >> %q\n' "$terminal_log"; } > "$T/bin/flea-t41-handler"
-chmod +x "$T/bin/flea-t41-handler"
+{ printf '#!/bin/sh\n'; printf 'printf "HANDLER %%s\\n" "$*" >> %q\n' "$terminal_log"; } > "$T/bin/bachy-t41-handler"
+chmod +x "$T/bin/bachy-t41-handler"
 # What glib runs a Terminal=true entry inside; glib names this one, not src/terminal.rs, so it is
 # not derived, and it records the call and then runs the command itself.
 { printf '#!/bin/sh\n'; printf 'printf "TERMINAL %%s\\n" "$*" >> %q\n' "$terminal_log"; printf 'exec "$@"\n'; } > "$T/bin/xdg-terminal-exec"
@@ -741,13 +743,13 @@ chmod +x "$T/bin/xdg-terminal-exec"
 {
   printf '[Desktop Entry]\n'
   printf 'Type=Application\n'
-  printf 'Name=Flea issue 41 handler\n'
-  printf 'Exec=flea-t41-handler %%f\n'
+  printf 'Name=Bachy issue 41 handler\n'
+  printf 'Exec=bachy-t41-handler %%f\n'
   printf 'Terminal=true\n'
   printf 'NoDisplay=true\n'
   printf 'MimeType=text/plain;\n'
-} > "$T/data/applications/flea-t41.desktop"
-printf '[Default Applications]\ntext/plain=flea-t41.desktop\n' > "$T/config/mimeapps.list"
+} > "$T/data/applications/bachy-t41.desktop"
+printf '[Default Applications]\ntext/plain=bachy-t41.desktop\n' > "$T/config/mimeapps.list"
 printf 'hello\n' > "$T/note.txt"
 # Built if the tool is here and skipped if it is not; the checks below read the run, not this.
 update-desktop-database "$T/data/applications" >/dev/null 2>&1
@@ -767,7 +769,7 @@ sandbox_remove "$T"
 out=$(printf '{"c":"quit"}\n' | $BIN --backend)
 check "--backend still runs" "0" "$?"
 
-D="$FIXTURE_ROOT/flea-modes-test-$$"
+D="$FIXTURE_ROOT/bachy-modes-test-$$"
 sandbox_make "$D"
 mkdir -p "$D"; : > "$D/a.txt"
 $BIN --prewarm "$D" 1 "$D/out.json" >/dev/null 2>&1
@@ -782,7 +784,7 @@ check "and names the accepted shape" "1" "$(echo "$out" | grep -c -- '--default 
 
 # With no desktop entry installed, --default must refuse and touch nothing: pointing
 # xdg-mime or Hyprland's bindings at an uninstalled binary would be a claim on nothing.
-D="$FIXTURE_ROOT/flea-default-missing-test-$$"
+D="$FIXTURE_ROOT/bachy-default-missing-test-$$"
 sandbox_make "$D"
 mkdir -p "$D/data" "$D/config/hypr"
 printf -- '-- stock omarchy bindings\n' > "$D/config/hypr/bindings.lua"
@@ -796,10 +798,10 @@ check "and bindings.lua is left untouched" "-- stock omarchy bindings" "$(cat "$
 sandbox_remove "$D"
 
 # At a terminal --picker restarts the portal as Settings does; piped, it leaves that to its caller.
-D="$FIXTURE_ROOT/flea-portal-restart-test-$$"
+D="$FIXTURE_ROOT/bachy-portal-restart-test-$$"
 sandbox_make "$D"
 mkdir -p "$D/data/xdg-desktop-portal/portals" "$D/config/hypr" "$D/bin"
-: > "$D/data/xdg-desktop-portal/portals/flea.portal"
+: > "$D/data/xdg-desktop-portal/portals/bachy.portal"
 printf -- '-- stock omarchy bindings\n' > "$D/config/hypr/bindings.lua"
 # Sample input: systemctl --user try-restart xdg-desktop-portal.service
 printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s/restarts"\nexit "$(cat "%s/restart-status")"\n' "$D" "$D" > "$D/bin/systemctl"
@@ -816,7 +818,7 @@ restarted="xdg-desktop-portal restarted if it was running, so file dialogs follo
 at_startup="xdg-desktop-portal reads this at startup: systemctl --user restart xdg-desktop-portal"
 command -v script >/dev/null || check "script(1) is installed for the terminal cases" "yes" "no"
 out=$("${picker_env[@]}" "$BIN_REAL" --picker 2>&1 </dev/null)
-check "a piped --picker claims" "1" "$(grep -c 'flea;gtk, written to' <<<"$out")"
+check "a piped --picker claims" "1" "$(grep -c 'bachy;gtk, written to' <<<"$out")"
 check "a piped --picker restarts nothing" "0" "$(restarts)"
 check "and ends on the restart command instead" "$at_startup" "$(grep '^xdg-desktop-portal ' <<<"$out")"
 out=$(at_terminal "" --picker off)
@@ -842,19 +844,19 @@ printf '%s' "$nautilus" > "$shadow"
 out=$(at_terminal "" --picker)
 check "the claim names the desktop file it wrote" "1" "$(grep -c 'written to .*hyprland-portals.conf, the file xdg-desktop-portal reads on this desktop' <<<"$out")"
 check "and the backend it replaced" "1" "$(grep -c 'it named gnome;gtk before, and the undo below puts that back' <<<"$out")"
-check "the desktop file now routes the chooser to flea" "1" "$(grep -cx 'org.freedesktop.impl.portal.FileChooser=flea;gtk' "$shadow")"
-check "and keeps the note naming what it replaced" "1" "$(grep -cx '# flea replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk' "$shadow")"
+check "the desktop file now routes the chooser to bachy" "1" "$(grep -cx 'org.freedesktop.impl.portal.FileChooser=bachy;gtk' "$shadow")"
+check "and keeps the note naming what it replaced" "1" "$(grep -cx '# bachy replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk' "$shadow")"
 check "and keeps its default line" "1" "$(grep -cx 'default=hyprland;gtk' "$shadow")"
 check "a routed claim at a terminal restarts the portal" "4" "$(restarts)"
 check "and says file dialogs follow now" "$restarted" "$(grep '^xdg-desktop-portal ' <<<"$out")"
-check "an older Flea's portals.conf line is still there before the undo" "1" "$(grep -cx 'org.freedesktop.impl.portal.FileChooser=flea;gtk' "$D/config/xdg-desktop-portal/portals.conf")"
+check "an older Bachy's portals.conf line is still there before the undo" "1" "$(grep -cx 'org.freedesktop.impl.portal.FileChooser=bachy;gtk' "$D/config/xdg-desktop-portal/portals.conf")"
 # The undo reads the directory, not the session: an off run over ssh has no XDG_CURRENT_DESKTOP.
 no_desktop=(env -u XDG_CURRENT_DESKTOP)
 for setting in "${picker_env[@]:1}"; do [ "$setting" = XDG_CURRENT_DESKTOP=Hyprland ] || no_desktop+=("$setting"); done
 out=$(script -qec "$(printf '%q ' "${no_desktop[@]}" "$BIN_REAL" --picker off)" /dev/null </dev/null | tr -d '\r')
 check "--picker off puts the replaced backend back byte for byte" "${nautilus}x" "$(cat "$shadow"; printf x)"
 check "and says so, without the session's desktop to name the file" "1" "$(grep -c 'gnome;gtk put back in .*hyprland-portals.conf' <<<"$out")"
-check "and removes the portals.conf an older Flea left, naming it" "1" "$(grep -c 'portals.conf held nothing else, so it is gone' <<<"$out")"
+check "and removes the portals.conf an older Bachy left, naming it" "1" "$(grep -c 'portals.conf held nothing else, so it is gone' <<<"$out")"
 check "which is gone" "no" "$([ -e "$D/config/xdg-desktop-portal/portals.conf" ] && echo yes || echo no)"
 check "and restarts the portal once more" "5" "$(restarts)"
 # Without the session's desktop a claim cannot tell which file the portal reads, so it refuses before either half writes.
@@ -869,13 +871,14 @@ check "and restarts nothing" "5" "$(restarts)"
 # With no desktop named and no desktop file, portals.conf is the only user file the portal can read.
 rm "$shadow"
 out=$(script -qec "$(printf '%q ' "${no_desktop[@]}" "$BIN_REAL" --picker); echo rc=\$?" /dev/null </dev/null | tr -d '\r')
-check "a claim with no desktop named and no desktop file writes portals.conf" "1" "$(grep -c 'flea;gtk, written to .*/xdg-desktop-portal/portals.conf' <<<"$out")"
+check "a claim with no desktop named and no desktop file writes portals.conf" "1" "$(grep -c 'bachy;gtk, written to .*/xdg-desktop-portal/portals.conf' <<<"$out")"
 check "and exits 0" "1" "$(grep -cx 'rc=0' <<<"$out")"
 check "and restarts the portal" "6" "$(restarts)"
-# The routing alone decides: a claim whose float block fails (no bindings.lua) still exits 1 but restarts.
+# Chooser routing does not require or create a compositor bindings file.
 rm "$D/config/hypr/bindings.lua"
 out=$(at_terminal "" --picker)
-check "a routed claim whose window half failed names that failure" "1" "$(grep -c 'bindings.lua could not be read' <<<"$out")"
+check "a routed claim explains the optional manual rule" "1" "$(grep -c 'window: add the optional picker floating rule' <<<"$out")"
+check "and no compositor bindings file is created" "no" "$([ -e "$D/config/hypr/bindings.lua" ] && echo yes || echo no)"
 check "and still restarts the portal" "7" "$(restarts)"
 check "and says file dialogs follow now" "$restarted" "$(grep '^xdg-desktop-portal ' <<<"$out")"
 sandbox_remove "$D"

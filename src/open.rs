@@ -20,7 +20,7 @@ pub fn open(path: &str) -> i32 {
         Some(p) => p,
         // The reason is elided, never shown raw, and the path is the user's own input.
         None => {
-            eprintln!("flea: that file could not be opened, check that it still exists");
+            eprintln!("bachy: that file could not be opened, check that it still exists");
             return FAILED;
         }
     };
@@ -33,7 +33,7 @@ pub fn open(path: &str) -> i32 {
     let mut launcher = Command::new("gio");
     // The display-GPU pin is Qt's alone, and only this launcher's own pin is dropped.
     vulkan::drop_display_pin(&mut launcher);
-    // The platform theme Flea traded for its own startup is Qt's alone too, and is handed back here.
+    // The platform theme Bachy traded for its own startup is Qt's alone too, and is handed back here.
     gui::restore_platform_theme(&mut launcher);
     let finished = launcher
         .arg("open")
@@ -42,18 +42,18 @@ pub fn open(path: &str) -> i32 {
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        // Its own process group, so nothing that later kills Flea's group reaches the opened program.
+        // Its own process group, so nothing that later kills Bachy's group reaches the opened program.
         .process_group(0)
         .status();
     match finished {
         Ok(status) if status.success() => 0,
         // A launcher that refused, which a spawn nobody waited on used to report as a clean handoff.
         Ok(_) => {
-            eprintln!("flea: gio open refused that file, so no application on this system took it");
+            eprintln!("bachy: gio open refused that file, so no application on this system took it");
             FAILED
         }
         Err(_) => {
-            eprintln!("flea: nothing on this system could be asked to open that file");
+            eprintln!("bachy: nothing on this system could be asked to open that file");
             FAILED
         }
     }

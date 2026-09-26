@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Scroll.js" as Scroll
 
 // An overlay on the viewport, never content; inside a Flickable it anchors to parent, never the Flickable id.
@@ -176,7 +176,7 @@ Item {
         onCanceled: root.endDrag()
     }
 
-    Flea.FastScrollHandler {
+    Bachy.FastScrollHandler {
         parent: root
         flickable: root.flickable
         ctrlWheelAction: root.ctrlWheelAction

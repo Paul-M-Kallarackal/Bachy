@@ -7,7 +7,7 @@ const TEMP_TRIES: usize = 8;
 const TEMP_MODE: u32 = 0o600;
 const SUFFIX_BYTES: usize = 8;
 // This application's name in the PNG Software key, matching the fail/ namespace in thumbcache.
-const SOFTWARE: &str = "flea";
+const SOFTWARE: &str = "bachy";
 // The three keys a published entry may hold only one of, so any the thumbnailer wrote are stripped before ours go in.
 const STAMPED_KEYS: [&str; 3] = ["Thumb::URI", "Thumb::MTime", "Software"];
 // The reflected polynomial PNG's CRC-32 uses, and the value that both seeds and inverts the register.
@@ -29,7 +29,7 @@ const ONE_PIXEL: [u8; 67] = [
 
 // The pid is in the name so a shutdown sweep can find this process's temps and no other process's.
 fn temp_prefix() -> String {
-    format!(".flea-{}-", std::process::id())
+    format!(".bachy-{}-", std::process::id())
 }
 
 // A predictable destination is never handed to a child; see AGENTS.md "Predictable path writes".
@@ -250,7 +250,7 @@ mod tests {
         let mine = exclusive_temp(dir.path()).unwrap();
         // A published entry, another process's in-flight temp, and another application's dotfile must all survive.
         let published = dir.join("d41d8cd98f00b204e9800998ecf8427e.png");
-        let other_pid = dir.join(".flea-1-0011223344556677.png");
+        let other_pid = dir.join(".bachy-1-0011223344556677.png");
         let other_app = dir.join(".gnome-thumbnail-factory.png");
         for p in [&published, &other_pid, &other_app] {
             std::fs::write(p, b"").unwrap();

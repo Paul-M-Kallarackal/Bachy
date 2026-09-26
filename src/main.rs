@@ -26,7 +26,6 @@ mod shelfcli;
 mod shelfdrag;
 mod shelfops;
 mod shelfplaces;
-mod shelfplugin;
 mod shelfthumb;
 mod shelfundo;
 mod shelfzip;
@@ -48,24 +47,24 @@ fn claim_both() -> i32 {
     if handler != 0 {
         return handler;
     }
-    // A source build has no flea.portal to prefer, which is the picker's precondition, not a failure here.
+    // A source build has no bachy.portal to prefer, which is the picker's precondition, not a failure here.
     let status = if chooser::backend_installed() {
         chooser::claim()
     } else {
-        eprintln!("flea: no portal backend is installed, so the file chooser step was skipped");
+        eprintln!("bachy: no portal backend is installed, so the file chooser step was skipped");
         0
     };
     // The one undo line this invocation ends on: --default off releases both halves it just claimed.
-    println!("undo both with: flea --default off");
+    println!("undo both with: bachy --default off");
     status
 }
 
-// flea --picker on its own, so it owns the undo line --default must not print for it.
+// bachy --picker on its own, so it owns the undo line --default must not print for it.
 fn claim_picker() -> i32 {
     let installed = chooser::backend_installed();
     let status = chooser::claim();
     if installed {
-        println!("undo both with: flea --picker off");
+        println!("undo both with: bachy --picker off");
     }
     status
 }
@@ -77,13 +76,13 @@ fn release_both() -> i32 {
 }
 
 fn usage(message: &str) -> ! {
-    eprintln!("flea: {}", message);
-    eprintln!("usage: flea [--tui|--gui] [--select <uri|path>] [path]");
-    eprintln!("       flea --default [off]");
-    eprintln!("       flea --picker [off]");
-    eprintln!("       flea --ui-state [<json patch>]");
-    eprintln!("       flea --update [check]");
-    eprintln!("       flea --version");
+    eprintln!("bachy: {}", message);
+    eprintln!("usage: bachy [--tui|--gui] [--select <uri|path>] [path]");
+    eprintln!("       bachy --default [off]");
+    eprintln!("       bachy --picker [off]");
+    eprintln!("       bachy --ui-state [<json patch>]");
+    eprintln!("       bachy --update [check]");
+    eprintln!("       bachy --version");
     exit(2)
 }
 
@@ -98,13 +97,13 @@ fn select_target(raw: &str) -> Option<(PathBuf, PathBuf)> {
     Some((parent, path))
 }
 
-// flea --ui-state, the one path both front ends reach the state file through: no argument reads it,
+// bachy --ui-state, the one path both front ends reach the state file through: no argument reads it,
 // one JSON object merges that patch through the lock. Either way the resulting document is printed.
 fn ui_state(args: &[String]) -> i32 {
     let store = match uistore::Store::user() {
         Ok(store) => store,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -112,7 +111,6 @@ fn ui_state(args: &[String]) -> i32 {
         usage("--ui-state takes nothing, or one JSON object");
     }
     let before = store.read();
-    let was = shelf_enabled(&before);
     let state = match args.get(2) {
         None => before,
         Some(patch) => {
@@ -122,27 +120,14 @@ fn ui_state(args: &[String]) -> i32 {
             match merged {
                 Ok(next) => next,
                 Err(e) => {
-                    eprintln!("flea: {}", e);
+                    eprintln!("bachy: {}", e);
                     return 2;
                 }
             }
         }
     };
-    // B1: the Settings switch is the only thing that installs the shelf plugin, and every front end
-    // reaches it through this one path, so the bar follows the switch without a second act.
-    let now = shelf_enabled(&state);
-    if now != was {
-        if let Err(e) = shelfplugin::sync(now) {
-            eprintln!("flea: the shelf plugin was not {} ({})", if now { "enabled" } else { "disabled" }, e);
-        }
-    }
     print!("{}", jsondoc::render(&state));
     0
-}
-
-// Directive 38: the shelf ships off, so anything but a stored true is off.
-fn shelf_enabled(state: &jsondoc::Json) -> bool {
-    state.get("shelf").and_then(|s| s.get("enabled")).and_then(|v| v.as_bool()) == Some(true)
 }
 
 fn main() {
@@ -150,12 +135,12 @@ fn main() {
     let args: Vec<String> = match std::env::args_os().map(|a| a.into_string()).collect() {
         Ok(v) => v,
         Err(bad) => {
-            eprintln!("flea: {} is not valid UTF-8, and Flea takes text paths", bad.to_string_lossy());
+            eprintln!("bachy: {} is not valid UTF-8, and Bachy takes text paths", bad.to_string_lossy());
             exit(2);
         }
     };
 
-    // Bare and checked before every other mode, so a script can ask which Flea is installed without parsing.
+    // Bare and checked before every other mode, so a script can ask which Bachy is installed without parsing.
     if args.len() == 2 && args[1] == "--version" {
         println!("{}", env!("CARGO_PKG_VERSION"));
         exit(0);
@@ -165,16 +150,35 @@ fn main() {
         usage("--version takes nothing");
     }
 
+    // The local launcher's background GPU check never opens a window or scans files.
+    if args.len() == 2 && args[1] == "--probe-vulkan" {
+        match vulkan::usable() {
+            Ok(devices) => {
+                for (vendor, device) in devices {
+                    println!("{vendor:#06x}:{device:#06x}");
+                }
+                exit(0);
+            }
+            Err(reason) => {
+                eprintln!("bachy: Vulkan probe failed: {reason}");
+                exit(1);
+            }
+        }
+    }
+    if args.get(1).map(String::as_str) == Some("--probe-vulkan") {
+        usage("--probe-vulkan takes nothing");
+    }
+
     if args.iter().any(|a| a == "--backend") {
         exit(backend::run::run());
     }
 
-    // flea --thumb-worker: only ever started by the backend, inside its sandbox, with a socket on stdin.
+    // bachy --thumb-worker: only ever started by the backend, inside its sandbox, with a socket on stdin.
     if args.len() == 2 && args[1] == "--thumb-worker" {
         exit(backend::thumbworker::run());
     }
 
-    // flea --prefetch <list>: only ever started by the launcher, see src/prefetch.rs.
+    // bachy --prefetch <list>: only ever started by the launcher, see src/prefetch.rs.
     if args.len() == 3 && args[1] == "--prefetch" {
         exit(prefetch::helper(&PathBuf::from(&args[2])));
     }
@@ -182,7 +186,7 @@ fn main() {
         usage("--prefetch takes the list path");
     }
 
-    // flea --prewarm <path> <count> <dest>
+    // bachy --prewarm <path> <count> <dest>
     if args.len() == 5 && args[1] == "--prewarm" {
         let first: usize = args[3].parse().unwrap_or(0);
         match launcher::prewarm::write_prewarm(&args[2], first, &PathBuf::from(&args[4])) {
@@ -197,7 +201,7 @@ fn main() {
         usage("--prewarm takes a path, a first index and a destination");
     }
 
-    // flea --open <path>
+    // bachy --open <path>
     if args.len() == 3 && args[1] == "--open" {
         exit(open::open(&args[2]));
     }
@@ -205,7 +209,7 @@ fn main() {
         usage("--open takes one path");
     }
 
-    // flea --terminal <dir>
+    // bachy --terminal <dir>
     if args.len() == 3 && args[1] == "--terminal" {
         exit(terminal::open_terminal(&args[2]));
     }
@@ -213,7 +217,7 @@ fn main() {
         usage("--terminal takes one directory");
     }
 
-    // flea --update [check]: ask the installing source for a newer Flea, or open Omarchy's updater; see src/update.rs.
+    // bachy --update [check]: ask the installing source for a newer Bachy, or open Omarchy's updater; see src/update.rs.
     if args.len() == 2 && args[1] == "--update" {
         exit(update::launch());
     }
@@ -224,7 +228,7 @@ fn main() {
         usage("--update takes nothing, or check");
     }
 
-    // flea --default [off]: both per-user steps pacman cannot own, see docs/install.md.
+    // bachy --default [off]: both per-user steps pacman cannot own, see docs/install.md.
     if args.len() == 2 && args[1] == "--default" {
         exit(claim_both());
     }
@@ -243,7 +247,7 @@ fn main() {
         usage("--youleftmeforstrata takes nothing");
     }
 
-    // flea --picker [off]: the chooser routing, the other per-user step, see docs/install.md.
+    // bachy --picker [off]: the chooser routing, the other per-user step, see docs/install.md.
     if args.len() == 2 && args[1] == "--picker" {
         exit(claim_picker());
     }
@@ -254,7 +258,7 @@ fn main() {
         usage("--picker takes nothing, or off");
     }
 
-    // flea --pick <reply>: one portal request's picker window, opened by tools/flea-portal.
+    // bachy --pick <reply>: one portal request's picker window, opened by tools/bachy-portal.
     if args.len() == 3 && args[1] == "--pick" {
         exit(gui::pick(&args[2]));
     }
@@ -262,7 +266,7 @@ fn main() {
         usage("--pick takes one reply file");
     }
 
-    // flea --ui-state [<json patch>]: the shared ui.json read and update path, see AGENTS.md "The state file".
+    // bachy --ui-state [<json patch>]: the shared ui.json read and update path, see AGENTS.md "The state file".
     if args.get(1).map(String::as_str) == Some("--ui-state") {
         exit(ui_state(&args));
     }
@@ -271,7 +275,7 @@ fn main() {
         exit(favourites::command(&args));
     }
 
-    // flea shelf <verb>: the drop shelf's own state, minted for a plugin that is another process.
+    // bachy shelf <verb>: the drop shelf's own state, minted for a plugin that is another process.
     if args.get(1).map(String::as_str) == Some("shelf") {
         exit(shelfcli::command(&args));
     }
@@ -324,14 +328,14 @@ fn main() {
     let interactive = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
     if want_tui {
         if !interactive {
-            eprintln!("flea: the terminal interface needs a terminal on stdin and stdout");
+            eprintln!("bachy: the terminal interface needs a terminal on stdin and stdout");
             exit(2);
         }
         exit(tui::run(open_path.as_deref(), select_path.as_deref()));
     }
 
     if !paths::has_display() {
-        eprintln!("flea: there is no graphical session to open a window in");
+        eprintln!("bachy: there is no graphical session to open a window in");
         exit(2);
     }
     match paths::ui_dir() {
@@ -340,19 +344,12 @@ fn main() {
             // state file"; it can fail or decline, and the window then opens on a file it did not touch.
             match uistore::Store::user().and_then(|store| store.settle()) {
                 Ok(()) => {}
-                Err(e) => eprintln!("flea: the view state was not settled ({})", e),
-            }
-            // An upgrade ships a new plugin under a switch that is already on, and the copy in the
-            // user's own plugin directory is the one the bar reads.
-            if let Ok(store) = uistore::Store::user() {
-                if let Err(e) = shelfplugin::refresh(shelf_enabled(&store.read())) {
-                    eprintln!("flea: the shelf plugin was not refreshed ({})", e);
-                }
+                Err(e) => eprintln!("bachy: the view state was not settled ({})", e),
             }
             exit(gui::exec_qs(&ui, open_path.as_deref(), select_path.as_deref()))
         }
         None => {
-            eprintln!("flea: the shell config is missing, set FLEA_UI or install /usr/share/flea/ui");
+            eprintln!("bachy: the shell config is missing, set BACHY_UI or install /usr/share/bachy/ui");
             exit(2);
         }
     }

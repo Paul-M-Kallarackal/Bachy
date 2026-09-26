@@ -3,22 +3,21 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
-import qs.Commons
 import "js/Columns.js" as Columns
 import "js/Contrast.js" as Contrast
 import "js/Palette.js" as Palette
 import "js/TextSize.js" as TextSize
 
-// Flea is its own process, so it plays the role shell.qml plays for the bar: it feeds Color and Style.
+// Bachy is its own process, so it plays the role shell.qml plays for the bar: it feeds Color and Style.
 Singleton {
     id: root
 
-    readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/omarchy/current"
+    readonly property string stateDir: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/bachy"
 
     // True only once colors.toml parsed to a palette, so a test can tell one from a fallback.
     property bool ready: false
 
-    // The size Flea draws at: Omarchy's own unless the Display section pinned an override stop.
+    // The size Bachy draws at: Omarchy's own unless the Display section pinned an override stop.
     readonly property int baseSize: TextSize.effective(ViewState.textSize, Style.font.baseSize)
     readonly property bool overridden: !TextSize.following(ViewState.textSize)
     // One while following, so every OEM token below is Omarchy's own until an override moves it,
@@ -31,21 +30,21 @@ Singleton {
 
     // A property and not a Motion.js var: a plain library var notifies nothing, so every Behavior
     // reading it would keep whatever it was built with when the compositor's answer arrives.
-    property bool reducedMotion: Quickshell.env("FLEA_REDUCED_MOTION") === "1"
+    property bool reducedMotion: Quickshell.env("BACHY_REDUCED_MOTION") === "1"
 
     // The only literal colours in the UI. Color models five roles; surface, symlink and executable
     // have no counterpart, and the other two are read here before Color.loadColors has run.
     readonly property var fallbackColor: ({
-        background: "#101315",
-        surface: "#181825",
-        symlink: "#94e2d5",
-        executable: "#a6e3a1"
+        background: "#FFFFFF",
+        surface: "#F5F6F9",
+        symlink: "#1E40AF",
+        executable: "#166534"
     })
 
     readonly property QtObject color: QtObject {
         readonly property color background: Color.background
         readonly property color foreground: Color.foreground
-        property color muted: Qt.darker(Color.foreground, 1.4)
+        property color muted: "#606876"
         readonly property color accent: Color.accent
         property color error: Color.urgent
         property color surface: root.fallbackColor.surface
@@ -102,7 +101,7 @@ Singleton {
         readonly property int nameMin: Math.round(root.nameMinChars * glyphMetrics.advanceWidth)
     }
 
-    // Row height follows the font so it scales with omarchy display text size.
+    // Row height follows the configured font size.
     readonly property int rowHeight: Math.round(font.bodySmall * lineBoxRatio) + 2 * spacing.rowPaddingY
     readonly property int fileRowHeight: Math.round(font.bodySmall * lineBoxRatio) + 2 * Math.round(spacing.rowPaddingY * densityRatio)
     // The icon slot is the row's text line box, so an icon can never change the row height.
@@ -241,7 +240,7 @@ Singleton {
     }
 
     // The metrics contract as the app resolves it, one key=value per line in the Blueprint board's
-    // order; ui/shell.qml serves it as tokens() and tools/flea-metrics-gate diffs it. family is the
+    // order; ui/shell.qml serves it as tokens() and tools/bachy-metrics-gate diffs it. family is the
     // resolved face, never the "monospace" alias, so the gate cannot pass on a box without the font.
     function tokens() {
         var t = {
@@ -296,7 +295,7 @@ Singleton {
         // Measured over the 22 stock palettes in tests/js/themes.js: 20 set a muted under the 3:1 a
         // caption needs, rose-pine's at 1.48, so it is lifted the way the two ladder colours below are.
         root.color.muted = Contrast.ensureRatio(
-            Palette.pick(found, ["muted"], Qt.darker(Color.foreground, 1.4)), bg, 3);
+            Palette.pick(found, ["muted"], "#606876"), bg, 4.5);
         root.color.accentFrame = Contrast.ensureRatio(Color.accent, surface, 3);
         root.color.symlink = Contrast.ensureRatio(
             Palette.pick(found, ["cyan", "color6"], root.fallbackColor.symlink), bg, 4.5);
@@ -335,40 +334,14 @@ Singleton {
         path: root.stateDir + "/theme/colors.toml"
         blockLoading: true
         printErrors: false
+        watchChanges: true
+        onFileChanged: reload()
         onLoaded: root.applyColors(text())
         onLoadFailed: root.ready = false
         Component.onCompleted: root.applyColors(colorsFile.text())
     }
 
-    // Color.loadShell refreshes Style's whole token scale, so the type ladder flips with the theme.
-    FileView {
-        id: shellFile
-        path: root.stateDir + "/theme/shell.toml"
-        blockLoading: true
-        printErrors: false
-        onLoaded: Color.loadShell(text())
-        onLoadFailed: Color.loadShell("")
-    }
-
-    // omarchy-theme-set rm -rf's and mv's the theme directory, so an inotify watch on a file inside
-    // it dies with the old inode and never fires again. theme.name is rewritten in place after the
-    // swap, which makes it the one event that survives, measured across three consecutive switches.
-    FileView {
-        id: themeNameFile
-        path: root.stateDir + "/theme.name"
-        blockLoading: true
-        watchChanges: true
-        printErrors: false
-        onFileChanged: {
-            reload();
-            colorsFile.reload();
-            shellFile.reload();
-            // The OEM shell's applyTheme runs this beside the two reloads above, and without it a theme that moves decoration:rounding leaves every corner here on the old value.
-            Style.scheduleRefresh();
-        }
-    }
-
-    // Read once, not watched: the Display section reports the compositor's scale and Flea owns no
+    // Read once, not watched: the Display section reports the compositor's scale and Bachy owns no
     // control that could change it, so there is nothing here for a poll to keep in step with.
     Process {
         running: true
@@ -381,12 +354,12 @@ Singleton {
         }
     }
 
-    // Flea agrees with the compositor rather than carrying a switch, and FLEA_REDUCED_MOTION is the
+    // Bachy agrees with the compositor rather than carrying a switch, and BACHY_REDUCED_MOTION is the
     // test override; Quickshell.env answers null for an unset variable, so the guard is a truthiness
     // test, StdioCollector text is a property whose call throws, and the query is Style.qml's own.
     Process {
         id: motionQuery
-        running: !Quickshell.env("FLEA_REDUCED_MOTION")
+        running: !Quickshell.env("BACHY_REDUCED_MOTION")
         command: ["hyprctl", "-j", "getoption", "animations:enabled"]
         stdout: StdioCollector {
             waitForEnd: true

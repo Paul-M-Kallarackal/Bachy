@@ -1,19 +1,19 @@
 .pragma library
 
-// Settings > About's Make Flea the default: which state the row is in, the note under it and what a press runs; ui/DefaultClaim.qml runs the processes.
+// Settings > About's Make Bachy the default: which state the row is in, the note under it and what a press runs; ui/DefaultClaim.qml runs the processes.
 
 // The row's id, which ui/SettingsPanel.qml routes to the run instead of writing it into ui.json.
 var ROW_ID = "makeDefault"
-// The entry flea --default points the desktop at; the box is ticked exactly when xdg-mime answers it.
-var DESKTOP_ID = "com.thisisgm.flea.desktop"
-// src/main.rs claim_both() says this and still exits 0 when a build has no flea.portal to route file dialogs to.
+// The entry bachy --default points the desktop at; the box is ticked exactly when xdg-mime answers it.
+var DESKTOP_ID = "local.bachy.FileManager.desktop"
+// src/main.rs claim_both() says this and still exits 0 when a build has no bachy.portal to route file dialogs to.
 var SKIPPED = "no portal backend is installed, so the file chooser step was skipped"
 // src/defaults.rs claim() refuses with this when the running binary has no desktop entry to point at.
 var UNINSTALLED = "is not installed in any applications directory"
 // The portal reads its routing once, at startup; try-restart leaves a portal that is not running alone.
 var RESTART = ["systemctl", "--user", "try-restart", "xdg-desktop-portal.service"]
-// flea's own stderr lines start with its name, which the note drops.
-var OWN_PREFIX = "flea: "
+// bachy's own stderr lines start with its name, which the note drops.
+var OWN_PREFIX = "bachy: "
 
 // Nothing run in this process yet; an entry is assumed until the probe or a refusal says otherwise.
 function idle() {
@@ -25,7 +25,7 @@ function inert(claim) {
     return claim.running || claim.packaged === false
 }
 
-// flea's arguments for a press, or null while the row is inert.
+// bachy's arguments for a press, or null while the row is inert.
 function press(handler, claim) {
     if (inert(claim))
         return null
@@ -39,7 +39,7 @@ function started(claim, args) {
 }
 
 // Still running until a handler read numbered nextRead or later lands and a switch that went through has restarted the portal.
-// Sample stderr: "flea: no portal backend is installed, so the file chooser step was skipped\n"
+// Sample stderr: "bachy: no portal backend is installed, so the file chooser step was skipped\n"
 function finished(claim, code, stderr, nextRead) {
     var text = stderr || ""
     var next = Object.assign({}, claim, { reading: true, readFrom: nextRead, restarting: code === 0 })
@@ -56,15 +56,15 @@ function finished(claim, code, stderr, nextRead) {
     return next
 }
 
-// xdg-mime's stderr reaches flea's own, so flea's line is the one that starts with its name.
-// Sample stderr: "xdg-mime: no method available\nflea: xdg-mime default exited 3\n"
+// xdg-mime's stderr reaches bachy's own, so bachy's line is the one that starts with its name.
+// Sample stderr: "xdg-mime: no method available\nbachy: xdg-mime default exited 3\n"
 function errorLine(stderr, code, claiming) {
     var lines = stderr.split("\n").map(function (line) { return line.trim() })
     var own = lines.filter(function (line) { return line.indexOf(OWN_PREFIX) === 0 })[0]
     if (own !== undefined)
         return own.substring(OWN_PREFIX.length)
     var first = lines.filter(function (line) { return line.length > 0 })[0]
-    return first !== undefined ? first : (claiming ? "flea --default" : "flea --default off") + " exited " + code
+    return first !== undefined ? first : (claiming ? "bachy --default" : "bachy --default off") + " exited " + code
 }
 
 // The handler read numbered read has landed; only one begun after the run exited ends it, and only once the portal restart has answered too.
@@ -75,7 +75,7 @@ function settled(claim, read) {
 }
 
 // A Process's exit and its collector's text land in either order (AGENTS.md "The state file"), so an answer is read once it holds both.
-// Sample: landed(landed({}, { code: 0 }), { text: "com.thisisgm.flea.desktop\n" }) is { code: 0, text: "com.thisisgm.flea.desktop\n" }
+// Sample: landed(landed({}, { code: 0 }), { text: "local.bachy.FileManager.desktop\n" }) is { code: 0, text: "local.bachy.FileManager.desktop\n" }
 function landed(answer, half) {
     return Object.assign({}, answer, half)
 }
@@ -99,7 +99,7 @@ function handlerOf(answer) {
 }
 
 // A run whose program never started wrote nothing, so it is over at once, failed, naming what could not start.
-// Sample command: ["/usr/bin/flea", "--default"]
+// Sample command: ["/usr/bin/bachy", "--default"]
 function unstarted(claim, command) {
     return Object.assign({}, claim, { running: false, reading: false, restarting: false, outcome: "failed",
                                       error: command.join(" ") + " could not start" })
@@ -139,24 +139,24 @@ function state(handler, claim) {
 function note(handler, claim) {
     var now = state(handler, claim)
     if (now === "on")
-        return ["Folders, Show in folder and file dialogs open Flea.", "foreground"]
+        return ["Folders, Show in folder and file dialogs open Bachy.", "foreground"]
     if (now === "working")
-        return [claim.claiming ? "Making Flea the default" : "Handing folders back", "muted"]
+        return [claim.claiming ? "Making Bachy the default" : "Handing folders back", "muted"]
     if (now === "partly")
-        return ["File dialogs need the flea package's portal files.", "foreground"]
+        return ["File dialogs need the bachy package's portal files.", "foreground"]
     if (now === "portal")
         return ["File dialogs follow after xdg-desktop-portal restarts.", "foreground"]
     if (now === "failed")
         return [claim.error, "error"]
     if (now === "unpackaged")
-        return ["Install a Flea package to make it the default.", "foreground"]
+        return ["Install a Bachy package to make it the default.", "foreground"]
     return null
 }
 
 // The check row and its note for About's This box group; the note elides on one line rather than wrapping.
 function rows(handler, claim) {
     var live = claim || idle()
-    var out = [{ kind: "check", id: ROW_ID, label: "Make Flea the default", on: handler === DESKTOP_ID, inert: inert(live) }]
+    var out = [{ kind: "check", id: ROW_ID, label: "Make Bachy the default", on: handler === DESKTOP_ID, inert: inert(live) }]
     var line = note(handler, live)
     if (line !== null)
         out.push({ kind: "hint", label: line[0], role: line[1], elide: "right" })

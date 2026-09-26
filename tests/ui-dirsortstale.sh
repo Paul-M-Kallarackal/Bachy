@@ -16,24 +16,24 @@ dirsortstale_wait_size() {
 
 dirsortstale_cleanup() {
     [[ -n "${dirsortstale_test_ui:-}" ]] || return 0
-    flea_ui="$dirsortstale_test_ui"
-    flea_bin="$dirsortstale_candidate_bin"
-    kill_flea
-    flea_ui="$dirsortstale_saved_ui"
-    flea_bin="$dirsortstale_saved_bin"
+    bachy_ui="$dirsortstale_test_ui"
+    bachy_bin="$dirsortstale_candidate_bin"
+    kill_bachy
+    bachy_ui="$dirsortstale_saved_ui"
+    bachy_bin="$dirsortstale_saved_bin"
 }
 
 case_dirsortstale() {
-    local candidate_ui="$flea_ui" candidate_bin="$flea_bin"
+    local candidate_ui="$bachy_ui" candidate_bin="$bachy_bin"
     local dir="$fixture_root/dirsortstale"
     local test_ui="$fixture_root/dirsortstale-ui"
-    local proxy="$fixture_root/dirsortstale-flea"
+    local proxy="$fixture_root/dirsortstale-bachy"
     local proxy_py="$fixture_root/dirsortstale-proxy.py"
     local armed="$fixture_root/dirsortstale-armed"
     local events="$fixture_root/dirsortstale-events"
     local source="$dir/aaa" destination="$dir/zzz"
     local old_bytes new_bytes old_state new_state
-    local flea_ui="$candidate_ui" flea_bin="$candidate_bin"
+    local bachy_ui="$candidate_ui" bachy_bin="$candidate_bin"
     dirsortstale_saved_ui="$candidate_ui"
     dirsortstale_saved_bin="$candidate_bin"
     dirsortstale_test_ui="$test_ui"
@@ -72,10 +72,10 @@ import selectors
 import subprocess
 import sys
 
-real = os.environ["FLEA_DIRSORT_REAL_BIN"]
-armed_path = Path(os.environ["FLEA_DIRSORT_ARMED"])
-events_path = Path(os.environ["FLEA_DIRSORT_EVENTS"])
-old_bytes = int(os.environ["FLEA_DIRSORT_OLD_BYTES"])
+real = os.environ["BACHY_DIRSORT_REAL_BIN"]
+armed_path = Path(os.environ["BACHY_DIRSORT_ARMED"])
+events_path = Path(os.environ["BACHY_DIRSORT_EVENTS"])
+old_bytes = int(os.environ["BACHY_DIRSORT_OLD_BYTES"])
 
 def log(value):
     with events_path.open("a") as stream:
@@ -203,9 +203,9 @@ PY
 #!/usr/bin/env bash
 set -u
 if [[ "${1:-}" == "--backend" ]]; then
-    exec python3 "$FLEA_DIRSORT_PROXY_PY"
+    exec python3 "$BACHY_DIRSORT_PROXY_PY"
 fi
-exec "$FLEA_DIRSORT_REAL_BIN" "$@"
+exec "$BACHY_DIRSORT_REAL_BIN" "$@"
 SH
     chmod +x "$proxy"
 
@@ -213,14 +213,14 @@ SH
     sandbox_require "$events"
     : > "$events"
     seed_ui_state "$fixture_root/dirsortstale-state" '{"sort":{"key":"name","reverse":false}}'
-    kill_flea
-    local -x FLEA_DIRSORT_REAL_BIN="$candidate_bin"
-    local -x FLEA_DIRSORT_PROXY_PY="$proxy_py"
-    local -x FLEA_DIRSORT_ARMED="$armed"
-    local -x FLEA_DIRSORT_EVENTS="$events"
-    local -x FLEA_DIRSORT_OLD_BYTES="$old_bytes"
-    flea_ui="$test_ui"
-    flea_bin="$proxy"
+    kill_bachy
+    local -x BACHY_DIRSORT_REAL_BIN="$candidate_bin"
+    local -x BACHY_DIRSORT_PROXY_PY="$proxy_py"
+    local -x BACHY_DIRSORT_ARMED="$armed"
+    local -x BACHY_DIRSORT_EVENTS="$events"
+    local -x BACHY_DIRSORT_OLD_BYTES="$old_bytes"
+    bachy_ui="$test_ui"
+    bachy_bin="$proxy"
     launch "$dir"
     wait_listing 2
     old_state=$(dirsortstale_wait_size "$old_bytes") || fail "dirsortstale: initial source dirsize never arrived"

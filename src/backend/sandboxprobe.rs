@@ -1,5 +1,5 @@
 // Test-only: the one runtime probe the sandboxed tests share. bwrap sits on PATH inside a container
-// and still cannot build a namespace there, so nine tests went red for the box and not for flea.
+// and still cannot build a namespace there, so nine tests went red for the box and not for bachy.
 use crate::backend::sandbox::wrap_readonly;
 use std::io::Write;
 use std::path::Path;

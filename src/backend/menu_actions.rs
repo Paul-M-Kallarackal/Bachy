@@ -121,7 +121,7 @@ impl MenuActions {
 impl Drop for MenuActions {
     fn drop(&mut self) {
         self.cancellation.lock().unwrap().next();
-        if let Err(error) = self.registry.cancel() { eprintln!("flea: {}", error); }
+        if let Err(error) = self.registry.cancel() { eprintln!("bachy: {}", error); }
     }
 }
 
@@ -409,7 +409,7 @@ mod tests {
         d.file("folder/new", "new child");
         let check = format!(r#"{{"op":"checkDelete","id":5,"token":{}}}"#, old_token);
         assert!(snapshot.handle(&check, vec![]).contains(r#""valid":false"#));
-        assert!(path.is_absolute() && path.starts_with(d.path()) && d.path().join(".flea-test-sandbox").is_file());
+        assert!(path.is_absolute() && path.starts_with(d.path()) && d.path().join(".bachy-test-sandbox").is_file());
         std::fs::rename(&path, d.join("original-moved")).unwrap();
         d.file("item", "replacement");
         d.file("unrelated", "preserved");
@@ -431,7 +431,7 @@ mod tests {
         let (tx, _rx) = std::sync::mpsc::channel();
         let menu = MenuActions::new(tx);
         *menu.restoration.lock().unwrap() = (8, vec![Selected::inspect(path.to_str().unwrap()).unwrap(), Selected::inspect(kept.to_str().unwrap()).unwrap()]);
-        assert!(path.is_absolute() && path.starts_with(d.path()) && d.path().join(".flea-test-sandbox").is_file());
+        assert!(path.is_absolute() && path.starts_with(d.path()) && d.path().join(".bachy-test-sandbox").is_file());
         std::fs::rename(&path, d.join("moved")).unwrap();
         d.file("item", "replacement");
         menu.request(r#"{"op":"close","id":8}"#.into(), vec![], None);

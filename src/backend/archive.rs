@@ -176,7 +176,7 @@ mod tests {
         assert!(nothing.names().is_empty(), "with no tool at all the whole entry self-hides");
     }
 
-    // Flea reads rar and writes none. 7z's own rar and rar5 readers are the reference ones, so they
+    // Bachy reads rar and writes none. 7z's own rar and rar5 readers are the reference ones, so they
     // are preferred where 7z is installed; libarchive reads both too and is the fallback.
     #[test]
     fn a_rar_is_read_by_7z_where_it_is_installed_and_by_libarchive_where_it_is_not() {

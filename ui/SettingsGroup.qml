@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // One settings heading. Where the group has a master, the heading is also that master's control:
 // SettingsMenus rule 3 puts the tri-state box and the group's own enabled count on the heading it
@@ -48,7 +48,7 @@ Item {
         anchors.verticalCenter: label.verticalCenter
         spacing: Theme.spacing.gap - Theme.spacing.hairline
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.verticalCenter: parent.verticalCenter
             width: Theme.font.caption
             height: width
@@ -86,7 +86,7 @@ Item {
         }
 
         // The tri-state the group reads: every id on is a tick, some on a bar, none an empty box.
-        Flea.CheckBox {
+        Bachy.CheckBox {
             id: box
             value: root.row.state === "all" ? "on" : (root.row.state === "some" ? "some" : "off")
         }

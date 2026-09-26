@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Pdf
-import qs.Commons
 import "js/Format.js" as Format
 import "js/Swap.js" as Swap
 

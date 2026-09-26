@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Crumbs.js" as Crumbs
 import "js/PathBar.js" as PathBar
 
@@ -186,14 +185,14 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.spacing.gap
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             glyph: "arrow-left"
             enabled: root.canGoBack
             onActivated: root.backRequested()
         }
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             glyph: "arrow-up"
             enabled: root.canGoUp
@@ -259,7 +258,7 @@ Item {
                     model: Crumbs.fitCrumbs(Crumbs.crumbs(root.path, root.home),
                                          Math.floor(crumbSlot.width / crumbMetrics.advanceWidth))
 
-                    delegate: Flea.Crumb {
+                    delegate: Bachy.Crumb {
                         inputLive: root.inputLive
                         // The strip's height with the glyphs centred, because the crumb's handlers are the path area's
                         // whole gesture and a text-tall box left 11 of the strip's 27 px dead, measured at the window.
@@ -356,14 +355,14 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.spacing.gap
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             visible: root.viewMode !== "grid"
             glyph: "search"
             onActivated: root.searchRequested()
         }
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             visible: root.viewMode === "grid"
             enabled: root.canFilter
@@ -372,7 +371,7 @@ Item {
             onActivated: root.filterRequested()
         }
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             visible: root.viewMode === "grid"
             enabled: root.canSort
@@ -381,7 +380,7 @@ Item {
             onActivated: root.sortRequested()
         }
 
-        Flea.ChromeModes {
+        Bachy.ChromeModes {
             id: modes
             inputLive: root.inputLive
             viewMode: root.viewMode
@@ -397,7 +396,7 @@ Item {
             opacity: 0.12
         }
 
-        Flea.ChromeButton {
+        Bachy.ChromeButton {
             inputLive: root.inputLive
             glyph: "sliders"
             onActivated: root.settingsRequested()
@@ -416,5 +415,5 @@ Item {
     }
 
     // The pointer's title bar over the whole strip; the controls under it keep their own taps.
-    Flea.WindowDrag { anchors.fill: parent; editing: root.editing; inputLive: root.inputLive }
+    Bachy.WindowDrag { anchors.fill: parent; editing: root.editing; inputLive: root.inputLive }
 }

@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Tabs.js" as Tabs
 
 // The window's tab strip. Hidden with no height until a second tab exists, so the default window
@@ -81,7 +81,7 @@ Item {
 
                 // GM's ruling: a drag resting on a tab selects it so the drop can land in that tab's
                 // listing, and a drop on the tab itself lands there too, by path, see ui/DropInto.qml.
-                Flea.DropInto {
+                Bachy.DropInto {
                     anchors.fill: parent
                     pane: root.pane
                     switchesOnHover: true
@@ -153,7 +153,7 @@ Item {
 
                     // The mark never moves and its target never shrinks; only the ink answers, so a
                     // crowded strip is no harder to hit than a tidy one.
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         anchors.centerIn: parent
                         width: Theme.chromeMarkSize
                         height: Theme.chromeMarkSize
@@ -192,7 +192,7 @@ Item {
             Accessible.onPressAction: if (pane) Tabs.openNew(pane)
             HoverHandler { cursorShape: Qt.PointingHandCursor }
 
-            Flea.Glyph {
+            Bachy.Glyph {
                 anchors.centerIn: parent
                 width: Theme.chromeMarkSize
                 height: Theme.chromeMarkSize

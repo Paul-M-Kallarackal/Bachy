@@ -499,7 +499,7 @@ fn act(m: &mut Model, action: &str, w: &mut Wire) -> io::Result<()> {
         }
         "openTerminal" | "windowNew" => {
             let child = super::terminal::launch(&m.path, action == "windowNew")?;
-            m.launches.push((if action == "windowNew" { "New Flea window" } else { "Terminal" }.into(), child));
+            m.launches.push((if action == "windowNew" { "New Bachy window" } else { "Terminal" }.into(), child));
         }
         "tabClose" => {
             if m.tabs.len() == 1 {

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Drives flea --update against stub pacman, checkupdates, curl, vercmp and Omarchy's presenter; nothing here touches a network or a package.
+# Drives bachy --update against stub pacman, checkupdates, curl, vercmp and Omarchy's presenter; nothing here touches a network or a package.
 set -u
 # Hard rule 9's guard, which owns FIXTURE_ROOT and every create and delete below.
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
-BIN=./target/debug/flea
+BIN=./target/debug/bachy
 [ -x "$BIN" ] || { echo "update.sh: $BIN is missing, run cargo build" >&2; exit 1; }
 # current_exe() answers with the kernel's resolved path, which is what the stub pacman is asked to own.
 BIN_REAL=$(readlink -f "$BIN")
@@ -34,7 +34,7 @@ wait_for_line() {
   return 1
 }
 
-D="$FIXTURE_ROOT/flea-update-test-$$"
+D="$FIXTURE_ROOT/bachy-update-test-$$"
 sandbox_make "$D"
 mkdir -p "$D/bin" "$D/empty" "$D/home"
 calls="$D/calls.log"
@@ -47,7 +47,7 @@ stub() {
   chmod +x "$D/bin/$name"
 }
 
-# Sample input: pacman -Qqo /src/target/debug/flea, then pacman -Qi flea.
+# Sample input: pacman -Qqo /src/target/debug/bachy, then pacman -Qi bachy.
 stub pacman '
 case "$1" in
   -Qqo) [ -n "${STUB_OWNER-}" ] || exit 1; printf "%s\n" "$STUB_OWNER" ;;
@@ -76,21 +76,21 @@ check "and asked pacman who owns the running binary" "1" "$(grep -c "^pacman -Qq
 check "and asked no mirror and no AUR" "0|0" "$(called checkupdates)|$(called curl)"
 
 # A local makepkg build carries OPR's name and no signature.
-run_check STUB_OWNER=flea STUB_INSTALLED=0.3.3-1 STUB_VALIDATED=None
+run_check STUB_OWNER=bachy STUB_INSTALLED=0.3.3-1 STUB_VALIDATED=None
 check "a local build prints unchecked local with its version" "unchecked local 0.3.3-1 -" "$out"
 check "and exits with nothing to install" "3" "$rc"
-check "and pacman described it in the C locale" "1" "$(grep -c '^pacman -Qi flea LC_ALL=C$' "$calls")"
+check "and pacman described it in the C locale" "1" "$(grep -c '^pacman -Qi bachy LC_ALL=C$' "$calls")"
 check "and asked no source" "0|0" "$(called checkupdates)|$(called curl)"
 
-# flea-git follows main, and its describe-style version is not one this check compares.
-run_check STUB_OWNER=flea-git STUB_INSTALLED=0.3.1.r0.g6433131-2 STUB_VALIDATED=None
+# bachy-git follows main, and its describe-style version is not one this check compares.
+run_check STUB_OWNER=bachy-git STUB_INSTALLED=0.3.1.r0.g6433131-2 STUB_VALIDATED=None
 check "a rolling build prints unchecked git and no version" "unchecked git - -" "$out"
 check "and asked no source" "0|0" "$(called checkupdates)|$(called curl)"
 
 # OPR's signed package asks checkupdates, which syncs its own database copy and is never given --nosync.
-opr=(STUB_OWNER=flea STUB_INSTALLED=0.3.2-1 STUB_VALIDATED=Signature)
+opr=(STUB_OWNER=bachy STUB_INSTALLED=0.3.2-1 STUB_VALIDATED=Signature)
 run_check "${opr[@]}" STUB_UPDATES_CODE=0 STUB_ORDER=1 \
-  STUB_UPDATES='linux 6.16.8.arch1-1 -> 6.16.9.arch1-1\nflea 0.3.2-1 -> 0.3.3-1\n'
+  STUB_UPDATES='linux 6.16.8.arch1-1 -> 6.16.9.arch1-1\nbachy 0.3.2-1 -> 0.3.3-1\n'
 check "an OPR update prints available with both versions" "available opr 0.3.2-1 0.3.3-1" "$out"
 check "and exits 0" "0" "$rc"
 check "checkupdates ran with no arguments" "1" "$(grep -c '^checkupdates  LC_ALL=C$' "$calls")"
@@ -98,7 +98,7 @@ check "vercmp was asked whether the offer is newer than the installed" "1" "$(gr
 check "and the AUR was never asked" "0" "$(called curl)"
 
 run_check "${opr[@]}" STUB_UPDATES_CODE=0 STUB_UPDATES='linux 6.16.8.arch1-1 -> 6.16.9.arch1-1\n'
-check "other packages' updates leave OPR Flea current" "current opr 0.3.2-1 -" "$out"
+check "other packages' updates leave OPR Bachy current" "current opr 0.3.2-1 -" "$out"
 check "and exit with nothing to install" "3" "$rc"
 
 run_check "${opr[@]}" STUB_UPDATES_CODE=2
@@ -108,16 +108,16 @@ check "and needs no vercmp" "0" "$(called vercmp)"
 run_check "${opr[@]}" STUB_UPDATES_CODE=1
 check "checkupdates' error status prints failed" "failed opr 0.3.2-1 -" "$out"
 check "and exits 2" "2" "$rc"
-check "with one sentence naming the mirrors" "flea: the package mirrors could not be asked for a newer Flea" "$err"
+check "with one sentence naming the mirrors" "bachy: the package mirrors could not be asked for a newer Bachy" "$err"
 
-# flea-bin asks the AUR's RPC once, bounded in time and size, and never the mirrors.
-aur=(STUB_OWNER=flea-bin STUB_INSTALLED=0.3.3-1 STUB_VALIDATED=None)
-answer='{"resultcount":1,"results":[{"Name":"flea-bin","Version":"0.3.4-1"}],"type":"multiinfo","version":5}'
+# bachy-bin asks the AUR's RPC once, bounded in time and size, and never the mirrors.
+aur=(STUB_OWNER=bachy-bin STUB_INSTALLED=0.3.3-1 STUB_VALIDATED=None)
+answer='{"resultcount":1,"results":[{"Name":"bachy-bin","Version":"0.3.4-1"}],"type":"multiinfo","version":5}'
 run_check "${aur[@]}" STUB_BODY="$answer" STUB_ORDER=1
 check "an AUR update prints available with both versions" "available aur 0.3.3-1 0.3.4-1" "$out"
 check "and exits 0" "0" "$rc"
 check "curl got the bounded request and nothing else" \
-  "curl -q --silent --fail --globoff --max-time 10 --max-filesize 1M https://aur.archlinux.org/rpc/v5/info?arg[]=flea-bin LC_ALL=C" \
+  "curl -q --silent --fail --globoff --max-time 10 --max-filesize 1M https://aur.archlinux.org/rpc/v5/info?arg[]=bachy-bin LC_ALL=C" \
   "$(grep '^curl ' "$calls")"
 check "and the mirrors were never asked" "0" "$(called checkupdates)"
 check "vercmp was asked whether the AUR's build is newer than the installed" "1" "$(grep -c '^vercmp 0.3.4-1 0.3.3-1 ' "$calls")"
@@ -132,13 +132,13 @@ check "and exits with nothing to install" "3" "$rc"
 run_check "${aur[@]}" STUB_CURL_CODE=6
 check "an unreachable AUR prints failed" "failed aur 0.3.3-1 -" "$out"
 check "and exits 2" "2" "$rc"
-check "with one sentence naming the AUR" "flea: the AUR could not be asked for a newer Flea" "$err"
+check "with one sentence naming the AUR" "bachy: the AUR could not be asked for a newer Bachy" "$err"
 
 # A whole envelope, so the version pattern is the only thing left to refuse it.
-run_check "${aur[@]}" STUB_BODY='{"resultcount":1,"results":[{"Name":"flea-bin","Version":"0.3.4-1 $(reboot)"}],"type":"multiinfo","version":5}'
+run_check "${aur[@]}" STUB_BODY='{"resultcount":1,"results":[{"Name":"bachy-bin","Version":"0.3.4-1 $(reboot)"}],"type":"multiinfo","version":5}'
 check "a version that fails the strict pattern prints failed" "failed aur 0.3.3-1 -" "$out"
 check "and never reaches vercmp" "0" "$(called vercmp)"
-check "and says the version, not the AUR, was the problem" "flea: the package source answered with a version this check cannot compare" "$err"
+check "and says the version, not the AUR, was the problem" "bachy: the package source answered with a version this check cannot compare" "$err"
 
 # The two usage shapes a malformed --update takes, on an empty PATH so a parse that ran either could launch nothing real.
 out=$(env -i HOME="$D/home" PATH="$D/empty" "$BIN" --update now 2>&1 >/dev/null); rc=$?
@@ -171,7 +171,7 @@ check "the presenter is Omarchy's own floating terminal launcher" "omarchy-launc
 chmod +x "$D/bin/$presenter"
 
 : > "$ran"
-# Quickshell hands flea --update a pipe and closes it, so a pipe is what the updater must not inherit.
+# Quickshell hands bachy --update a pipe and closes it, so a pipe is what the updater must not inherit.
 env -i HOME="$D/home" PATH="$D/bin" "$BIN" --update 2>&1 | cat >/dev/null
 check "--update returns success once the presenter is started" "0" "${PIPESTATUS[0]}"
 wait_for_line "$ran" '^THP_enabled'
@@ -183,12 +183,12 @@ check "the updater got no inherited pipe, on stdout or stderr" "1|1" \
 check "the updater leads its own process group" "1" "$(echo "$out" | grep -c '^PGID MATCH$')"
 check "the updater runs with huge pages on" "1" "$(echo "$out" | grep -c '^THP_enabled:[[:space:]]*1')"
 
-# The window runs flea --update from qs, which inherits huge pages off, so the updater must get them back.
+# The window runs bachy --update from qs, which inherits huge pages off, so the updater must get them back.
 : > "$ran"
 printf '#!/bin/sh\n/usr/bin/grep -i "^THP_enabled" /proc/self/status | /usr/bin/sed "s/^/QS /" >> %q\nexec %q --update\n' "$ran" "$BIN_REAL" > "$D/bin/qs"
 chmod +x "$D/bin/qs"
-# FLEA_UI is named rather than walked to, because the walk starts from the resolved binary and a linked target/ leads elsewhere.
-env -i HOME="$D/home" XDG_STATE_HOME="$D/home/state" FLEA_UI="$PWD/ui" WAYLAND_DISPLAY=flea-update-test-display PATH="$D/bin" \
+# BACHY_UI is named rather than walked to, because the walk starts from the resolved binary and a linked target/ leads elsewhere.
+env -i HOME="$D/home" XDG_STATE_HOME="$D/home/state" BACHY_UI="$PWD/ui" WAYLAND_DISPLAY=bachy-update-test-display PATH="$D/bin" \
   "$BIN" --gui >"$D/gui.log" 2>&1 </dev/null
 wait_for_line "$ran" '^THP_enabled'
 check "the shell inherited huge pages off" "1" "$(grep -c '^QS THP_enabled:[[:space:]]*0' "$ran")"
@@ -196,7 +196,7 @@ check "and the updater it started got them back" "1" "$(grep -c '^THP_enabled:[[
 
 out=$(env -i HOME="$D/home" PATH="$D/empty" "$BIN" --update 2>&1); rc=$?
 check "a box with no presenter is the failure status" "2" "$rc"
-check "and one sentence saying nothing was updated" "flea: Omarchy's updater could not be started, so nothing was updated" "$out"
+check "and one sentence saying nothing was updated" "bachy: Omarchy's updater could not be started, so nothing was updated" "$out"
 
 # The presenter ships in the omarchy package, which PKGBUILD must depend on or the row opens nothing.
 check "PKGBUILD depends on omarchy, which ships $presenter" "1" "$(grep -c "^depends=.*'omarchy'" PKGBUILD)"

@@ -21,12 +21,12 @@ pub fn open_terminal(path: &str) -> i32 {
         Some(p) => p,
         // The reason is elided, never shown raw, and the path is the user's own input.
         None => {
-            eprintln!("flea: that directory could not be opened in a terminal, check that it still exists");
+            eprintln!("bachy: that directory could not be opened in a terminal, check that it still exists");
             return FAILED;
         }
     };
     if !target.is_dir() {
-        eprintln!("flea: that directory could not be opened in a terminal, check that it still exists");
+        eprintln!("bachy: that directory could not be opened in a terminal, check that it still exists");
         return FAILED;
     }
     // An OsString and not a format!, because Path::display would substitute U+FFFD for a byte that is not UTF-8.
@@ -39,22 +39,22 @@ pub fn open_terminal(path: &str) -> i32 {
     match started {
         Ok(_) => 0,
         Err(_) => {
-            eprintln!("flea: nothing on this system could be asked to open a terminal there");
+            eprintln!("bachy: nothing on this system could be asked to open a terminal there");
             FAILED
         }
     }
 }
 
-// The guards every program Flea starts and does not wait for carries; src/update.rs hands its updater the same.
+// The guards every program Bachy starts and does not wait for carries; src/update.rs hands its updater the same.
 pub fn detach(child: &mut Command) {
     // The setting is inherited across exec, so this is the last point that can hand it back.
     thp::enable();
     // The display-GPU pin is Qt's alone, and only this launcher's own pin is dropped.
     vulkan::drop_display_pin(child);
-    // The platform theme Flea traded for its own startup is Qt's alone too, and is handed back here.
+    // The platform theme Bachy traded for its own startup is Qt's alone too, and is handed back here.
     gui::restore_platform_theme(child);
     // The child outlives us, so an inherited pipe would kill it on its first write; see AGENTS.md "Opening a file".
     child.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
-    // Its own process group, so nothing that later kills Flea's group reaches the child.
+    // Its own process group, so nothing that later kills Bachy's group reaches the child.
     child.process_group(0);
 }

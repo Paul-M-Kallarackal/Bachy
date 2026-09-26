@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Picker.js" as Picker
 
@@ -82,7 +81,7 @@ Item {
             border.color: control.frame
         }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.centerIn: parent
             visible: control.glyph.length > 0
             width: Theme.chromeMarkSize
@@ -261,7 +260,7 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             flickableDirection: Flickable.HorizontalFlick
             clip: true
-            Flea.FastScrollHandler { flickable: types }
+            Bachy.FastScrollHandler { flickable: types }
 
             function reveal(item) {
                 if (item.x < contentX) contentX = item.x

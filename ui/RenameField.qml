@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 
 // The row becoming its own editor, per the States artboard: an accent frame around the name, the
 // extension muted inside that frame, enter commits and escape abandons.

@@ -1,6 +1,6 @@
 // Tree-copy creation manifest on the runtime filesystem, never on the destination, never in the journal entry.
 use crate::backend::trashmanifest::{Manifest, Records};
-use crate::error::FleaError;
+use crate::error::BachyError;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
@@ -77,7 +77,7 @@ pub fn writer_for(src: &Path, dst: &Path) -> Option<Writer> {
     match Writer::create_for(src, dst) {
         // No off-copy filesystem still copies, but never silently: undo falls back to the whole-tree check.
         Err(e) => {
-            eprintln!("flea: copy manifest unavailable for {}: {e}", dst.display());
+            eprintln!("bachy: copy manifest unavailable for {}: {e}", dst.display());
             None
         }
         Ok(writer) => Some(writer),
@@ -217,6 +217,7 @@ impl Writer {
     }
 }
 
+#[cfg(test)]
 fn encode(meta: &std::fs::Metadata, rel: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(HEADER + rel.len());
     encode_into(&mut out, meta, rel);
@@ -361,8 +362,8 @@ pub fn summarize(report: &Report) -> String {
     msg
 }
 
-pub fn undo_err(to: &Path, msg: String) -> FleaError {
-    FleaError { where_: "undo".into(), path: to.to_string_lossy().into(), msg }
+pub fn undo_err(to: &Path, msg: String) -> BachyError {
+    BachyError { where_: "undo".into(), path: to.to_string_lossy().into(), msg }
 }
 
 #[cfg(test)]

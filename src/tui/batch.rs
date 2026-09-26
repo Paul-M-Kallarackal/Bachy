@@ -104,10 +104,10 @@ impl Batch {
 struct NamesFile { root: PathBuf, path: PathBuf, identity: (u64, u64, u32), cleaned: bool }
 impl NamesFile {
     fn new(document: &str) -> io::Result<Self> {
-        let output = Command::new("mktemp").args(["-d", "/tmp/flea-rename-XXXXXX"]).output()?;
+        let output = Command::new("mktemp").args(["-d", "/tmp/bachy-rename-XXXXXX"]).output()?;
         if !output.status.success() { return Err(failure("Could not create bulk rename directory")); }
         let root = PathBuf::from(String::from_utf8(output.stdout).map_err(|_| failure("Bulk rename temporary path is not UTF-8"))?.trim());
-        if !root.is_absolute() || root.parent() != Some(Path::new("/tmp")) || !root.file_name().is_some_and(|name| name.to_string_lossy().starts_with("flea-rename-")) {
+        if !root.is_absolute() || root.parent() != Some(Path::new("/tmp")) || !root.file_name().is_some_and(|name| name.to_string_lossy().starts_with("bachy-rename-")) {
             return Err(failure("Bulk rename temporary path is outside its owned sandbox"));
         }
         let meta = root.symlink_metadata()?;
@@ -139,7 +139,7 @@ impl NamesFile {
 }
 impl Drop for NamesFile {
     fn drop(&mut self) {
-        if !self.cleaned { if let Err(error) = self.cleanup() { eprintln!("flea: {}", error); } }
+        if !self.cleaned { if let Err(error) = self.cleanup() { eprintln!("bachy: {}", error); } }
     }
 }
 

@@ -1,8 +1,8 @@
-//@ pragma ShellId flea-menu-settle-test
+//@ pragma ShellId bachy-menu-settle-test
 
 import QtQuick
 import Quickshell
-import "flea" as Flea
+import "bachy" as Bachy
 
 // tests/menu-settle.sh's harness: the real ui/ContextMenu.qml placed again while open, with nothing new to draw, still ends its pointer settle.
 ShellRoot {
@@ -23,7 +23,7 @@ ShellRoot {
         implicitHeight: 480
         color: "#303030"
 
-        Flea.ContextMenu { id: menu }
+        Bachy.ContextMenu { id: menu }
     }
 
     // One step per tick: open, wait for the open to settle, sit idle so no frame is pending, place again, wait again.

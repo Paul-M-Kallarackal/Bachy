@@ -1,7 +1,7 @@
 // The shipped ui.json shape and the rule each key is measured against; src/uistate.rs applies them.
 use crate::jsondoc::{self, Json};
 
-// docs/flea-0.1.4-build-handoff.md section 1's shape and defaults, but density compact (0.3.2), showUnmounted on (0.3.3).
+// docs/bachy-0.1.4-build-handoff.md section 1's shape and defaults, but density compact (0.3.2), showUnmounted on (0.3.3).
 pub const DEFAULTS: &str = r#"{
   "view": "list",
   "density": "compact",
@@ -63,11 +63,11 @@ pub enum Rule {
     SidebarWidth,
     // dual.paths is the pair handoff 5a specifies, or the empty array that means nothing remembered.
     Pair,
-    // menu.hidden is deliberately open: a closed list would make this Flea drop an id a newer one hid.
+    // menu.hidden is deliberately open: a closed list would make this Bachy drop an id a newer one hid.
     Ids,
     Count(f64, f64),
     TextSize,
-    // Any whole number, so a newer Flea's higher stamp survives this one's write; no patch may set it.
+    // Any whole number, so a newer Bachy's higher stamp survives this one's write; no patch may set it.
     Version,
     Group(&'static [(&'static str, Rule)]),
 }
@@ -117,7 +117,7 @@ pub const PREVIEW: &[(&str, Rule)] = &[
 // mode is "system" or one stop, so there is nowhere to put a free number; see the handoff's Display row.
 pub const TEXT_SIZE: &[(&str, Rule)] = &[("mode", Rule::TextSize)];
 
-// textSize alone. Window opacity, icon theme and shadows are the compositor's, and Flea mirrors it
+// textSize alone. Window opacity, icon theme and shadows are the compositor's, and Bachy mirrors it
 // rather than carrying a second writable copy of a setting Hyprland already owns.
 pub const DISPLAY: &[(&str, Rule)] = &[("textSize", Rule::Group(TEXT_SIZE)), ("hyprlandIcons", Rule::Bool)];
 

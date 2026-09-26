@@ -190,7 +190,7 @@ vm.runInContext('function exited(code) {' + writerExit[1] + '\n}', writerContext
 writerContext.exited(0);
 check(writerEvents[0], ['network-8', true, 'Favorites were saved, but their new state could not be read.'],
     'exit-zero response parse failure reports a committed operation');
-writerContext.writer.errorText = 'flea: State write refused';
+writerContext.writer.errorText = 'bachy: State write refused';
 writerContext.exited(2);
 check(writerEvents[1], ['network-8', false, 'State write refused'], 'failed CLI write remains retryable');
 writerContext.writer.answer = '{"places":{"favourites":[{"label":"Fixture","path":"/fixture"}]}}';

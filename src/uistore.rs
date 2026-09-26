@@ -9,7 +9,7 @@ use std::io::Write;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
-const DIR: &str = "flea";
+const DIR: &str = "bachy";
 const FILE: &str = "ui.json";
 const LOCK: &str = "ui.json.lock";
 const LEGACY: &str = "view.json";
@@ -70,7 +70,7 @@ impl Store {
     }
 
     // The lock is held across the re-read, the validation, the merge, the temp write and the rename,
-    // so a second Flea cannot land between this one's read and its write.
+    // so a second Bachy cannot land between this one's read and its write.
     pub fn update(&self, patch: &Json) -> Result<Json, String> {
         self.transform(|state| uistate::patched(state, patch))
     }
@@ -317,7 +317,7 @@ mod tests {
     fn a_view_json_beside_a_missing_ui_json_is_migrated_on_read() {
         let d = TestDir::new("uistore-migrate");
         let s = store(&d);
-        fs::create_dir_all(d.join("config").join("flea")).expect("config dir");
+        fs::create_dir_all(d.join("config").join("bachy")).expect("config dir");
         fs::write(s.legacy(), r#"{"hiddenCols":["kind","mode"],"uiScale":1.4}"#).expect("write");
         let read = s.read();
         let cols: Vec<&str> = read.get("columns").and_then(Json::as_array).expect("columns").iter().filter_map(Json::as_str).collect();
@@ -337,7 +337,7 @@ mod tests {
         let s = store(&d);
         s.settle().expect("nothing to migrate");
         assert!(!s.file().exists(), "no view.json means no state file is seeded");
-        fs::create_dir_all(d.join("config").join("flea")).expect("config dir");
+        fs::create_dir_all(d.join("config").join("bachy")).expect("config dir");
         fs::write(s.legacy(), r#"{"hiddenCols":["kind"],"uiScale":1.4}"#).expect("write");
         s.settle().expect("migrate");
         let migrated = s.read();
@@ -353,13 +353,13 @@ mod tests {
     }
 
     // The window applies no schema of its own, so what settle leaves on disk is what the first paint
-    // reads: a value this Flea refuses has to be gone before the FileView ever sees it.
+    // reads: a value this Bachy refuses has to be gone before the FileView ever sees it.
     #[test]
     fn a_settle_rewrites_a_refused_value_out_of_the_file_and_keeps_its_neighbours() {
         let d = TestDir::new("uistore-settle");
         let s = store(&d);
-        fs::create_dir_all(d.join("state").join("flea")).expect("state dir");
-        fs::write(s.file(), r#"{"columns":["name","size","owner"],"density":"comfortable","fromANewerFlea":{"a":1}}"#).expect("write");
+        fs::create_dir_all(d.join("state").join("bachy")).expect("state dir");
+        fs::write(s.file(), r#"{"columns":["name","size","owner"],"density":"comfortable","fromANewerBachy":{"a":1}}"#).expect("write");
         s.settle().expect("settle");
         let body = fs::read_to_string(s.file()).expect("read back");
         assert!(!body.contains("owner"), "the refused column must not survive the settle: {}", body);
@@ -367,7 +367,7 @@ mod tests {
         let cols: Vec<&str> = stored.get("columns").and_then(Json::as_array).expect("columns").iter().filter_map(Json::as_str).collect();
         assert_eq!(cols, ["name", "size", "date"], "the refused array falls back to the shipped one");
         assert_eq!(stored.get("density").and_then(Json::as_str), Some("comfortable"), "a good key beside it stands");
-        assert!(stored.get("fromANewerFlea").is_some(), "a newer Flea's own key still survives");
+        assert!(stored.get("fromANewerBachy").is_some(), "a newer Bachy's own key still survives");
         let settled = fs::read_to_string(s.file()).expect("settled");
         let ino = fs::metadata(s.file()).expect("meta").ino();
         s.settle().expect("second settle");
@@ -379,15 +379,15 @@ mod tests {
     fn an_unknown_key_is_rewritten_untouched() {
         let d = TestDir::new("uistore-unknown");
         let s = store(&d);
-        fs::create_dir_all(d.join("state").join("flea")).expect("state dir");
-        fs::write(s.file(), r#"{"fromANewerFlea":{"a":[1,2]},"view":"grid"}"#).expect("write");
+        fs::create_dir_all(d.join("state").join("bachy")).expect("state dir");
+        fs::write(s.file(), r#"{"fromANewerBachy":{"a":[1,2]},"view":"grid"}"#).expect("write");
         s.update(&patch(r#"{"hidden":true}"#)).expect("update");
         let body = fs::read_to_string(s.file()).expect("read back");
         let stored = jsondoc::parse(&body).expect("valid JSON on disk");
         assert_eq!(stored.get("view").and_then(Json::as_str), Some("grid"));
         assert_eq!(stored.get("hidden").and_then(Json::as_bool), Some(true));
         assert_eq!(
-            jsondoc::render(stored.get("fromANewerFlea").expect("the newer key survived")),
+            jsondoc::render(stored.get("fromANewerBachy").expect("the newer key survived")),
             "{\n  \"a\": [\n    1,\n    2\n  ]\n}\n"
         );
     }
@@ -473,11 +473,11 @@ mod tests {
     #[test]
     fn the_paths_hang_off_the_state_home_and_the_config_home() {
         let home = PathBuf::from("/home/nobody");
-        assert_eq!(state_dir(Some(PathBuf::from("/tmp/flea-test-state")), &home), PathBuf::from("/tmp/flea-test-state"));
+        assert_eq!(state_dir(Some(PathBuf::from("/tmp/bachy-test-state")), &home), PathBuf::from("/tmp/bachy-test-state"));
         assert_eq!(state_dir(None, &home), PathBuf::from("/home/nobody/.local/state"));
-        let s = Store::at(&state_dir(None, &home), Path::new("/tmp/flea-test-config"));
-        assert_eq!(s.file(), Path::new("/home/nobody/.local/state/flea/ui.json"));
-        assert_eq!(s.lock_file(), Path::new("/home/nobody/.local/state/flea/ui.json.lock"));
-        assert_eq!(s.legacy(), Path::new("/tmp/flea-test-config/flea/view.json"));
+        let s = Store::at(&state_dir(None, &home), Path::new("/tmp/bachy-test-config"));
+        assert_eq!(s.file(), Path::new("/home/nobody/.local/state/bachy/ui.json"));
+        assert_eq!(s.lock_file(), Path::new("/home/nobody/.local/state/bachy/ui.json.lock"));
+        assert_eq!(s.legacy(), Path::new("/tmp/bachy-test-config/bachy/view.json"));
     }
 }

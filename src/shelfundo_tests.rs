@@ -103,8 +103,8 @@ fn a_row_missing_a_field_is_not_a_move() {
 fn a_hand_edited_file_that_is_not_the_shelfs_own_undoes_nothing() {
     let dir = TestDir::new("shelfundo-junk");
     let moves = Moves::at(dir.path());
-    std::fs::create_dir_all(dir.path().join("omarchy/flea-shelf")).unwrap();
-    std::fs::write(dir.path().join("omarchy/flea-shelf/undo.json"), "{ not json").unwrap();
+    std::fs::create_dir_all(dir.path().join("bachy/shelf")).unwrap();
+    std::fs::write(dir.path().join("bachy/shelf/undo.json"), "{ not json").unwrap();
     assert_eq!(moves.at_ms(), 0);
     assert!(moves.take().unwrap().is_empty(), "and the unreadable record is spent rather than read again");
 }

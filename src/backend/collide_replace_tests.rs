@@ -84,7 +84,7 @@ fn unrestorable_trash(d: &TestDir, cancel: Arc<AtomicBool>, lifts: bool) -> Stan
     StandIn
 }
 
-fn redo(journal: &mut Journal) -> Result<String, FleaError> {
+fn redo(journal: &mut Journal) -> Result<String, BachyError> {
     let (tx, _rx) = channel();
     journal.redo(1, &AtomicBool::new(false), &tx)
 }
@@ -185,7 +185,7 @@ fn a_replace_whose_copy_fails_puts_the_old_item_straight_back() {
     assert!(entry.steps.is_empty(), "and there is nothing left for undo to do");
     assert_eq!(std::fs::read_dir(&can).unwrap().count(), 0);
     // A cancel reaches the same path and keeps its own word, which is what the transfer counts it by.
-    let cancelled = |_: &mut Vec<Step>| Err(FleaError { where_: "copy".into(), path: String::new(), msg: CANCELLED.into() });
+    let cancelled = |_: &mut Vec<Step>| Err(BachyError { where_: "copy".into(), path: String::new(), msg: CANCELLED.into() });
     let mut steps = Vec::new();
     assert_eq!(replacing(&there, &mut steps, cancelled).unwrap_err().msg, CANCELLED);
     assert_eq!(text(&there), "there");
@@ -209,7 +209,7 @@ fn a_put_back_that_fails_keeps_the_step_for_undo_and_says_the_old_item_is_in_tra
     d.dir("to");
     let there = d.file("to/shut.txt", "there");
     let _trash = unrestorable_trash(&d, Arc::new(AtomicBool::new(false)), true);
-    let failing = |_: &mut Vec<Step>| Err(FleaError { where_: "copy".into(), path: String::new(), msg: "permission denied".into() });
+    let failing = |_: &mut Vec<Step>| Err(BachyError { where_: "copy".into(), path: String::new(), msg: "permission denied".into() });
     let mut steps = Vec::new();
     let error = replacing(&there, &mut steps, failing).unwrap_err();
     assert!(error.msg.starts_with("permission denied; the item it replaced is still in Trash"), "{}", error.msg);

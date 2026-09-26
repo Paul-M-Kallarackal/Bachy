@@ -74,11 +74,11 @@ pub fn collect(dir: &Path, prefix: &str, suffix: &str, found: &mut Vec<Capture>)
 }
 
 fn screenshot_dir() -> PathBuf {
-    resolve("OMARCHY_SCREENSHOT_DIR", "XDG_PICTURES_DIR", "Pictures")
+    resolve("BACHY_SCREENSHOT_DIR", "XDG_PICTURES_DIR", "Pictures")
 }
 
 fn recording_dir() -> PathBuf {
-    resolve("OMARCHY_SCREENRECORD_DIR", "XDG_VIDEOS_DIR", "Videos")
+    resolve("BACHY_SCREENRECORD_DIR", "XDG_VIDEOS_DIR", "Videos")
 }
 
 fn resolve(own: &str, xdg: &str, fallback: &str) -> PathBuf {
@@ -131,7 +131,7 @@ pub fn user_dirs_entry(text: &str, key: &str, home: &str) -> Option<String> {
     None
 }
 
-// flea shelf captures [count] [both|screenshots|recordings]: one line per capture, newest first,
+// bachy shelf captures [count] [both|screenshots|recordings]: one line per capture, newest first,
 // the mtime then the path.
 pub fn command(rest: &[String]) -> i32 {
     let count = match rest.first() {
@@ -141,14 +141,14 @@ pub fn command(rest: &[String]) -> i32 {
             // Refused rather than defaulted: a word here would slide the kinds argument along and
             // answer with both kinds at the default count, which is not what was asked for.
             Err(_) => {
-                eprintln!("flea: shelf captures takes a count first, and {} is not one", asked);
+                eprintln!("bachy: shelf captures takes a count first, and {} is not one", asked);
                 return 2;
             }
         },
     };
     let kinds = rest.get(1).map(String::as_str).unwrap_or("both");
     if !matches!(kinds, "both" | "screenshots" | "recordings") {
-        eprintln!("flea: shelf captures takes both, screenshots or recordings, and {} is none of them", kinds);
+        eprintln!("bachy: shelf captures takes both, screenshots or recordings, and {} is none of them", kinds);
         return 2;
     }
     let screenshots = kinds == "both" || kinds == "screenshots";

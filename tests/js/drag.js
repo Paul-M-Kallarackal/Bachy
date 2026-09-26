@@ -14,7 +14,7 @@ function pane(sent, picked, rows) {
 }
 
 function run(check) {
-    var rows = [{ n: "omarchy", d: true }, { n: "flea", d: true }, { n: "a.txt", d: false }, { n: "b.txt", d: false }]
+    var rows = [{ n: "omarchy", d: true }, { n: "bachy", d: true }, { n: "a.txt", d: false }, { n: "b.txt", d: false }]
 
     // The selection when the pressed row is in it, the row alone when it is not.
     check("a drag from a selected row carries the whole selection",
@@ -56,7 +56,7 @@ function run(check) {
     check("and the clipboard was never part of it", mover.clipboard, "untouched")
     var copied = []
     Drag.drop(pane(copied, [], rows), [2], 1, true)
-    check("under ctrl it is a copy", copied.length === 1 ? copied[0].op + " " + copied[0].dest : "nothing sent", "copy /d/flea")
+    check("under ctrl it is a copy", copied.length === 1 ? copied[0].op + " " + copied[0].dest : "nothing sent", "copy /d/bachy")
 
     // The marker carries where the rows were lifted from, so a drop after the listing changed can
     // resolve by path, and the wire carries the same paths as plain text for a terminal.
@@ -68,7 +68,7 @@ function run(check) {
     check("a marker from before this shape reads as no source", Drag.markerSource("x\n1\nmove"), "")
     check("and as an unknown filesystem", Drag.markerDev("x\n1\nmove"), 0)
     check("the same listing is the by-index case", Drag.sameListing(wire[Drag.ROWS_MIME], "/d"), true)
-    check("another directory is not", Drag.sameListing(wire[Drag.ROWS_MIME], "/d/flea"), false)
+    check("another directory is not", Drag.sameListing(wire[Drag.ROWS_MIME], "/d/bachy"), false)
     check("nor is a foreign drag, whatever its source", Drag.sameListing("other\n1\nmove\n/d\n42", "/d"), false)
     check("plain text is the absolute paths, one a line", wire["text/plain"], "/d/a.txt\n/d/b.txt")
     check("a wide selection offers no plain text either", Drag.mimeFor(lifted, [2, 9], false)["text/plain"], undefined)
@@ -162,7 +162,7 @@ function run(check) {
           Drag.dropInto(pane(extRefused, [], rows), "", ["https://example.com/a.txt"], "/d/omarchy", 0), false)
     check("and nothing went out from any of them", extRefused.length, 0)
 
-    // What the drag puts on the wire, and the marker that tells Flea's own drag from a foreign one.
+    // What the drag puts on the wire, and the marker that tells Bachy's own drag from a foreign one.
     check("a path becomes a file URI", Drag.uriFor("/d/a.txt"), "file:///d/a.txt")
     check("a space is percent encoded", Drag.uriFor("/d/a b.txt"), "file:///d/a%20b.txt")
     check("and so is a hash, which encodeURI would leave alone", Drag.uriFor("/d/a#b.txt"), "file:///d/a%23b.txt")
@@ -190,12 +190,12 @@ function run(check) {
     check("a fully resolvable selection still offers both",
           Drag.mimeFor(pane([], [], rows), [0, 2], false).hasOwnProperty("text/uri-list"), true)
 
-    // The marker names the application; the instance mime names this process. Another Flea window is
+    // The marker names the application; the instance mime names this process. Another Bachy window is
     // a different process whose row indices mean nothing here, so it must not take the internal path.
     check("a drag from this window is recognised as its own",
           Drag.isOwnDrag(Drag.markerPayload([0, 2], false)), true)
-    check("a drag from another Flea window is not",
-          Drag.isOwnDrag("some-other-flea\n0,2"), false)
+    check("a drag from another Bachy window is not",
+          Drag.isOwnDrag("some-other-bachy\n0,2"), false)
     check("and neither is something carrying no marker at all",
           Drag.isOwnDrag(""), false)
     check("the marker names the sender before the rows",
@@ -223,7 +223,7 @@ function run(check) {
           Drag.line(1, "omarchy", Drag.verbFor(true, false, 56, 56) === "copy"),
           "Move 1 item to omarchy · ctrl at lift copies")
 
-    // The lift's ctrl rides the marker because the drop event cannot carry it any more: Flea now
+    // The lift's ctrl rides the marker because the drop event cannot carry it any more: Bachy now
     // advertises Qt.CopyAction alone, so Chromium stops reporting dropEffect move, and Qt clamps
     // a DragEvent's proposedAction to what the source advertised. Measured on Qt 6.11.2: the
     // receiver read proposedAction 2 of supported 3 under copy|move and 1 of 1 under copy alone.
@@ -234,7 +234,7 @@ function run(check) {
     check("a marked copy reads back as one", Drag.markerCopying(Drag.markerPayload([2], true)), true)
     check("a marked move reads back as one", Drag.markerCopying(Drag.markerPayload([2], false)), false)
     check("a marker carrying no modifier field is not a copy",
-          Drag.markerCopying("some-other-flea\n0,2"), false)
+          Drag.markerCopying("some-other-bachy\n0,2"), false)
     check("and neither is a drag carrying no marker at all", Drag.markerCopying(""), false)
 
     // The round trip the DropArea makes: what mimeFor put on the wire is what verbFor reads back.
@@ -248,14 +248,14 @@ function run(check) {
           Drag.verbFor(Drag.isOwnDrag(heldWire), Drag.markerCopying(heldWire), 56, 56), "copy")
     check("and across two volumes the marker cannot make it a move",
           Drag.verbFor(Drag.isOwnDrag(plainWire), Drag.markerCopying(plainWire), 56, 32), "copy")
-    check("a marked drag from another Flea window still copies, whatever its marker says",
-          Drag.verbFor(Drag.isOwnDrag("some-other-flea\n0,2\nmove"),
-                       Drag.markerCopying("some-other-flea\n0,2\nmove"), 56, 56), "copy")
+    check("a marked drag from another Bachy window still copies, whatever its marker says",
+          Drag.verbFor(Drag.isOwnDrag("some-other-bachy\n0,2\nmove"),
+                       Drag.markerCopying("some-other-bachy\n0,2\nmove"), 56, 56), "copy")
 
-    var fromOtherFlea = []
-    Drag.dropInto(pane(fromOtherFlea, [], rows), "some-other-flea\n0\nmove\n/x\n56", ["file:///x/a.txt"], "/d/omarchy", 56)
-    check("a drop from another Flea window copies, like any other foreign source",
-          fromOtherFlea.length === 1 ? fromOtherFlea[0].op : "nothing sent", "copy")
+    var fromOtherBachy = []
+    Drag.dropInto(pane(fromOtherBachy, [], rows), "some-other-bachy\n0\nmove\n/x\n56", ["file:///x/a.txt"], "/d/omarchy", 56)
+    check("a drop from another Bachy window copies, like any other foreign source",
+          fromOtherBachy.length === 1 ? fromOtherBachy[0].op : "nothing sent", "copy")
 
     var feedback = Drag.feedbackFor(Drag.markerPayload([1, 3], false, "/source", 56),
         ["file:///source/a.txt", "file:///source/link"])
@@ -280,7 +280,7 @@ function run(check) {
     check("ctrl survives the feedback handoff", Drag.feedbackLine(Drag.feedbackFor(
         Drag.markerPayload([1], true, "/source", 56), ["file:///source/a.txt"]), "folder", 56), "Copy 1 item to folder")
 
-  // DragOut rule 4: Flea is the shelf's one named receiver, so the word it says while a shelf drag
+  // DragOut rule 4: Bachy is the shelf's one named receiver, so the word it says while a shelf drag
   // hovers is the intent the lift fixed, not the one a missing rows marker would imply.
   var moveDrag = "9f2c\nmove"
   var copyDrag = "9f2c\ncopy"

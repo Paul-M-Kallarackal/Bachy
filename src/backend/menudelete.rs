@@ -105,7 +105,7 @@ mod tests {
     fn selected(path: &Path) -> Selected { Selected::inspect(path.to_str().unwrap()).unwrap() }
     fn deletion_sandbox(d: &TestDir, paths: &[&Path]) {
         assert!(!d.path().as_os_str().is_empty() && d.path().is_absolute());
-        assert!(d.path().join(".flea-test-sandbox").is_file());
+        assert!(d.path().join(".bachy-test-sandbox").is_file());
         for path in paths { assert!(!path.as_os_str().is_empty() && path.is_absolute() && path.starts_with(d.path())); }
     }
 

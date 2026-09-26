@@ -11,7 +11,7 @@ function run(check) {
     // four mountpoints including /, which is why the parser reads MOUNTPOINTS and not MOUNTPOINT.
     // The plain column showed /home for that device and never /, so nothing could name the system disk.
     var live = '{"blockdevices":['
-             + '{"name":"loop0","path":"/dev/loop0","label":"FLEATEST","mountpoints":[null],"rm":false,"size":67108864,"type":"loop","model":null},'
+             + '{"name":"loop0","path":"/dev/loop0","label":"BACHYTEST","mountpoints":[null],"rm":false,"size":67108864,"type":"loop","model":null},'
              + '{"name":"sda","path":"/dev/sda","label":null,"mountpoints":[null],"rm":true,"size":124656812032,"type":"disk","model":"USB Flash Disk",'
              + '"children":[{"name":"sda1","path":"/dev/sda1","label":"128GB","mountpoints":["/run/media/gm/128GB"],"rm":true,"size":124656812032,"type":"part","model":null}]},'
              + '{"name":"zram0","path":"/dev/zram0","label":"zram0","mountpoints":["[SWAP]"],"rm":false,"size":20724056064,"type":"disk","model":null},'
@@ -105,7 +105,7 @@ function run(check) {
           locked[locked.length - 1].removable, false)
 
     // An internal partition nothing mounted stays out: a spare EFI or recovery partition is not a
-    // place to browse, and Flea offers no way to mount one.
+    // place to browse, and Bachy offers no way to mount one.
     var spare = '{"blockdevices":['
               + '{"name":"nvme0n1","path":"/dev/nvme0n1","label":null,"mountpoints":[null],"rm":false,"size":256060514304,"type":"disk","model":"KBG40ZNS256G",'
               + '"children":[{"name":"nvme0n1p1","path":"/dev/nvme0n1p1","label":null,"mountpoints":["/"],"rm":false,"size":256060514304,"type":"part","model":null}]},'

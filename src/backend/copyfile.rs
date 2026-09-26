@@ -1,5 +1,5 @@
 // The copy primitives every transfer is built from: streaming, symlink-preserving, and refusing to overwrite.
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -45,11 +45,11 @@ fn here(path: &Path) -> At<'_> {
 // Copies one regular file, creating the destination exclusively so an existing file is never destroyed.
 // Test only: copy_any routes the product's copies, and copynode's fifo test is the last caller by path.
 #[cfg(test)]
-pub fn copy_file(src: &Path, dst: &Path, total: u64, p: &mut Progress) -> Result<(), FleaError> {
+pub fn copy_file(src: &Path, dst: &Path, total: u64, p: &mut Progress) -> Result<(), BachyError> {
     copy_file_at(here(src), here(dst), total, p)
 }
 
-fn copy_file_at(src: At, dst: At, total: u64, p: &mut Progress) -> Result<(), FleaError> {
+fn copy_file_at(src: At, dst: At, total: u64, p: &mut Progress) -> Result<(), BachyError> {
     // Anything reaching here that is not a regular file was swapped in after copy_any's stat:
     // O_NOFOLLOW refuses a symlink, and regfile's non-blocking open and fstat refuse every other kind.
     let (mut r, src_meta) = crate::backend::regfile::open_if_regular_with_meta(src.at, O_NOFOLLOW)
@@ -125,13 +125,13 @@ fn umask() -> u32 {
 }
 
 // A failure after the destination was created, and not a cancel: the partial stays, and is reported for the journal.
-fn left_partial(p: &mut Progress, dst: &Path, e: FleaError) -> FleaError {
+fn left_partial(p: &mut Progress, dst: &Path, e: BachyError) -> BachyError {
     p.partial = Some(dst.to_path_buf());
     e
 }
 
 // A failure mid-file leaves a half-written file, which undo removes only if the manifest names it.
-fn left_half_written(p: &mut Progress, dst: At, w: &std::fs::File, e: FleaError) -> FleaError {
+fn left_half_written(p: &mut Progress, dst: At, w: &std::fs::File, e: BachyError) -> BachyError {
     record_open(p, dst.named, w);
     left_partial(p, dst.named, e)
 }
@@ -147,7 +147,7 @@ fn record_open(p: &mut Progress, named: &Path, w: &std::fs::File) {
 }
 
 // A symlink is copied as a symlink and never followed, matching cp -a and every rival in the parity audit.
-fn copy_symlink_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
+fn copy_symlink_at(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
     let target = std::fs::read_link(src.at).map_err(|e| from_io("copy", &src.named.to_string_lossy(), &e))?;
     std::os::unix::fs::symlink(&target, dst.at).map_err(|e| from_io("copy", &dst.named.to_string_lossy(), &e))?;
     if let Some(writer) = p.manifest.as_mut() {
@@ -158,11 +158,11 @@ fn copy_symlink_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> 
 
 // Copies a file, a symlink, a whole directory tree, or any other node by recreating it. The
 // destination must not already exist.
-pub fn copy_any(src: &Path, dst: &Path, p: &mut Progress) -> Result<(), FleaError> {
+pub fn copy_any(src: &Path, dst: &Path, p: &mut Progress) -> Result<(), BachyError> {
     copy_at(here(src), here(dst), p)
 }
 
-fn copy_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
+fn copy_at(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
     let meta = src
         .at
         .symlink_metadata()
@@ -185,7 +185,7 @@ fn copy_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
     Ok(())
 }
 
-fn copy_dir_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
+fn copy_dir_at(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
     // Issue 110: both ends are held open and every child is reached through those descriptors, because
     // resolving a child from its path again lets a parent renamed aside mid-copy redirect the rest of
     // the tree through a symlink. corner: three descriptors a level, the two ends and the read_dir on
@@ -240,7 +240,7 @@ fn copy_dir_at(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
     r
 }
 
-fn copy_dir_entries(src: At, dst: At, p: &mut Progress) -> Result<(), FleaError> {
+fn copy_dir_entries(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
     let entries = std::fs::read_dir(src.at).map_err(|e| from_io("copy", &src.named.to_string_lossy(), &e))?;
     for entry in entries {
         if cancelled(p) {
@@ -315,7 +315,7 @@ fn open_dir(path: &Path) -> std::io::Result<std::fs::File> {
 }
 
 // Same filesystem is a rename; a different one is copy-then-remove, and the source only goes once the copy is complete.
-pub fn move_any(src: &Path, dst: &Path, p: &mut Progress) -> Result<(), FleaError> {
+pub fn move_any(src: &Path, dst: &Path, p: &mut Progress) -> Result<(), BachyError> {
     match crate::backend::renamecompat::rename_noreplace(src, dst) {
         Ok(()) => Ok(()),
         Err(e) if e.raw_os_error() == Some(EXDEV) => {
@@ -326,7 +326,7 @@ pub fn move_any(src: &Path, dst: &Path, p: &mut Progress) -> Result<(), FleaErro
     }
 }
 
-pub fn remove_any(path: &Path) -> Result<(), FleaError> {
+pub fn remove_any(path: &Path) -> Result<(), BachyError> {
     let meta = path
         .symlink_metadata()
         .map_err(|e| from_io("move", &path.to_string_lossy(), &e))?;
@@ -338,8 +338,8 @@ pub fn remove_any(path: &Path) -> Result<(), FleaError> {
     r.map_err(|e| from_io("move", &path.to_string_lossy(), &e))
 }
 
-fn cancel_err(path: &Path) -> FleaError {
-    FleaError {
+fn cancel_err(path: &Path) -> BachyError {
+    BachyError {
         where_: "copy".to_string(),
         path: path.to_string_lossy().to_string(),
         msg: "cancelled".to_string(),

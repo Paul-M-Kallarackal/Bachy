@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Keymap.js" as Keymap
 
 // The keymap sheet ? opens, drawn as the Keys panel on Operations.dc.html draws it. Every row comes
@@ -171,7 +170,7 @@ Item {
         // Mirrors hyprland decoration:rounding, same as ui/ConvertDialog.qml; 0 on a stock box stays square.
         radius: Style.cornerRadius
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.margins: Theme.spacing.rowPaddingX

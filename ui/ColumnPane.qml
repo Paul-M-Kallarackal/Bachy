@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Filter.js" as Filter
 import "js/Tap.js" as Tap
 import "js/Thumbs.js" as Thumbs
@@ -131,13 +130,13 @@ Item {
     onVisibleChanged: if (root.visible && root.pane !== null) { coalesce.restart(); settle.restart() }
     onHeightChanged: if (root.visible && root.pane !== null) { coalesce.restart(); settle.restart() }
 
-    Flea.FileDrag {
+    Bachy.FileDrag {
         id: dragSession
         pane: root.pane
     }
 
     // Only the active column owns this directory; neighboring peek floors cannot target its listing.
-    Flea.DropInto {
+    Bachy.DropInto {
         anchors.fill: parent
         enabled: root.pane !== null && !root.pane.trash.opened && root.pane.searchMode === ""
         pane: root.pane
@@ -161,19 +160,19 @@ Item {
             height: root.pane ? Theme.spacing.rowPaddingY : 0
         }
 
-        Flea.FastScrollHandler {
+        Bachy.FastScrollHandler {
             parent: view
             flickable: view
         }
 
-        Flea.ViewportScrollBar {
+        Bachy.ViewportScrollBar {
             id: verticalScroll
             parent: view
             anchors { top: parent.top; right: parent.right }
             flickable: view
         }
 
-        Flea.SelectionBand {
+        Bachy.SelectionBand {
             parent: view
             pane: root.pane
             flickable: view
@@ -189,7 +188,7 @@ Item {
             }
         }
 
-        delegate: Flea.ColumnRow {
+        delegate: Bachy.ColumnRow {
             id: cell
             required property int index
             readonly property int listingIndex: root.pane ? Filter.at(root.pane.shown, index) : index
@@ -231,7 +230,7 @@ Item {
                 }
             }
 
-            Flea.RowDrag {
+            Bachy.RowDrag {
                 session: dragSession
                 listingIndex: cell.listingIndex
                 row: cell.row
@@ -240,7 +239,7 @@ Item {
     }
 
     // A denied peek answers zero rows, the exact count an empty directory answers, so a locked column draws States.dc.html's Locked tile rather than reading as an empty one.
-    Flea.StateMessage {
+    Bachy.StateMessage {
         anchors.fill: parent
         listingState: root.lockedMode >= 0 ? "locked" : "ready"
         lockedMode: root.lockedMode
@@ -293,7 +292,7 @@ Item {
         width: Math.max(0, view.width - root.renameLeft - root.renameRight)
         height: Theme.fileRowHeight
         z: 2
-        sourceComponent: Flea.RenameField {
+        sourceComponent: Bachy.RenameField {
             anchors.fill: parent
             pane: root.pane
             name: root.pane && root.pane.rowFor(root.pane.renamingIndex)
@@ -306,7 +305,7 @@ Item {
     // For ui/Ipc.qml's columnChildEmpty readers: the tile's state and its mark's box.
     readonly property Item emptyItem: emptyTile
     // The same hero the list draws, per the operator: a peeked empty directory animates like the pane's own.
-    Flea.EmptyState {
+    Bachy.EmptyState {
         id: emptyTile
         anchors.fill: parent
         visible: root.drawsEmpty && root.rows.length === 0 && root.lockedMode < 0

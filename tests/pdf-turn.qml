@@ -1,4 +1,4 @@
-//@ pragma ShellId flea-pdf-turn-test
+//@ pragma ShellId bachy-pdf-turn-test
 
 import Quickshell
 import QtQuick

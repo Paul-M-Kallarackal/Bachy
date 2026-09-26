@@ -3,7 +3,7 @@
 # shellcheck disable=SC2034,SC2154 # ui.sh supplies globals; sourced helpers consume case locals.
 
 oversight_identity() {
-    python3 - "$repo" "$flea_ui" "$flea_bin" "$oversight_source" "$oversight_binary_sha" \
+    python3 - "$repo" "$bachy_ui" "$bachy_bin" "$oversight_source" "$oversight_binary_sha" \
         "$oversight_box" "$oversight_home" "${1:-0}" <<'PY'
 import hashlib
 import json
@@ -62,7 +62,7 @@ if int(pid):
     require(process.stat().st_uid == os.getuid(), "window process has another owner")
     environment = dict(value.split(b"=", 1) for value in (process / "environ").read_bytes().split(b"\0") if b"=" in value)
     session = {name: os.environ[name] for name in ("WAYLAND_DISPLAY", "XDG_RUNTIME_DIR", "HYPRLAND_INSTANCE_SIGNATURE", "QT_QPA_PLATFORMTHEME")}
-    for name, value in dict(session, FLEA_BIN=binary, FLEA_UI=ui, FLEA_OVERSIGHT_ROOT=sandbox, HOME=home, QSG_RHI_BACKEND="vulkan").items():
+    for name, value in dict(session, BACHY_BIN=binary, BACHY_UI=ui, BACHY_OVERSIGHT_ROOT=sandbox, HOME=home, QSG_RHI_BACKEND="vulkan").items():
         require(environment.get(name.encode()) == value.encode(), "window environment differs: " + name)
     for name in ("XDG_STATE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"):
         require(environment.get(name.encode()) == os.environ[name].encode(), "sandbox environment differs: " + name)
@@ -72,15 +72,15 @@ if int(pid):
     instances = [item for item in instances if item["pid"] == int(pid) and item["config_path"] == str(Path(ui, "boot", "shell.qml"))]
     require(len(instances) == 1, "window has no exact native UI instance")
     clients = json.loads(subprocess.check_output(["hyprctl", "clients", "-j"]))
-    clients = [item for item in clients if item.get("class") == "com.thisisgm.flea"]
-    require(len(clients) == 1 and clients[0]["pid"] == int(pid), "another Flea window owns the display")
+    clients = [item for item in clients if item.get("class") == "local.bachy.FileManager"]
+    require(len(clients) == 1 and clients[0]["pid"] == int(pid), "another Bachy window owns the display")
     require(clients[0]["size"] == [880, 620] and clients[0]["floating"], "viewport is not the matched 880x620 client")
     monitors = json.loads(subprocess.check_output(["hyprctl", "monitors", "-j"]))
     monitors = [item for item in monitors if item["id"] == clients[0]["monitor"]]
     require(len(monitors) == 1, "client has no attributable monitor")
     monitor = {name: monitors[0][name] for name in ("name", "x", "y", "width", "height", "scale", "transform")}
     backends = []
-    processes = subprocess.run(["pgrep", "-x", "flea"], capture_output=True, text=True)
+    processes = subprocess.run(["pgrep", "-x", "bachy"], capture_output=True, text=True)
     require(processes.returncode in (0, 1), "backend process inventory failed")
     for backend_pid in processes.stdout.split():
         backend = Path("/proc", backend_pid)
@@ -89,7 +89,7 @@ if int(pid):
             backend_env = (backend / "environ").read_bytes().split(b"\0")
         except FileNotFoundError:
             continue
-        if b"--backend" in arguments and ("FLEA_OVERSIGHT_ROOT=" + sandbox).encode() in backend_env:
+        if b"--backend" in arguments and ("BACHY_OVERSIGHT_ROOT=" + sandbox).encode() in backend_env:
             require((backend / "exe").resolve() == Path(binary), "live backend uses another binary")
             backends.append(int(backend_pid))
     require(len(backends) == 1, "expected exactly one owned backend")
@@ -100,12 +100,12 @@ PY
 
 oversight_stop() {
     local pid
-    for pid in $(flea_pids); do
+    for pid in $(bachy_pids); do
         [[ -r "/proc/$pid/environ" ]] || fail "oversight: window vanished before ownership check"
-        tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "FLEA_OVERSIGHT_ROOT=$oversight_box" >/dev/null \
+        tr '\0' '\n' < "/proc/$pid/environ" | grep -Fx "BACHY_OVERSIGHT_ROOT=$oversight_box" >/dev/null \
             || fail "oversight: refusing to stop a foreign window"
     done
-    kill_flea
+    kill_bachy
 }
 
 oversight_visible_row() {
@@ -144,13 +144,13 @@ oversight_park_row() {
 
 oversight_capture() {
     local label="$1" index="${2:--1}" prefix="$evidence_dir/oversight-$oversight_arm-$1" extension identity tokens palette entries="" hints=""
-    [[ "$label" =~ ^[a-z0-9-]+$ && -f "$run_root/.flea-test-sandbox" \
+    [[ "$label" =~ ^[a-z0-9-]+$ && -f "$run_root/.bachy-test-sandbox" \
         && "$prefix" == /* && "$(realpath -m -- "$prefix")" == "$run_root/"* ]] \
         || fail "oversight: invalid evidence target"
     for extension in png context.png identity.json state.json; do
         [[ ! -e "$prefix.$extension" && ! -L "$prefix.$extension" ]] || fail "oversight: evidence already exists: $prefix.$extension"
     done
-    identity=$(oversight_identity "$(flea_pid)") || fail "oversight: native identity changed before $label"
+    identity=$(oversight_identity "$(bachy_pid)") || fail "oversight: native identity changed before $label"
     [[ "$(jq -c .theme <<< "$identity")" == "$oversight_theme" ]] || fail "oversight: theme inputs changed between arms"
     [[ -n "$oversight_monitor" ]] || oversight_monitor=$(jq -c .monitor <<< "$identity")
     [[ "$(jq -c .monitor <<< "$identity")" == "$oversight_monitor" ]] || fail "oversight: monitor configuration differs between arms"
@@ -159,7 +159,7 @@ oversight_capture() {
     [[ "$(grep '^family=' <<< "$tokens")" == "$oversight_font" ]] || fail "oversight: font family differs between arms"
     grep -Fx 'baseSize=14' <<< "$tokens" >/dev/null || fail "oversight: live base size is not 14"
     [[ "$(ipc bodyPx)" == 14 ]] || fail "oversight: running text is not 14px"
-    grep -E 'QRhi.*backend Vulkan' "$flea_log" >/dev/null || fail "oversight: Qt did not confirm its Vulkan renderer"
+    grep -E 'QRhi.*backend Vulkan' "$bachy_log" >/dev/null || fail "oversight: Qt did not confirm its Vulkan renderer"
     (( index < 0 )) || oversight_visible_row "$index"
     palette=$(ipc palette) || fail "oversight: live palette unavailable"
     local menu_open observed_path observed_view observed_state observed_cursor message transient total selected
@@ -207,19 +207,19 @@ PY
 }
 
 case_oversight() {
-    local candidate_ui="$flea_ui" candidate_bin="$flea_bin"
-    local flea_ui="$candidate_ui" flea_bin="$candidate_bin"
+    local candidate_ui="$bachy_ui" candidate_bin="$bachy_bin"
+    local bachy_ui="$candidate_ui" bachy_bin="$candidate_bin"
     local oversight_box="$fixture_root/oversight" oversight_home="$fixture_root/oversight/home"
     local oversight_arm oversight_source oversight_binary_sha oversight_theme="" oversight_font="" oversight_monitor="" identity view chord row entries hints
     local permissions_checks=0 menus_checks=0 path end marked marks step index x y width height
     local -x XDG_CONFIG_HOME="$oversight_home/.config" XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
-    local -x FLEA_OVERSIGHT_ROOT="$oversight_box" QSG_RHI_BACKEND=vulkan QSG_INFO=1
-    [[ "${FLEA_SOURCE_SHA:-}" =~ ^[0-9a-f]{40}$ && "${FLEA_BINARY_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] \
-        || fail "oversight: FLEA_SOURCE_SHA and FLEA_BINARY_SHA256 must identify the candidate build"
-    [[ "$(git -C "$repo" rev-parse HEAD)" == "$FLEA_SOURCE_SHA" ]] || fail "oversight: candidate HEAD differs from the build source"
+    local -x BACHY_OVERSIGHT_ROOT="$oversight_box" QSG_RHI_BACKEND=vulkan QSG_INFO=1
+    [[ "${BACHY_SOURCE_SHA:-}" =~ ^[0-9a-f]{40}$ && "${BACHY_BINARY_SHA256:-}" =~ ^[0-9a-f]{64}$ ]] \
+        || fail "oversight: BACHY_SOURCE_SHA and BACHY_BINARY_SHA256 must identify the candidate build"
+    [[ "$(git -C "$repo" rev-parse HEAD)" == "$BACHY_SOURCE_SHA" ]] || fail "oversight: candidate HEAD differs from the build source"
     git -C "$repo" ls-files --error-unmatch tests/ui-oversight.sh >/dev/null \
         || fail "oversight: the native instrument must be included in the candidate"
-    git -C "$repo" diff --quiet "$FLEA_SOURCE_SHA" -- tests/ui.sh tests/ui-oversight.sh tests/ui-permissions.sh tests/ui-menus.sh \
+    git -C "$repo" diff --quiet "$BACHY_SOURCE_SHA" -- tests/ui.sh tests/ui-oversight.sh tests/ui-permissions.sh tests/ui-menus.sh \
         || fail "oversight: native instrument differs from the identified candidate"
     git -C "$repo" cat-file -e '784da4692e1594dfa99cc7de841c8a3cb3b5a7e2^{commit}' \
         || fail "oversight: immutable release source is unavailable"
@@ -228,21 +228,21 @@ case_oversight() {
     local listing="$oversight_home/Documents/claude"
     sandbox_require "$listing"
     mkdir -p "$listing" "$evidence_dir" || fail "oversight: could not create owned fixture/evidence directories"
-    for path in flea omarchy themes; do mkdir "$listing/$path" || fail "oversight: fixture folder creation failed"; done
+    for path in bachy omarchy themes; do mkdir "$listing/$path" || fail "oversight: fixture folder creation failed"; done
     for path in field-bench-notes.md README.md changelog.md notes.txt example.txt config.toml license.txt; do
-        printf 'Flea native comparison fixture: %s\n' "$path" > "$listing/$path" || fail "oversight: fixture file creation failed"
+        printf 'Bachy native comparison fixture: %s\n' "$path" > "$listing/$path" || fail "oversight: fixture file creation failed"
     done
     trap 'oversight_stop' EXIT
     for oversight_arm in release candidate; do
         if [[ "$oversight_arm" == release ]]; then
-            flea_ui=/usr/share/flea/ui; flea_bin=/usr/bin/flea
+            bachy_ui=/usr/share/bachy/ui; bachy_bin=/usr/bin/bachy
             oversight_source=784da4692e1594dfa99cc7de841c8a3cb3b5a7e2
             oversight_binary_sha=301fd049c62c8323cf4455d7d432dceae2e1c8dd3207990ecf2cc2765b39c22e
         else
-            flea_ui="$candidate_ui"; flea_bin="$candidate_bin"
-            oversight_source="$FLEA_SOURCE_SHA"; oversight_binary_sha="$FLEA_BINARY_SHA256"
+            bachy_ui="$candidate_ui"; bachy_bin="$candidate_bin"
+            oversight_source="$BACHY_SOURCE_SHA"; oversight_binary_sha="$BACHY_BINARY_SHA256"
         fi
-        [[ -z "$(flea_pids)" ]] || fail "oversight: a foreign $oversight_arm UI instance is already running"
+        [[ -z "$(bachy_pids)" ]] || fail "oversight: a foreign $oversight_arm UI instance is already running"
         identity=$(oversight_identity) || fail "oversight: $oversight_arm does not match its immutable source/build"
         [[ -n "$oversight_theme" ]] || oversight_theme=$(jq -c .theme <<< "$identity")
         for path in data cache; do
@@ -258,7 +258,7 @@ case_oversight() {
         [[ -n "$oversight_font" ]] || oversight_font=$(ipc tokens | grep '^family=')
         [[ -n "$oversight_font" ]] || fail "oversight: no resolved font family"
         end=$((SECONDS + 20))
-        until grep -E 'QRhi.*backend Vulkan' "$flea_log" >/dev/null; do
+        until grep -E 'QRhi.*backend Vulkan' "$bachy_log" >/dev/null; do
             (( SECONDS < end )) || fail "oversight: Qt did not report Vulkan readiness"
             sleep 0.05
         done
@@ -366,12 +366,12 @@ case_oversight() {
         oversight_stop
     done
     trap - EXIT
-    printf 'OVERSIGHT_CAPTURE_GROUP source=%s matched=880x620 base=14 arms=2 shared_specimens_per_arm=9 candidate_extra_specimens=1 visual_inspection=pending\n' "$FLEA_SOURCE_SHA"
+    printf 'OVERSIGHT_CAPTURE_GROUP source=%s matched=880x620 base=14 arms=2 shared_specimens_per_arm=9 candidate_extra_specimens=1 visual_inspection=pending\n' "$BACHY_SOURCE_SHA"
 }
 empty_hero_capture() {
     local label="$1" before after lit x y width height attempt=0 deadline=$((SECONDS + 15)) target="$evidence_dir/$1.png"
     [[ "$label" =~ ^[a-z0-9-]+$ && "$target" == /* && "$target" == "$run_root/"* \
-        && -f "$run_root/.flea-test-sandbox" && ! -e "$target" && ! -L "$target" ]] \
+        && -f "$run_root/.bachy-test-sandbox" && ! -e "$target" && ! -L "$target" ]] \
         || fail "empty hero: evidence target is not fresh inside this run"
     while (( SECONDS < deadline )); do
         before=$(ipc emptyHeroState) || fail "empty hero: paint state unavailable"
@@ -434,22 +434,22 @@ empty_hero_late_query() (
         || fail "EMPTY_HERO_LATE_BLOCKED: actual compositor animations must already be disabled; unchanged response=$response"
     sandbox_scratch "$query_root"
     mkdir "$query_root/bin" || fail "empty hero late query: helper directory creation failed"
-    printf 'empty hero query gate\n' > "$query_root/.flea-test-sandbox"
+    printf 'empty hero query gate\n' > "$query_root/.bachy-test-sandbox"
     mkfifo "$query_root/release" || fail "empty hero late query: release FIFO creation failed"
     cat > "$query_root/bin/hyprctl" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "$#" != 3 || "$1" != -j || "$2" != getoption || "$3" != animations:enabled ]]; then
-    exec "$FLEA_HERO_REAL_HYPRCTL" "$@"
+    exec "$BACHY_HERO_REAL_HYPRCTL" "$@"
 fi
-. "$FLEA_HERO_REPO/tools/flea-sandbox-guard"
-sandbox_require "$FLEA_HERO_QUERY_ROOT"
+. "$BACHY_HERO_REPO/tools/bachy-sandbox-guard"
+sandbox_require "$BACHY_HERO_QUERY_ROOT"
 query_root=$SANDBOX_PATH
-[[ -f "$query_root/.flea-test-sandbox" && -p "$query_root/release" && ! -L "$query_root/release" ]] \
+[[ -f "$query_root/.bachy-test-sandbox" && -p "$query_root/release" && ! -L "$query_root/release" ]] \
     || { printf 'empty hero query: owned marker or FIFO missing\n' >&2; exit 1; }
 set -o noclobber
 query_status=0
-"$FLEA_HERO_REAL_HYPRCTL" "$@" > "$query_root/response.json" 2> "$query_root/response.stderr" || query_status=$?
+"$BACHY_HERO_REAL_HYPRCTL" "$@" > "$query_root/response.json" 2> "$query_root/response.stderr" || query_status=$?
 printf '%s\n' "$query_status" > "$query_root/status"
 cat "$query_root/response.stderr" >&2
 (( query_status == 0 )) || exit "$query_status"
@@ -468,24 +468,24 @@ SH
         trap - EXIT
         if [[ -n "$key_job" ]]; then wait "$key_job" || outcome=1; fi
         sandbox_require "$query_root/release"
-        [[ -p "$SANDBOX_PATH" && ! -L "$SANDBOX_PATH" && -f "$query_root/.flea-test-sandbox" ]] \
+        [[ -p "$SANDBOX_PATH" && ! -L "$SANDBOX_PATH" && -f "$query_root/.bachy-test-sandbox" ]] \
             || fail "empty hero late query: cleanup FIFO is not owned"
         # Hold both ends until the native process drains so a query arriving late can still read its release.
         if [[ -z "$release_fd" ]]; then
             exec {release_fd}<>"$SANDBOX_PATH" || fail "empty hero late query: cleanup could not open release"
         fi
         printf 'release\n' >&"$release_fd" || outcome=1
-        ( kill_flea ) || outcome=1
+        ( kill_bachy ) || outcome=1
         exec {release_fd}>&-
         exit "$outcome"
     }
     trap 'late_query_cleanup' EXIT
-    unset FLEA_REDUCED_MOTION
-    PATH="$query_root/bin:$PATH" FLEA_HERO_REAL_HYPRCTL="$real_hyprctl" FLEA_HERO_REPO="$repo" \
-        FLEA_HERO_QUERY_ROOT="$query_root" launch "$directory"
+    unset BACHY_REDUCED_MOTION
+    PATH="$query_root/bin:$PATH" BACHY_HERO_REAL_HYPRCTL="$real_hyprctl" BACHY_HERO_REPO="$repo" \
+        BACHY_HERO_QUERY_ROOT="$query_root" launch "$directory"
     wait_listing 2
-    pid=$(flea_pid) || fail "empty hero late query: native PID unavailable"
-    flea_process_owned "$pid" || fail "empty hero late query: native PID is not owned"
+    pid=$(bachy_pid) || fail "empty hero late query: native PID unavailable"
+    bachy_process_owned "$pid" || fail "empty hero late query: native PID is not owned"
     menus_equal "late query starts with its nonempty fixture" "$directory" "$(ipc path)"
     permissions_viewport 880 620
     deadline=$((SECONDS + query_wait_seconds))
@@ -493,7 +493,7 @@ SH
         (( SECONDS < deadline )) || fail "empty hero late query: real query did not reach the gate; evidence=$query_root"
         sleep 0.05
     done
-    before=$(qs ipc --pid "$pid" call flea emptyHeroState) || fail "empty hero late query: hidden observer failed"
+    before=$(qs ipc --pid "$pid" call bachy emptyHeroState) || fail "empty hero late query: hidden observer failed"
     jq -e '(.visible | not) and (.reducedMotion | not) and .opacity == 0' <<< "$before" >/dev/null \
         || fail "empty hero late query: query was not held before the empty entrance: $before"
     hidden_offset=$(jq -er '.offset | numbers' <<< "$before") || fail "empty hero late query: hidden offset unavailable"
@@ -503,11 +503,11 @@ SH
     assert_focus
     started=$(date +%s%3N)
     # Observe concurrently with native delivery so the command's own return cannot consume the entrance.
-    timeout "$query_wait_seconds" omarchy-drive key --window flea -k Return > "$query_root/key.log" 2>&1 &
+    timeout "$query_wait_seconds" omarchy-drive key --window bachy -k Return > "$query_root/key.log" 2>&1 &
     key_job=$!
     deadline=$((SECONDS + query_wait_seconds))
     while :; do
-        before=$(qs ipc --pid "$pid" call flea emptyHeroState) || fail "empty hero late query: entrance observer failed"
+        before=$(qs ipc --pid "$pid" call bachy emptyHeroState) || fail "empty hero late query: entrance observer failed"
         if jq -e '.visible and (.reducedMotion | not) and (.opacity < 1 or .offset != 0)' <<< "$before" >/dev/null; then break; fi
         jq -e '.visible' <<< "$before" >/dev/null \
             && fail "EMPTY_HERO_LATE_UNVERIFIED: native observation missed the actual entrance: $before"
@@ -517,7 +517,7 @@ SH
     exec {release_fd}>&-
     release_fd=""
     while :; do
-        observed=$(qs ipc --pid "$pid" call flea emptyHeroState) || fail "empty hero late query: reduced observer failed"
+        observed=$(qs ipc --pid "$pid" call bachy emptyHeroState) || fail "empty hero late query: reduced observer failed"
         if jq -e '.reducedMotion' <<< "$observed" >/dev/null; then break; fi
         (( SECONDS < deadline )) || fail "empty hero late query: actual response was never applied: $observed"
     done
@@ -545,13 +545,13 @@ case_emptystate() (
     local directory="$fixture_root/empty-state" permissions_listing="$fixture_root/empty-state" menus_checks=0 mode chord
     local reduced_directory="$directory/reduced" observed before visit deadline started elapsed rotate_ms
     sandbox_scratch "$directory"
-    export FLEA_REDUCED_MOTION=0
+    export BACHY_REDUCED_MOTION=0
     launch "$directory"
     wait_listing 0
     permissions_viewport 880 620
     for mode in list columns grid; do
         case "$mode" in list) chord=1 ;; columns) chord=2 ;; grid) chord=3 ;; esac
-        hotkey --global ctrl "$chord" flea >/dev/null
+        hotkey --global ctrl "$chord" bachy >/dev/null
         cardsize_expect viewMode "$mode"
         menus_expect stateLayers '.empty and (.message | not)' "$mode empty hero excludes the ordinary state sentence"
         menus_expect previewSelectionState '(.inlineVisible | not)' "$mode empty listing has no file preview"
@@ -562,7 +562,7 @@ case_emptystate() (
     printf 'visible row\n' > "$directory/visible.txt"
     wait_listing 1
     menus_expect stateLayers '(.empty | not) and (.message | not)' "populated listing hides both empty surfaces"
-    hotkey --global ctrl 2 flea >/dev/null
+    hotkey --global ctrl 2 bachy >/dev/null
     cardsize_expect viewMode columns
     menus_expect previewSelectionState '.inlineVisible and .index == 0' "Columns shows the selected file preview"
     key -M ctrl -k l -m ctrl "$directory/missing" -k Return >/dev/null
@@ -573,14 +573,14 @@ case_emptystate() (
     key -M ctrl -k l -m ctrl "$directory" -k Return >/dev/null
     wait_listing 1
     menus_expect stateLayers '(.empty | not) and (.message | not)' "recovered listing hides the error sentence"
-    kill_flea
+    kill_bachy
     sandbox_require "$directory"
     mkdir "$reduced_directory" || fail "empty hero: could not create the reduced-motion fixture"
-    export FLEA_REDUCED_MOTION=1
+    export BACHY_REDUCED_MOTION=1
     launch "$directory"
     wait_listing 2
     permissions_viewport 880 620
-    hotkey --global ctrl 1 flea >/dev/null
+    hotkey --global ctrl 1 bachy >/dev/null
     cardsize_expect viewMode list
     for visit in opening reopening; do
         if [[ "$visit" == reopening ]]; then
@@ -629,7 +629,7 @@ print("EMPTY_HERO_STATIC_PIXELS changed=0")
 PY
         then fail "empty hero: static native pixel comparison failed"; fi
     done
-    kill_flea
+    kill_bachy
     empty_hero_late_query "$directory" "$reduced_directory" || exit $?
     printf 'EMPTY_STATE checks=%s views=3 populated=ok missing=ok recovery=ok reduced=first-visible-static-reopening late=separate-receipt\n' "$menus_checks"
 )

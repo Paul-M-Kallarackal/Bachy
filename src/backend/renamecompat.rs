@@ -1,7 +1,7 @@
 // Linux's atomic no-clobber rename, plus the measured mounts that need a safe caller-owned copy fallback.
 use crate::backend::copyfile::{copy_any, remove_any, Progress};
 use crate::backend::mountinfo::mount_type_in;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::ffi::{c_char, CString};
 use std::io;
 use std::path::Path;
@@ -47,7 +47,7 @@ pub fn rename_noreplace(from: &Path, to: &Path) -> io::Result<()> {
 }
 
 // Rename uses the atomic syscall everywhere except a measured fallback, which copies exclusively before removing the source.
-pub(crate) fn rename_path(from: &Path, to: &Path) -> Result<(), FleaError> {
+pub(crate) fn rename_path(from: &Path, to: &Path) -> Result<(), BachyError> {
     match rename_noreplace(from, to) {
         Ok(()) => Ok(()),
         Err(error) if error.raw_os_error() == Some(EXDEV) || needs_copy_fallback(from, &error) => copy_then_remove(from, to),
@@ -91,14 +91,14 @@ fn needs_fuse_fallback_in(from: &Path, error: &io::Error, mountinfo: &str) -> bo
 }
 
 // The target is built through the exclusive copy primitives, so an existing destination is refused rather than replaced.
-pub(crate) fn copy_then_remove(from: &Path, to: &Path) -> Result<(), FleaError> {
+pub(crate) fn copy_then_remove(from: &Path, to: &Path) -> Result<(), BachyError> {
     let cancel = AtomicBool::new(false);
     let mut sink = |_: u64, _: u64| {};
     let mut progress = Progress { cancel: &cancel, on_bytes: &mut sink, partial: None, tree: None, manifest: None };
     if let Err(error) = copy_any(from, to, &mut progress) {
         if progress.partial.as_deref() == Some(to) {
             if let Err(cleanup) = remove_any(to) {
-                return Err(FleaError {
+                return Err(BachyError {
                     where_: "rename".to_string(),
                     path: to.to_string_lossy().to_string(),
                     msg: format!("{}; partial target could not be removed: {}", error.msg, cleanup.msg),
@@ -114,7 +114,7 @@ pub(crate) fn copy_then_remove(from: &Path, to: &Path) -> Result<(), FleaError> 
 }
 
 // Only a directory's removal can stop partway, so a source that still stats as any other kind is proof it survived whole.
-fn after_failed_removal(from: &Path, to: &Path, error: FleaError) -> FleaError {
+fn after_failed_removal(from: &Path, to: &Path, error: BachyError) -> BachyError {
     match from.symlink_metadata() {
         Ok(meta) if !meta.is_dir() => undo_the_copy(to, error),
         _ => kept_error(from, error),
@@ -122,8 +122,8 @@ fn after_failed_removal(from: &Path, to: &Path, error: FleaError) -> FleaError {
 }
 
 // The source is not provably whole here, so the target may hold the only complete copy and stays under its own kind.
-fn kept_error(from: &Path, error: FleaError) -> FleaError {
-    FleaError {
+fn kept_error(from: &Path, error: BachyError) -> BachyError {
+    BachyError {
         where_: KEPT.to_string(),
         path: from.to_string_lossy().to_string(),
         msg: error.msg,
@@ -131,10 +131,10 @@ fn kept_error(from: &Path, error: FleaError) -> FleaError {
 }
 
 // The source still stats as a kind remove_any unlinks, so it is whole and the copy is a duplicate this operation takes back.
-fn undo_the_copy(to: &Path, error: FleaError) -> FleaError {
+fn undo_the_copy(to: &Path, error: BachyError) -> BachyError {
     match remove_any(to) {
         Ok(()) => rename_error(error),
-        Err(cleanup) => FleaError {
+        Err(cleanup) => BachyError {
             where_: "rename".to_string(),
             path: to.to_string_lossy().to_string(),
             msg: format!("{}; the copy left behind could not be removed: {}", error.msg, cleanup.msg),
@@ -142,7 +142,7 @@ fn undo_the_copy(to: &Path, error: FleaError) -> FleaError {
     }
 }
 
-fn rename_error(mut error: FleaError) -> FleaError {
+fn rename_error(mut error: BachyError) -> BachyError {
     error.where_ = "rename".to_string();
     error
 }

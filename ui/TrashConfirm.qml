@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 import "js/Keymap.js" as Keymap
 
@@ -69,7 +68,7 @@ FocusScope {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             onWheel: function(wheel) { wheel.accepted = true }
         }
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.leftMargin: root.cardPadding + Theme.spacing.hairline
@@ -82,7 +81,7 @@ FocusScope {
                 Row {
                     width: parent.width
                     spacing: Theme.spacing.gap
-                    Flea.Glyph { id: alertMark; width: Theme.font.bodySmall * 1.3; height: title.height; name: "alert"; color: Theme.color.error }
+                    Bachy.Glyph { id: alertMark; width: Theme.font.bodySmall * 1.3; height: title.height; name: "alert"; color: Theme.color.error }
                     Text {
                         id: title
                         width: parent.width - alertMark.width - parent.spacing
@@ -107,7 +106,7 @@ FocusScope {
                     width: Math.min(parent.width, cancelButton.implicitWidth + dangerButton.implicitWidth + spacing)
                     anchors.right: parent.right
                     spacing: Theme.spacing.gap
-                    Flea.DialogButton { id: cancelButton; label: "Cancel"; primary: !root.destructiveFocus; onActivated: root.cancel() }
+                    Bachy.DialogButton { id: cancelButton; label: "Cancel"; primary: !root.destructiveFocus; onActivated: root.cancel() }
                     Item {
                         id: dangerButton
                         implicitWidth: dangerText.implicitWidth + 2 * Theme.spacing.gap

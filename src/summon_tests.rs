@@ -70,13 +70,13 @@ fn a_history_file_that_cannot_be_read_is_no_history_rather_than_an_error() {
 #[test]
 fn the_chord_is_read_off_the_line_in_the_users_own_config() {
     let config = "o.bind(\"SUPER + RETURN\", \"Terminal\", { omarchy = \"terminal\" })\n\
-                  o.bind(\"SUPER + SHIFT + D\", \"Drop shelf\", \"flea shelf toggle\")\n";
+                  o.bind(\"SUPER + SHIFT + D\", \"Drop shelf\", \"bachy shelf toggle\")\n";
     assert_eq!(summon_chord(config), Some("super+shift+d".to_string()));
     // The README offers the line, so a user who has only read it has not installed it.
-    assert_eq!(summon_chord("-- o.bind(\"SUPER + D\", \"Drop shelf\", \"flea shelf toggle\")\n"), None,
+    assert_eq!(summon_chord("-- o.bind(\"SUPER + D\", \"Drop shelf\", \"bachy shelf toggle\")\n"), None,
                "a commented line is a suggestion, not a bind");
-    assert_eq!(summon_chord("o.bind(\"SUPER + SHIFT + F\", \"File manager\", \"flea --gui\")\n"), None,
-               "a bind that opens Flea itself is not the shelf's own");
+    assert_eq!(summon_chord("o.bind(\"SUPER + SHIFT + F\", \"File manager\", \"bachy --gui\")\n"), None,
+               "a bind that opens Bachy itself is not the shelf's own");
 }
 
 // The card numbers its menu rows from one and sends that number, so this is the conversion it

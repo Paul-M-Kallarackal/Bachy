@@ -3,7 +3,7 @@
 // SI, because a file's size on disk has no power-of-two basis; GLib's own rule and the whole GUI bracket.
 var BYTES_PER_UNIT = 1000
 var UNITS = ["B", "kB", "MB", "GB", "TB"]
-// GNOME renders a narrow no-break space before the unit, and Flea's neighbours are GLib-formatted.
+// GNOME renders a narrow no-break space before the unit, and Bachy's neighbours are GLib-formatted.
 var UNIT_SPACE = " "
 
 // Below one kilobyte a fraction is noise, so bytes print whole.

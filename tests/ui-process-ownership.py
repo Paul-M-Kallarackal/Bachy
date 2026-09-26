@@ -20,13 +20,13 @@ def function(name):
     return source[start:end]
 
 
-root = Path(tempfile.mkdtemp(prefix="flea-process-ownership-", dir="/tmp")).resolve()
-(root / ".flea-test-sandbox").write_text("private process guard fixtures\n")
+root = Path(tempfile.mkdtemp(prefix="bachy-process-ownership-", dir="/tmp")).resolve()
+(root / ".bachy-test-sandbox").write_text("private process guard fixtures\n")
 
 
 def guard(path):
     assert str(path) and path.is_absolute() and path.is_relative_to(root), path
-    assert (root / ".flea-test-sandbox").is_file(), root
+    assert (root / ".bachy-test-sandbox").is_file(), root
 
 
 def process(pid, command, own=True, readable=True):
@@ -37,22 +37,22 @@ def process(pid, command, own=True, readable=True):
     if readable:
         tag = str(root) if own else str(root / "foreign")
         (path / "environ").write_bytes(
-            f"FLEA_TEST_RUN_ROOT={tag}\0FLEA_BIN=/bin/flea-check\0FLEA_PATH={root}/fixture/listing\0".encode()
+            f"BACHY_TEST_RUN_ROOT={tag}\0BACHY_BIN=/bin/bachy-check\0BACHY_PATH={root}/fixture/listing\0".encode()
         )
 
 
 process(123, "qs -p /candidate/ui")
 process(124, "qs -p /candidate/ui", own=False)
 process(126, "qs -p /candidate/ui", readable=False)
-process(234, "/bin/flea-check --backend", own=False)
-process(235, "/bin/flea-check --backend")
-process(236, "/bin/flea-check --backend", readable=False)
+process(234, "/bin/bachy-check --backend", own=False)
+process(235, "/bin/bachy-check --backend")
+process(236, "/bin/bachy-check --backend", readable=False)
 process(345, "gio monitor trash:///", own=False)
 process(346, "gio monitor trash:///")
 process(347, "gio monitor trash:///", readable=False)
 helpers = "\n".join(function(name) for name in (
-    "flea_pids", "flea_pid", "flea_process_owned", "backend_pids", "owned_trash_monitors",
-    "kill_flea", "cleanup", "window_box", "click_row"
+    "bachy_pids", "bachy_pid", "bachy_process_owned", "backend_pids", "owned_trash_monitors",
+    "kill_bachy", "cleanup", "window_box", "click_row"
 ))
 prelude = f"""
 set -u -o pipefail
@@ -61,18 +61,18 @@ fixture_root="$run_root/fixture"
 thumb_fixture="$run_root/thumb"
 hash_fixture="$run_root/hash"
 stale_fixture="$run_root/stale"
-flea_ui=/candidate/ui
-flea_bin=/bin/flea-check
-flea_window_class=com.thisisgm.flea
+bachy_ui=/candidate/ui
+bachy_bin=/bin/bachy-check
+bachy_window_class=local.bachy.FileManager
 foreign_pids=""
 qs_pids=""
 backend_ids=234
 monitor_ids=345
 drain_wait_s=1
 stuck=false
-flea_process_dir() {{ printf '%s/proc/%s\\n' "$run_root" "$1"; }}
+bachy_process_dir() {{ printf '%s/proc/%s\\n' "$run_root" "$1"; }}
 pgrep() {{
-    case "$2" in qs) value="$qs_pids" ;; flea) value="$backend_ids" ;; gio) value="$monitor_ids" ;; *) return 2 ;; esac
+    case "$2" in qs) value="$qs_pids" ;; bachy) value="$backend_ids" ;; gio) value="$monitor_ids" ;; *) return 2 ;; esac
     [[ -n "$value" ]] || return 1
     printf '%s\\n' "$value"
 }}
@@ -86,11 +86,11 @@ sandbox_remove() {{ printf 'SIMULATED_DELETE %s\\n' "$1"; }}
 cache_restore() {{ :; }}
 """
 cases = [
-    ("owned window; foreign backend/monitor ignored", "qs_pids=123; kill_flea", 0, "SIMULATED_SIGNAL 123", "FAIL"),
-    ("foreign window refused", "qs_pids=124; kill_flea", 1, "refusing to signal", "SIMULATED_SIGNAL"),
-    ("vanished window harmless", "qs_pids=125; kill_flea", 0, "", "SIMULATED_SIGNAL"),
-    ("vanished identity explicit", "flea_process_owned 125", 2, "", "SIMULATED_SIGNAL"),
-    ("unreadable window refused", "qs_pids=126; kill_flea", 1, "refusing to signal", "SIMULATED_SIGNAL"),
+    ("owned window; foreign backend/monitor ignored", "qs_pids=123; kill_bachy", 0, "SIMULATED_SIGNAL 123", "FAIL"),
+    ("foreign window refused", "qs_pids=124; kill_bachy", 1, "refusing to signal", "SIMULATED_SIGNAL"),
+    ("vanished window harmless", "qs_pids=125; kill_bachy", 0, "", "SIMULATED_SIGNAL"),
+    ("vanished identity explicit", "bachy_process_owned 125", 2, "", "SIMULATED_SIGNAL"),
+    ("unreadable window refused", "qs_pids=126; kill_bachy", 1, "refusing to signal", "SIMULATED_SIGNAL"),
     ("stuck window bounded; fixtures kept", "qs_pids=123; stuck=true; drain_wait_s=0; cleanup", 1, "active fixture roots kept", "SIMULATED_DELETE"),
     ("foreign refusal keeps fixtures", "qs_pids=124; cleanup", 1, "active fixture roots kept", "SIMULATED_DELETE"),
     ("owned backend must drain", "backend_ids=235; cleanup", 1, "backend or Trash monitor survived", "SIMULATED_DELETE"),
@@ -100,8 +100,8 @@ cases = [
     ("enumeration failure keeps fixtures", "pgrep() { return 2; }; cleanup", 1, "cannot enumerate", "SIMULATED_DELETE"),
     ("successful drain permits fixture cleanup", "qs_pids=123; cleanup", 0, "SIMULATED_DELETE", "FAIL"),
 ]
-cases.append(("foreign uid refused", "flea_process_dir() { printf '/\\n'; }; flea_process_owned 123", 1, "", "SIMULATED_SIGNAL"))
-owned_window = dict(pid=123, **{"class": "com.thisisgm.flea"}, at=[12, 42], size=[880, 620])
+cases.append(("foreign uid refused", "bachy_process_dir() { printf '/\\n'; }; bachy_process_owned 123", 1, "", "SIMULATED_SIGNAL"))
+owned_window = dict(pid=123, **{"class": "local.bachy.FileManager"}, at=[12, 42], size=[880, 620])
 foreign_window = dict(owned_window, pid=124)
 for name, windows, code in (
     ("owned pointer target", [owned_window], 0),
@@ -122,10 +122,10 @@ try:
     print(f"{len(cases)} process ownership checks, 0 failed; no real signals")
 finally:
     for child in root.iterdir():
-        if child.name == ".flea-test-sandbox":
+        if child.name == ".bachy-test-sandbox":
             continue
         guard(child)
         shutil.rmtree(child) if child.is_dir() else child.unlink()
     guard(root)
-    (root / ".flea-test-sandbox").unlink()
+    (root / ".bachy-test-sandbox").unlink()
     root.rmdir()

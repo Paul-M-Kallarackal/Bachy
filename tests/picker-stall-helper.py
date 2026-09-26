@@ -6,8 +6,8 @@ from pathlib import Path
 import signal
 import sys
 
-root = Path(os.environ['FLEA_PICKER_FIXTURE'])
-assert (root / '.flea-test-sandbox').is_file()
+root = Path(os.environ['BACHY_PICKER_FIXTURE'])
+assert (root / '.bachy-test-sandbox').is_file()
 with (root / 'pids').open('a') as log:
     log.write(f'{os.getpid()}\n')
 signal.signal(signal.SIGTERM, signal.SIG_IGN)

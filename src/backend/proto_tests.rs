@@ -235,7 +235,7 @@ fn a_thumbed_path_is_escaped_like_every_other_string() {
 
 #[test]
 fn emits_an_error_line_naming_operation_and_path() {
-    let e = FleaError {
+    let e = BachyError {
         where_: "scan".to_string(),
         path: "/root".to_string(),
         msg: "permission denied".to_string(),

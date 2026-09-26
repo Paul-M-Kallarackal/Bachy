@@ -1,4 +1,4 @@
-// Where a shelf action can send files, which is Flea's own places list and not a second picker:
+// Where a shelf action can send files, which is Bachy's own places list and not a second picker:
 // the destinations this shelf used last, then Home, the XDG user directories and the bookmarks the
 // rail already draws. Actions: recent destinations first, because the same folder is usually the
 // answer twice running.
@@ -7,7 +7,7 @@ use crate::uistore;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const DIR: &str = "omarchy/flea-shelf";
+const DIR: &str = "bachy/shelf";
 const RECENTS: &str = "dests.json";
 // Five, the same number of piles the card's own menu keeps, and the same reason: a list, not a log.
 const KEPT: usize = 5;
@@ -48,7 +48,7 @@ pub fn remember(dest: &str) -> Result<(), String> {
     uistore::replace(&path, &jsondoc::render(&doc))
 }
 
-// flea shelf places: one path per line, in the order the card offers them.
+// bachy shelf places: one path per line, in the order the card offers them.
 pub fn command() -> i32 {
     for place in places() {
         println!("{}", place);
@@ -82,8 +82,8 @@ pub fn places() -> Vec<String> {
     out
 }
 
-// flea shelf choose <title> [start]: the "Choose a folder" row of the destination flyout, which is
-// Flea's own picker rather than a second one. It prints the directory that came back, and nothing at
+// bachy shelf choose <title> [start]: the "Choose a folder" row of the destination flyout, which is
+// Bachy's own picker rather than a second one. It prints the directory that came back, and nothing at
 // all when the operator pressed esc in it.
 pub fn choose(rest: &[String]) -> i32 {
     let title = rest.first().map(String::as_str).unwrap_or("Choose a folder");
@@ -91,13 +91,13 @@ pub fn choose(rest: &[String]) -> i32 {
     let dir = match uistore::state_home() {
         Ok(state) => state.join(DIR),
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     let reply = dir.join("reply.json");
     if let Err(e) = uistore::make_dir(&dir) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         return 2;
     }
     let _ = fs::remove_file(&reply);
@@ -108,16 +108,16 @@ pub fn choose(rest: &[String]) -> i32 {
         ("title".to_string(), Json::Str(title.to_string())),
         ("folder".to_string(), Json::Str(start.to_string())),
     ]);
-    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("flea"));
+    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("bachy"));
     let finished = std::process::Command::new(exe)
         .arg("--pick")
         .arg(&reply)
-        .env("FLEA_PICKER", jsondoc::render(&request))
+        .env("BACHY_PICKER", jsondoc::render(&request))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .status();
     if finished.map(|s| !s.success()).unwrap_or(true) {
-        eprintln!("flea: the chooser could not be opened");
+        eprintln!("bachy: the chooser could not be opened");
         return 2;
     }
     // The picker writes its reply whichever way it ends, esc included, so a missing file is a
@@ -125,7 +125,7 @@ pub fn choose(rest: &[String]) -> i32 {
     let answer = match fs::read_to_string(&reply) {
         Ok(answer) => answer,
         Err(e) => {
-            eprintln!("flea: {} was not written, so the chooser answered nothing ({:?})", reply.display(), e.kind());
+            eprintln!("bachy: {} was not written, so the chooser answered nothing ({:?})", reply.display(), e.kind());
             return 2;
         }
     };

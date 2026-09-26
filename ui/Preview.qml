@@ -1,11 +1,10 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Facts.js" as Facts
 import "js/Kinds.js" as Kinds
 import "js/Motion.js" as Motion
 
-// The overlay lives inside the Flea window, Finder's Quick Look shape: a second window breaks omarchy-drive focus flea and every test that narrows on it.
+// The overlay lives inside the Bachy window, Finder's Quick Look shape: a second window breaks omarchy-drive focus bachy and every test that narrows on it.
 Item {
     id: root
     anchors.fill: parent
@@ -51,8 +50,8 @@ Item {
     readonly property alias stripVisible: mediaStrip.visible
     // The strip's own mute mark and the flag it draws from, so a test reads and clicks what is there.
     readonly property var muteMark: mediaStrip.muteItem
-    readonly property bool muted: Flea.MediaSound.muted
-    // fleaWindow.itemRect needs the real Item, the same seam rowCentre already reads through pane.
+    readonly property bool muted: Bachy.MediaSound.muted
+    // bachyWindow.itemRect needs the real Item, the same seam rowCentre already reads through pane.
     readonly property var seekSlider: mediaStrip.seekItem
     readonly property string status: {
         if (!root.active) return ""
@@ -90,7 +89,7 @@ Item {
     function togglePlay() { if (root.isMedia && mediaLoader.item) mediaLoader.item.togglePlay() }
 
     // MediaMute rule 3: one session flag, so the column's strip and this one always agree.
-    function toggleMute() { if (root.isMedia) Flea.MediaSound.toggle() }
+    function toggleMute() { if (root.isMedia) Bachy.MediaSound.toggle() }
 
     // Absolute seek in ms, clamped by PreviewMedia's own seekTo; the slider's onReleased calls this directly.
     function seekTo(ms) { if (root.isMedia && mediaLoader.item) mediaLoader.item.seekTo(ms) }
@@ -258,7 +257,7 @@ Item {
             }
         }
 
-        Flea.PreviewText {
+        Bachy.PreviewText {
             id: textPane
             anchors.fill: parent
             anchors.margins: Theme.spacing.gap
@@ -330,7 +329,7 @@ Item {
                 textFormat: Text.PlainText
             }
 
-            Flea.PreviewArchive {
+            Bachy.PreviewArchive {
                 width: parent.width
                 height: parent.height - y
                 meta: root.archiveMeta
@@ -344,7 +343,7 @@ Item {
             spacing: Theme.spacing.gap
             visible: root.kind === "unsupported" || root.archiveFailed
 
-            Flea.Glyph {
+            Bachy.Glyph {
                 anchors.horizontalCenter: parent.horizontalCenter
                 // The overlay declining is a pane state standing alone, which States.dc.html draws at 40.
                 maxSize: Theme.stateMarkSize
@@ -367,13 +366,13 @@ Item {
         }
 
         // Media still buffering or an image still decoding shows the crawl; LoadingState's hold-off keeps a fast local open from flashing it.
-        Flea.LoadingState {
+        Bachy.LoadingState {
             anchors.fill: parent
             visible: (root.isMedia || root.isImage || root.isArchive) && root.status === "loading"
         }
 
         // MediaStrip unframed: quiet over the video, permanent on audio, and the column draws the framed form of the same file.
-        Flea.MediaStrip {
+        Bachy.MediaStrip {
             id: mediaStrip
             visible: root.isMedia && (root.kind === "audio" || root.stripShown)
             anchors.left: parent.left

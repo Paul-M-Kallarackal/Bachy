@@ -1,6 +1,6 @@
 .pragma library
 
-// Generated from keys.toml by tools/flea-keymap-gen. Do not edit.
+// Generated from keys.toml by tools/bachy-keymap-gen. Do not edit.
 var PRESETS = ["default","vim","mac","windows"]
 var preset = "default"
 var PRESET_KEYS = [

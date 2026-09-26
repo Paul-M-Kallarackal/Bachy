@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 import "js/Errors.js" as Errors
 import "js/Filter.js" as Filter
 

@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Crumbs.js" as Crumbs
 
 // A dual pane's own path, drawn with the chrome's crumbs so issue 45's one tap on a parent reaches either pane.
@@ -58,7 +58,7 @@ Rectangle {
                                           Math.floor((slot.width - 2 * Theme.spacing.rowPaddingX) / metrics.advanceWidth))
                        : []
 
-                delegate: Flea.Crumb {
+                delegate: Bachy.Crumb {
                     height: slot.height
                     restColor: Theme.color.foreground
                     inputLive: root.inputLive

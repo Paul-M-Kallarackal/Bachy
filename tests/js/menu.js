@@ -33,16 +33,16 @@ function run(check) {
     check("background menu includes real creation actions in order", actions(Menu.listingEntries(state({ hasRow: false }))),
           "newFolder,newFile,paste,selectAll,addFavourite,sort,toggleHidden,settings")
     var background = Menu.listingEntries(state({ hasRow: false, updateVersion: "0.3.4" }))
-    check("a known newer build adds Update Flea under Settings, in the same group, with the download mark",
+    check("a known newer build adds Update Bachy under Settings, in the same group, with the download mark",
           background.slice(-2).map(function (r) { return (r.separator ? "|" : r.action) + ":" + r.glyph }).join(","),
-          "settings:sliders,updateFlea:download")
+          "settings:sliders,updateBachy:download")
     check("and its hint slot carries that version beside the status square",
-          entry(background, "updateFlea").hint + "|" + entry(background, "updateFlea").hintSquare, "0.3.4|true")
+          entry(background, "updateBachy").hint + "|" + entry(background, "updateBachy").hintSquare, "0.3.4|true")
     check("the Menus switch takes it away like any other row",
-          entry(Menu.listingEntries(state({ hasRow: false, updateVersion: "0.3.4", hiddenActions: ["updateFlea"] })), "updateFlea").action, undefined)
-    check("a file row's menu never offers it", entry(Menu.listingEntries(state({ updateVersion: "0.3.4" })), "updateFlea").action, undefined)
+          entry(Menu.listingEntries(state({ hasRow: false, updateVersion: "0.3.4", hiddenActions: ["updateBachy"] })), "updateBachy").action, undefined)
+    check("a file row's menu never offers it", entry(Menu.listingEntries(state({ updateVersion: "0.3.4" })), "updateBachy").action, undefined)
     check("and neither does an empty version, which is what every state but available gives",
-          entry(Menu.listingEntries(state({ hasRow: false, updateVersion: "" })), "updateFlea").action, undefined)
+          entry(Menu.listingEntries(state({ hasRow: false, updateVersion: "" })), "updateBachy").action, undefined)
     check("selected file cannot be pinned as a folder", entry(file, "addFavourite").disabled, true)
     check("Favorites menu uses GM's displayed spelling", entry(file, "addFavourite").label, "Add to Favorites")
     check("selected directory can be pinned", entry(Menu.listingEntries(state({ rowMode: 0o040755 })), "addFavourite").disabled, false)

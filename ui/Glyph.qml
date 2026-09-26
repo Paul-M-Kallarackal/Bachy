@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Commons
 import "js/Icons.js" as Icons
 
 // One row or sidebar mark, chosen by name. Lucide's grid is 24 units at stroke 2, scaled to the slot.

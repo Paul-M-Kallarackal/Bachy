@@ -1,13 +1,13 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Icons.js" as Icons
 import "js/Picker.js" as Picker
 import "js/Places.js" as Places
 import "js/Keymap.js" as Keymap
 
-// The chooser shares Flea's favourites and home locations without importing legacy GTK bookmarks.
+// The chooser shares Bachy's favourites and home locations without importing legacy GTK bookmarks.
 Item {
     id: root
 
@@ -32,7 +32,7 @@ Item {
         path: Picker.RECENT, label: Picker.RECENT_LABEL, group: "favorite", kind: "favorite", glyph: "history"
     }]
     readonly property var placeEntries: (root.offerRecent ? root.recentRow : [])
-        .concat(Places.storedEntries(Flea.Favourites.records, root.home), Places.homeEntries(root.home, root.dirsText, Icons.sidebarGlyphFor))
+        .concat(Places.storedEntries(Bachy.Favourites.records, root.home), Places.homeEntries(root.home, root.dirsText, Icons.sidebarGlyphFor))
     // Directive 55, GM relaying a user's report: a dialog that cannot reach a disk or a share is a
     // dialog that makes you type the path, so the chooser draws the window's own NETWORK and DEVICES
     // groups from the same listings. Rows only: nothing here trashes, ejects or renames.
@@ -65,8 +65,8 @@ Item {
         activeFocusOnTab: true
         currentIndex: 0
         onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-        Flea.FastScrollHandler { flickable: rail }
-        Flea.ViewportScrollBar {
+        Bachy.FastScrollHandler { flickable: rail }
+        Bachy.ViewportScrollBar {
             parent: rail
             anchors { top: parent.top; right: parent.right }
             flickable: rail
@@ -84,7 +84,7 @@ Item {
 
         // index and modelData are required on ui/SidebarRow.qml itself, so the view fills them;
         // redeclaring them here left the delegate uninitialised and the rail drew nothing.
-        delegate: Flea.SidebarRow {
+        delegate: Bachy.SidebarRow {
             cursor: rail.activeFocus ? index === rail.currentIndex : modelData.path === root.current
             focused: rail.activeFocus
             onActivated: function (at) { root.choose(at) }
@@ -170,7 +170,7 @@ Item {
     }
     // Standing, not loaded on demand: its own listing is what the NETWORK rows are, and the window
     // pays the same five-second rhythm for them.
-    Flea.NetworkMounts {
+    Bachy.NetworkMounts {
         id: network
         onCompleted: function(requestId, uri, success, reason) { root.networkCompleted(requestId, uri, success, reason) }
         onOpened: function(path) { if (root.awaitingNetwork) root.chosen(path) }
@@ -183,7 +183,7 @@ Item {
         }
     }
 
-    Flea.DeviceMounts {
+    Bachy.DeviceMounts {
         id: devices
         onOpened: function (path) { root.deviceOpened(path) }
         // A message carries no device, so it cannot end a wait: only the awaited device's own open does.
@@ -191,7 +191,7 @@ Item {
     }
 
     // The phone rows the window draws, read off the same gio listing; their mount is the share leg.
-    Flea.PhoneMounts {
+    Bachy.PhoneMounts {
         id: phones
         listingText: network.mountListing
         onMessage: function (text, error) { root.picker.say(text, error) }

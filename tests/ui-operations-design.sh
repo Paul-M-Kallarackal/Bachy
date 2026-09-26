@@ -75,7 +75,7 @@ operations_missing_footer() {
     menus_expect statusFooterState '.left.text == "unavailable" and .disk.text == "unknown" and .centre.text == ""' "missing filesystem reports unavailable on the left and unknown on the right"
     menus_equal "missing filesystem fallback foreground" "$(ipc themeForeground)" "$(ipc statusColor)"
     shot operations-no-filesystem
-    kill_flea
+    kill_bachy
 }
 
 operations_pause_backend() {
@@ -140,7 +140,7 @@ operations_search_footer() (
     menus_expect keyDeliveryState '.searchMode == ""' "native Escape closes completed search"
     wait_listing 5
     operations_idle_footer 5 0 "leaving Search restores the directory footer"
-    kill_flea
+    kill_bachy
     printf 'OPERATIONS_SEARCH initial_submitted=ok resumed_result=ok close=ok positive_scanned_live=not_run\n'
 )
 
@@ -175,7 +175,7 @@ operations_mixed() {
     shot operations-idle-selected
     key v >/dev/null
     operations_idle_footer 5 0 "native deselection removes the selection label"
-    hotkey --global ctrl a flea >/dev/null
+    hotkey --global ctrl a bachy >/dev/null
     menus_expect selectionCount '. == 5' "native Select All captures all five sources"
     operations_idle_footer 5 5 "native Select All updates the separate selection label"
     operations_copy_to "$destination"
@@ -254,7 +254,7 @@ operations_mixed() {
     menus_message 'Undid the copy.' 'native z reverses the earlier committed items'
     for name in a.txt b.txt d.txt e.txt; do operations_absent "$destination/$name"; done
     for name in a.txt b.txt c.txt d.txt e.txt; do [[ "$(cat "$source/$name")" == "original $name" ]] || fail "operations: source changed through copy or Undo"; done
-    kill_flea
+    kill_bachy
 }
 
 # Copy to onto a name that exists asks the paste's own question, and Keep both lands beside it.
@@ -270,7 +270,7 @@ operations_copy_to_collision() {
     launch "$source"
     wait_listing 2
     permissions_viewport 880 620
-    hotkey --global ctrl a flea >/dev/null
+    hotkey --global ctrl a bachy >/dev/null
     menus_expect selectionCount '. == 2' "Copy to collision selects both sources"
     menus_guard "$destination/photo copy.png"
     operations_copy_to "$destination"
@@ -286,7 +286,7 @@ operations_copy_to_collision() {
     menus_message 'Undid the copy.' 'native z reverses the kept copy'
     [[ ! -e "$destination/photo copy.png" && ! -e "$destination/notes.txt" ]] || fail "operations: Undo left the Copy to copies"
     menus_equal 'Undo leaves the photo already there' 'there' "$(cat "$destination/photo.png")"
-    kill_flea
+    kill_bachy
 }
 
 operations_long_error() {
@@ -322,13 +322,13 @@ operations_long_error() {
     menus_expect statusFooterState '(.centre.text | startswith("Copied 0 of 1")) and .centre.width > 0 and (.centre.truncated | not) and .secondary.truncated' \
         "acknowledging the long-name error leaves its complete short outcome ahead of the elided retry"
     shot operations-long-name-acknowledged
-    kill_flea
+    kill_bachy
     chmod 644 "$source/$name" || fail "operations: cannot make the long-name source readable again"
     [[ "$(cat "$source/$name")" == 'long-name source' ]] || fail "operations: the long-name failure changed its source"
 }
 
 operations_copy_gate() {
-    python3 - "$1" "$flea_bin" "$3" "$XDG_STATE_HOME" "$menu_box" "$2" "$operations_bytes" 3<&0 <<'PY'
+    python3 - "$1" "$bachy_bin" "$3" "$XDG_STATE_HOME" "$menu_box" "$2" "$operations_bytes" 3<&0 <<'PY'
 import ctypes, json, os, select, signal, stat, struct, sys, time
 from pathlib import Path
 
@@ -338,7 +338,7 @@ total = int(sys.argv[7])
 timeout_seconds = 15
 
 def guard(path):
-    if not path.is_absolute() or not root.is_absolute() or root.resolve() != root or not (root / ".flea-test-sandbox").is_file():
+    if not path.is_absolute() or not root.is_absolute() or root.resolve() != root or not (root / ".bachy-test-sandbox").is_file():
         raise RuntimeError(f"operations: copy gate needs an absolute owned sandbox: {path}")
     if path.resolve() == root or not path.resolve().is_relative_to(root):
         raise RuntimeError(f"operations: copy gate path escaped its sandbox: {path}")
@@ -362,11 +362,11 @@ def interrupted(number, frame):
 try:
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
-    # Sample argv: /owned/target/release/flea NUL --backend NUL.
+    # Sample argv: /owned/target/release/bachy NUL --backend NUL.
     argv = (process / "cmdline").read_bytes().rstrip(b"\0").split(b"\0")
-    # Sample environment entry: FLEA_PATH=/tmp/owned/cancel-source NUL.
+    # Sample environment entry: BACHY_PATH=/tmp/owned/cancel-source NUL.
     environment = dict(item.split(b"=", 1) for item in (process / "environ").read_bytes().split(b"\0") if b"=" in item)
-    expected = {b"FLEA_BIN": os.fsencode(binary), b"FLEA_PATH": os.fsencode(source), b"XDG_STATE_HOME": os.fsencode(state_home)}
+    expected = {b"BACHY_BIN": os.fsencode(binary), b"BACHY_PATH": os.fsencode(source), b"XDG_STATE_HOME": os.fsencode(state_home)}
     if process.stat().st_uid != os.getuid() or (process / "exe").resolve() != binary.resolve() or argv != [os.fsencode(binary), b"--backend"] or any(environment.get(key) != value for key, value in expected.items()):
         raise RuntimeError(f"operations: copy gate backend {pid} ownership differs")
     if select.select([pidfd], [], [], 0)[0]:
@@ -457,7 +457,7 @@ operations_cancel() (
     launch "$source"
     wait_listing 2
     permissions_viewport 880 620
-    hotkey --global ctrl a flea >/dev/null
+    hotkey --global ctrl a bachy >/dev/null
     menus_expect selectionCount '. == 2' "interrupted cancellation selects two real files"
     mapfile -t pids < <(backend_pids)
     [[ "${#pids[@]}" == 1 ]] || fail "operations: cancellation needs one owned backend"
@@ -523,7 +523,7 @@ operations_cancel() (
         || fail "operations: cancellation changed source data"
     shot "operations-cancelled-$variant-interrupted"
     printf 'OPERATIONS_CANCEL variant=%s interrupted_native=ok skipped=2 failed=0 partial_cleanup=ok source_preserved=ok unpaused_live=not_run\n' "$variant"
-    kill_flea
+    kill_bachy
 )
 
 operations_missed_window() {
@@ -541,10 +541,10 @@ operations_cancel_live() (
     source_hash=$(sha256sum < "$source/a-large.bin") || fail "operations: source checksum failed"
     source_identity=$(stat -c '%d:%i:%s:%Y' "$source/a-large.bin") || fail "operations: source identity unavailable"
     launch "$source"
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     wait_listing 2
     permissions_viewport 880 620
-    hotkey --global ctrl a flea >/dev/null
+    hotkey --global ctrl a bachy >/dev/null
     menus_expect selectionCount '. == 2' "live cancellation selects both real files"
     mapfile -t pids < <(backend_pids)
     [[ "${#pids[@]}" == 1 ]] || fail "operations: live cancellation requires one owned backend"
@@ -594,7 +594,7 @@ operations_cancel_live() (
 )
 
 operations_search_live() (
-    local source="$menu_box/search-live" query=flea-operations-no-match state footer deadline
+    local source="$menu_box/search-live" query=bachy-operations-no-match state footer deadline
     local directory_count=100000
     menus_guard "$source"
     mkdir "$source" || fail "operations: nested Search fixture creation failed"
@@ -605,7 +605,7 @@ import sys
 
 sandbox, root = map(Path, sys.argv[1:3])
 count = int(sys.argv[3])
-if not sandbox.is_absolute() or not root.is_absolute() or not (sandbox / ".flea-test-sandbox").is_file():
+if not sandbox.is_absolute() or not root.is_absolute() or not (sandbox / ".bachy-test-sandbox").is_file():
     raise SystemExit("operations: nested Search needs an absolute marked sandbox")
 if sandbox.resolve() != sandbox or root.resolve() != root or sandbox not in root.parents or any(root.iterdir()):
     raise SystemExit("operations: nested Search root is not an empty canonical child of its sandbox")
@@ -617,7 +617,7 @@ for index in range(1, count + 1):
 PY
     printf 'OPERATIONS_SEARCH_WORKLOAD directories=%s source=%q\n' "$directory_count" "$source"
     launch "$source"
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     wait_listing "$directory_count"
     permissions_viewport 880 620
     key f >/dev/null
@@ -665,11 +665,11 @@ case_operationsdesign() (
     local operations_bytes=$((1024 * 1024 * 1024))
     sandbox_require "$fixture_root"
     menu_box=$(mktemp -d "$fixture_root/operations-design.XXXXXXXX") || fail "operations: fixture creation failed"
-    printf 'native Operations fixture\n' > "$menu_box/.flea-test-sandbox"
+    printf 'native Operations fixture\n' > "$menu_box/.bachy-test-sandbox"
     [[ "$menu_box" == "$(realpath -e "$menu_box")" ]] || fail "operations: fixture is not canonical"
     for path in state config cache data cancel-source; do menus_guard "$menu_box/$path"; mkdir "$menu_box/$path"; done
     export XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config" XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"menu":{"hidden":[]}}' >/dev/null || fail "operations: fixture settings failed"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"menu":{"hidden":[]}}' >/dev/null || fail "operations: fixture settings failed"
     if [[ "${1:-all}" != live ]]; then
         operations_missing_footer || fail "operations: missing-filesystem proof failed"
         operations_mixed || fail "operations: mixed-outcome proof failed"
@@ -700,7 +700,7 @@ operations_footer_fixture() {
     local part
     sandbox_require "$fixture_root"
     menu_box=$(mktemp -d "$fixture_root/footer-$1.XXXXXXXX") || fail 'footer: cannot create fixture'
-    printf 'native Footer fixture\n' > "$menu_box/.flea-test-sandbox" || fail 'footer: cannot mark fixture'
+    printf 'native Footer fixture\n' > "$menu_box/.bachy-test-sandbox" || fail 'footer: cannot mark fixture'
     [[ "$menu_box" == "$(realpath -e "$menu_box")" ]] || fail 'footer: fixture is not canonical'
     for part in state config cache data payload destination; do
         menus_guard "$menu_box/$part"
@@ -708,7 +708,7 @@ operations_footer_fixture() {
     done
     export XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
     export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"preview":{"thumbnails":"off","loadOn":"manual"},"menu":{"hidden":[]}}' >/dev/null \
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"preview":{"thumbnails":"off","loadOn":"manual"},"menu":{"hidden":[]}}' >/dev/null \
         || fail 'footer: private settings seed failed'
 }
 
@@ -734,7 +734,7 @@ case_footerstates() (
     menus_guard "$menu_box/destination/photo.heic"
     chmod 000 "$menu_box/payload/photo.heic" || fail 'footer: cannot make photo.heic unreadable'
     launch "$menu_box/payload"
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     wait_listing 10
     permissions_viewport 880 620
     click_row "$(row_index_of photo.heic)" left
@@ -771,7 +771,7 @@ case_footertransfer() (
     truncate -s "$operations_bytes" "$permissions_listing/photo.heic" || fail 'footer: cannot size transfer fixture'
     menus_guard "$menu_box/destination/photo.heic"
     launch "$permissions_listing"
-    trap 'permissions_resume_stopped "$operations_stopped" || exit 1; kill_flea' EXIT
+    trap 'permissions_resume_stopped "$operations_stopped" || exit 1; kill_bachy' EXIT
     wait_listing 10
     permissions_viewport 880 620
     click_row 0 left
@@ -807,7 +807,7 @@ from pathlib import Path
 import sys
 root = Path(sys.argv[1])
 payload = root / "payload"
-if not root.is_absolute() or root.resolve() != root or not (root / ".flea-test-sandbox").is_file():
+if not root.is_absolute() or root.resolve() != root or not (root / ".bachy-test-sandbox").is_file():
     raise SystemExit("footer: Search requires an absolute marked sandbox")
 if payload.resolve() != payload or not payload.is_relative_to(root) or any(payload.iterdir()):
     raise SystemExit("footer: Search payload is not an empty canonical child")
@@ -817,7 +817,7 @@ for index in range(int(sys.argv[3])):
     (payload / f"{sys.argv[4]}-{index}.txt").write_text(f"matched original {index}\n")
 PY
     launch "$menu_box/payload"
-    trap 'kill_flea' EXIT
+    trap 'kill_bachy' EXIT
     wait_listing "$((directory_count + matched_count))"
     permissions_viewport 880 620
     key f >/dev/null || fail 'footer: Search entry failed'
@@ -885,7 +885,7 @@ case_footerspecimens() {
 operations_footer_full_mount() {
     local mount owner identity contents
     sandbox_require "$menu_box"
-    [[ "$menu_box" == "$(realpath -e "$menu_box")" && -O "$menu_box" && ! -L "$menu_box/.flea-test-sandbox" && -O "$menu_box/.flea-test-sandbox" ]] \
+    [[ "$menu_box" == "$(realpath -e "$menu_box")" && -O "$menu_box" && ! -L "$menu_box/.bachy-test-sandbox" && -O "$menu_box/.bachy-test-sandbox" ]] \
         || fail 'footerdiskfull: prepared root or marker identity changed'
     menus_guard "$menu_box/full"
     [[ -d "$menu_box/full" && ! -L "$menu_box/full" ]] || fail 'footerdiskfull: full is not the prepared directory'
@@ -914,16 +914,16 @@ operations_footer_full_cleanup() {
     local result="$1"
     trap - EXIT
     (operations_footer_full_mount) || result=1
-    (kill_flea) || result=1
+    (kill_bachy) || result=1
     printf 'FOOTER_ENOSPC_RETAINED root=%q mount=%q teardown_status=%s automatic_deletion=false\n' "$menu_box" "$menu_box/full" "$result"
     exit "$result"
 }
 
 case_footerdiskfull() (
-    local menu_box="${FLEA_ENOSPC_ROOT:-}" menus_checks=0 full_identity="" fixture_root="$fixture_root"
+    local menu_box="${BACHY_ENOSPC_ROOT:-}" menus_checks=0 full_identity="" fixture_root="$fixture_root"
     local part contents source source_identity source_hash partial_bytes error_color before_error
     local source_bytes=$((2 * 1024 * 1024))
-    [[ -n "$menu_box" && "$menu_box" == /* ]] || fail 'footerdiskfull: FLEA_ENOSPC_ROOT must name the prepared absolute marked root'
+    [[ -n "$menu_box" && "$menu_box" == /* ]] || fail 'footerdiskfull: BACHY_ENOSPC_ROOT must name the prepared absolute marked root'
     for part in "$fixture_root" "$thumb_fixture" "$hash_fixture" "$stale_fixture" "$run_root"; do
         [[ "$menu_box" != "$part" && "$menu_box" != "$part/"* ]] || fail 'footerdiskfull: prepared mount would enter automatic suite cleanup'
     done
@@ -935,12 +935,12 @@ case_footerdiskfull() (
         contents=$(find "$menu_box/$part" -mindepth 1 -maxdepth 1 -print -quit) || fail "footerdiskfull: cannot inspect $part"
         [[ -z "$contents" ]] || fail "footerdiskfull: prepared $part is not empty"
     done
-    kill_flea
+    kill_bachy
     fixture_root="$menu_box"
     trap 'operations_footer_full_cleanup "$?"' EXIT
     export XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
     export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"preview":{"thumbnails":"off","loadOn":"manual"},"menu":{"hidden":[]}}' >/dev/null \
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","display":{"textSize":{"mode":14}},"preview":{"thumbnails":"off","loadOn":"manual"},"menu":{"hidden":[]}}' >/dev/null \
         || fail 'footerdiskfull: private settings seed failed'
     source="$menu_box/payload/photo.heic"
     menus_guard "$source"

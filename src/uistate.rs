@@ -11,7 +11,7 @@ pub fn from_file(text: &str) -> Json {
     }
 }
 
-// 0.1.3's $XDG_CONFIG_HOME/flea/view.json. hiddenCols named what was hidden, so this inverts it;
+// 0.1.3's $XDG_CONFIG_HOME/bachy/view.json. hiddenCols named what was hidden, so this inverts it;
 // uiScale is dropped on the operator's ruling, because the new design stores an Omarchy stop only.
 pub fn from_view_json(text: &str) -> Json {
     let mut out = defaults();
@@ -61,7 +61,7 @@ fn check(pairs: &[(String, Json)], schema: &[(&str, Rule)], prefix: &str) -> Res
                 check(inner, sub, &format!("{}{}.", prefix, key))?;
             }
             // A front end that could write the stamp could rewind a migration the file has already had.
-            Rule::Version => return Err(format!("{}{} is kept by Flea and no patch sets it", prefix, key)),
+            Rule::Version => return Err(format!("{}{} is kept by Bachy and no patch sets it", prefix, key)),
             _ if fits(rule, value) => {}
             _ => return Err(format!("{}{} does not take {}", prefix, key, one_line(value))),
         }
@@ -89,7 +89,7 @@ fn apply(current: &Json, patch: &Json, schema: &[(&str, Rule)]) -> Json {
     Json::Obj(out)
 }
 
-// Known keys first in the shipped order, then whatever a newer Flea left behind, kept as it was read.
+// Known keys first in the shipped order, then whatever a newer Bachy left behind, kept as it was read.
 fn merge(default: &Json, found: &Json, schema: &[(&str, Rule)]) -> Json {
     let found_pairs = match found.as_object() {
         Some(pairs) => pairs,
@@ -141,7 +141,7 @@ fn fits(rule: &Rule, value: &Json) -> bool {
             None => false,
         },
         // An absolute path or a uri, or "" for one nothing has chosen or recorded. Nothing else:
-        // a relative path in ui.json would be resolved against whatever directory Flea was started in.
+        // a relative path in ui.json would be resolved against whatever directory Bachy was started in.
         Rule::Place => match value.as_str() {
             Some(text) => text.is_empty() || is_a_place(text),
             None => false,
@@ -266,9 +266,9 @@ mod tests {
 
     #[test]
     fn an_unknown_key_is_kept_and_rewritten_untouched_at_both_levels() {
-        let merged = from_file(r#"{"fromANewerFlea":{"a":[1,"two"]},"places":{"newLeaf":7}}"#);
+        let merged = from_file(r#"{"fromANewerBachy":{"a":[1,"two"]},"places":{"newLeaf":7}}"#);
         assert_eq!(
-            text(merged.get("fromANewerFlea").expect("top-level unknown")),
+            text(merged.get("fromANewerBachy").expect("top-level unknown")),
             "{\n  \"a\": [\n    1,\n    \"two\"\n  ]\n}\n"
         );
         assert_eq!(merged.get("places").and_then(|p| p.get("newLeaf")).and_then(Json::as_f64), Some(7.0));
@@ -309,7 +309,7 @@ mod tests {
     }
 
     #[test]
-    fn a_patch_is_refused_whole_when_a_value_or_a_key_is_not_one_this_flea_knows() {
+    fn a_patch_is_refused_whole_when_a_value_or_a_key_is_not_one_this_bachy_knows() {
         let current = from_file("{}");
         for (patch, named) in [
             (r#"{"view":"miller"}"#, "view"),
@@ -355,7 +355,7 @@ mod tests {
     // keys.toml holds 48 unique action ids and 32 of them are camelCase, so a hideable row named
     // like one of those has to survive a read rather than take the whole array down with it.
     #[test]
-    fn a_camel_case_action_id_is_a_menu_row_this_flea_can_keep_hidden() {
+    fn a_camel_case_action_id_is_a_menu_row_this_bachy_can_keep_hidden() {
         let merged = from_file(r#"{"menu":{"hidden":["delete","newFolder","copy-path","copy_path"]}}"#);
         let hidden: Vec<&str> = merged
             .get("menu").and_then(|m| m.get("hidden")).and_then(Json::as_array).expect("menu.hidden")
@@ -414,7 +414,7 @@ mod tests {
     }
 
     // Settings > View > Opening. A place or "", and nothing else: a relative path in ui.json would be
-    // resolved against whatever directory Flea happened to be started in.
+    // resolved against whatever directory Bachy happened to be started in.
     #[test]
     fn an_opening_folder_is_a_place_or_nothing() {
         let kept = from_file(r#"{"startIn":"folder","startFolder":"/home/gm/Work","newTab":"home"}"#);
@@ -435,7 +435,7 @@ mod tests {
             let refused = from_file(bad);
             assert_eq!(refused.get("startFolder").and_then(Json::as_str), Some(""), "refused: {bad}");
         }
-        let mode = from_file(r#"{"startIn":"fromANewerFlea","newTab":"elsewhere"}"#);
+        let mode = from_file(r#"{"startIn":"fromANewerBachy","newTab":"elsewhere"}"#);
         assert_eq!(mode.get("startIn").and_then(Json::as_str), Some("home"));
         assert_eq!(mode.get("newTab").and_then(Json::as_str), Some("current"));
     }

@@ -1,6 +1,6 @@
 .pragma library
 
-// Shared motion constants for Flea's structural transitions: preview open/close, share browser
+// Shared motion constants for Bachy's structural transitions: preview open/close, share browser
 // open/close, the Network dialog open/close, the empty state's appearance. The controller's
 // ruling: scroll, the cursor and hover fills stay animation-free forever (see the 60ms
 // CursorSurface note in the KB); only these four gain motion, 150-250ms, one easing curve.

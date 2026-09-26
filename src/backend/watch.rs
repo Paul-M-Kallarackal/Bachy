@@ -53,7 +53,7 @@ impl Watch {
     pub fn start(tx: Sender<Event>) -> Watch {
         let fd = unsafe { inotify_init1(IN_CLOEXEC) };
         if fd < 0 {
-            eprintln!("flea: the open folder will not follow outside changes, inotify is unavailable");
+            eprintln!("bachy: the open folder will not follow outside changes, inotify is unavailable");
             return Watch { fd: -1, wd: -1, incoming: -1 };
         }
         thread::spawn(move || pump(fd, tx));
@@ -131,7 +131,7 @@ fn pump(fd: c_int, tx: Sender<Event>) {
             if failure.kind() == io::ErrorKind::Interrupted {
                 continue;
             }
-            eprintln!("flea: the open folder stopped following outside changes, the inotify read failed: {}", failure);
+            eprintln!("bachy: the open folder stopped following outside changes, the inotify read failed: {}", failure);
             return;
         }
         // A closed descriptor ends the thread; the loop keeps running without a watch.

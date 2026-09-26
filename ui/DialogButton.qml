@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 
 // Dialog actions share a hairline frame; each surface supplies its specified fill.
 Item {

@@ -1,4 +1,4 @@
-// flea shelf zip: a pile becomes one archive, on the shelf rather than in a folder the operator then
+// bachy shelf zip: a pile becomes one archive, on the shelf rather than in a folder the operator then
 // has to find. Split from shelfops.rs at the 400 line cap, the seam between the transfer verbs and
 // this one.
 use crate::backend::archive::Formats;
@@ -9,80 +9,80 @@ use crate::uistore;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 
-const DIR: &str = "omarchy/flea-shelf";
+const DIR: &str = "bachy/shelf";
 // The mode uistore writes its own files at, because a probe is a file this process alone ever sees.
 const OWNER_ONLY_FILE: u32 = 0o600;
 
-// flea shelf zip <date> <path>...: the four become one, and the archive is on the shelf rather than
+// bachy shelf zip <date> <path>...: the four become one, and the archive is on the shelf rather than
 // written to a folder the operator then has to find. A pile spans folders, which is exactly the case
 // the pane's own compress refuses, so the names are taken relative to their own common ancestor.
 pub fn zip(rest: &[String]) -> i32 {
     let (date, paths) = match rest.split_first() {
         Some((date, paths)) if !paths.is_empty() => (date.as_str(), paths.to_vec()),
         _ => {
-            eprintln!("flea: shelf zip takes today's date, then the paths");
+            eprintln!("bachy: shelf zip takes today's date, then the paths");
             return 2;
         }
     };
     if !date.chars().all(|c| c.is_ascii_digit() || c == '-') || date.is_empty() {
-        eprintln!("flea: shelf zip takes a date, which is digits and dashes");
+        eprintln!("bachy: shelf zip takes a date, which is digits and dashes");
         return 2;
     }
     if let Some(relative) = paths.iter().find(|path| !Path::new(path).is_absolute()) {
-        eprintln!("flea: shelf zip takes absolute paths, and {} is not one", relative);
+        eprintln!("bachy: shelf zip takes absolute paths, and {} is not one", relative);
         return 2;
     }
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     let (parent, names) = match relative_to_ancestor(&paths) {
         Some(split) => split,
         None => {
-            eprintln!("flea: those paths have no directory in common to archive them from");
+            eprintln!("bachy: those paths have no directory in common to archive them from");
             return 2;
         }
     };
     let dir = match archives_dir() {
         Ok(dir) => dir,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     if let Err(e) = uistore::make_dir(&dir) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         return 2;
     }
     if let Err(e) = writable(&parent) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         return 2;
     }
     let dest = match free_name(&dir, date) {
         Ok(Some(dest)) => dest,
         Ok(None) => {
-            eprintln!("flea: there are already a hundred shelf archives for {}", date);
+            eprintln!("bachy: there are already a hundred shelf archives for {}", date);
             return 2;
         }
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     let mut reserved = Reserved { path: dest.clone(), kept: false };
     // The archive tool stages beside its sources and renames the result into place, so the archive is
     // written there first and relocated after: a pile on another filesystem cannot be renamed home.
-    let staged = parent.join(format!(".flea-shelf-{}-{}.zip", std::process::id(), date));
+    let staged = parent.join(format!(".bachy-shelf-{}-{}.zip", std::process::id(), date));
     if let Err(e) = compress(&Formats::probe(), &parent, &names, "zip", &staged) {
-        eprintln!("flea: {}", error_line(&e));
+        eprintln!("bachy: {}", error_line(&e));
         let _ = std::fs::remove_file(&staged);
         return 2;
     }
     if let Err(e) = relocate(&staged, &dest) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         let _ = std::fs::remove_file(&staged);
         return 2;
     }
@@ -94,11 +94,11 @@ pub fn zip(rest: &[String]) -> i32 {
     println!("{}", archive);
     let mut kept = 0;
     if let Err(e) = shelf.settle(&paths) {
-        eprintln!("flea: the shelf kept its references ({})", e);
+        eprintln!("bachy: the shelf kept its references ({})", e);
         kept = 2;
     }
     if let Err(e) = shelf.add(&[archive]) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         kept = 2;
     }
     kept
@@ -107,7 +107,7 @@ pub fn zip(rest: &[String]) -> i32 {
 // The archive tool works inside the sources' own directory, so a pile whose only common ancestor is
 // one nobody can write in cannot be archived there, and saying which is the whole of the answer.
 fn writable(parent: &Path) -> Result<(), String> {
-    let probe = parent.join(format!(".flea-shelf-probe-{}", std::process::id()));
+    let probe = parent.join(format!(".bachy-shelf-probe-{}", std::process::id()));
     let _ = std::fs::remove_file(&probe);
     // Exclusively, the way uistore::write_new creates: this pid's own leftover goes first, and a
     // name recreated in the window after that is refused rather than followed and truncated.
@@ -134,7 +134,7 @@ fn relocate(from: &Path, to: &Path) -> Result<(), String> {
         return Err(format!("the archive could not be put on the shelf ({:?})", e.kind()));
     }
     if let Err(e) = std::fs::remove_file(from) {
-        eprintln!("flea: the staged archive stayed behind at {} ({:?})", from.display(), e.kind());
+        eprintln!("bachy: the staged archive stayed behind at {} ({:?})", from.display(), e.kind());
     }
     Ok(())
 }

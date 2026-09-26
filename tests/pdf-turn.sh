@@ -17,14 +17,14 @@ for tool in qs magick; do
     command -v "$tool" >/dev/null || { echo "pdf-turn.sh: $tool is not installed"; exit 1; }
 done
 
-. "$PWD/tools/flea-sandbox-guard"
+. "$PWD/tools/bachy-sandbox-guard"
 sandbox_forbidden /tmp && sandbox_refuse "pdf-turn: /tmp is inside a forbidden test target"
-turn_root=$(mktemp -d /tmp/flea-pdf-turn.XXXXXXXX) || exit 1
+turn_root=$(mktemp -d /tmp/bachy-pdf-turn.XXXXXXXX) || exit 1
 FIXTURE_ROOT=$turn_root
 sandbox_root_ok
 turn_root=$SANDBOX_ROOT
 readonly turn_root
-printf 'Flea PDF turn sandbox\n' > "$turn_root/$SANDBOX_MARKER" || exit 1
+printf 'Bachy PDF turn sandbox\n' > "$turn_root/$SANDBOX_MARKER" || exit 1
 turn_work="$turn_root/work"
 readonly turn_work
 cleanup() {

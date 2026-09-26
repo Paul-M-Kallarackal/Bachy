@@ -1,7 +1,7 @@
 .import "../../ui/js/Scripts.js" as Scripts
 .import "../../ui/js/Menu.js" as Menu
 
-// MenuAdditions rule 2: one row per executable in ~/.config/flea/scripts, sorted by name, the label
+// MenuAdditions rule 2: one row per executable in ~/.config/bachy/scripts, sorted by name, the label
 // the file name without its extension, absent rather than greyed when there are none.
 
 function file(scripts, hidden) {
@@ -16,12 +16,12 @@ function row(entries, id) {
 }
 
 function run(check) {
-    var parsed = Scripts.parse("ocr.sh\nconvert-to-webp\nupload-to-s3.py\n", "/home/gm/.config/flea/scripts")
+    var parsed = Scripts.parse("ocr.sh\nconvert-to-webp\nupload-to-s3.py\n", "/home/gm/.config/bachy/scripts")
     check("the rows are sorted by name whatever order find printed",
           parsed.map(function (s) { return s.id }).join(","), "convert-to-webp,ocr.sh,upload-to-s3.py")
     check("and the label is the name without its extension",
           parsed.map(function (s) { return s.label }).join(","), "convert-to-webp,ocr,upload-to-s3")
-    check("each row carries the path it will run", parsed[1].path, "/home/gm/.config/flea/scripts/ocr.sh")
+    check("each row carries the path it will run", parsed[1].path, "/home/gm/.config/bachy/scripts/ocr.sh")
     check("a blank listing is no rows at all", Scripts.parse("\n\n", "/x").length, 0)
     check("and a name that is only an extension keeps it, because that is the file's own name",
           Scripts.parse(".hidden\n", "/x")[0].label, ".hidden")

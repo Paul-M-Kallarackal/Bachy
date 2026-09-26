@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Format.js" as Format
 
 // The transport the canvas draws under a media frame: a play/pause mark, a hairline seek with a
@@ -12,7 +11,7 @@ Item {
     property real position: 0
     property real duration: 0
     // MediaMute rules 2 and 3: the state reads by glyph, off the one session flag both strips share.
-    readonly property bool muted: Flea.MediaSound.muted
+    readonly property bool muted: Bachy.MediaSound.muted
 
     // A tile borders four sides, which is the PreviewColumn artboard. Flush against the bottom of
     // the Quick Look overlay that same border reads as a box, so there it is one top hairline.
@@ -73,7 +72,7 @@ Item {
         Accessible.name: root.playing ? "Pause" : "Play"
         Accessible.onPressAction: { root.touched(); root.toggled() }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.centerIn: parent
             width: Theme.font.bodySmall
             height: Theme.font.bodySmall
@@ -170,9 +169,9 @@ Item {
 
         Accessible.role: Accessible.Button
         Accessible.name: root.muted ? "Unmute" : "Mute"
-        Accessible.onPressAction: { root.touched(); Flea.MediaSound.toggle() }
+        Accessible.onPressAction: { root.touched(); Bachy.MediaSound.toggle() }
 
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.centerIn: parent
             width: Theme.font.bodySmall
             height: Theme.font.bodySmall
@@ -187,7 +186,7 @@ Item {
             gesturePolicy: TapHandler.ReleaseWithinBounds
             onTapped: {
                 root.touched()
-                Flea.MediaSound.toggle()
+                Bachy.MediaSound.toggle()
             }
         }
     }

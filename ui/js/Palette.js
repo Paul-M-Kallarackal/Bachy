@@ -17,7 +17,7 @@ function parse(body) {
 // it is absent, then selection for the alacritty-derived file that emits neither ladder key at all.
 var SURFACE_KEYS = ["dark_background", "background", "selection"];
 
-// The first key the theme actually set wins, and a role no theme models keeps Flea's own colour.
+// The first key the theme actually set wins, and a role no theme models keeps Bachy's own colour.
 function pick(found, keys, fallback) {
     for (var i = 0; i < keys.length; i++) {
         if (found[keys[i]])

@@ -347,7 +347,7 @@ pub fn run(path: Option<&str>, select: Option<&str>) -> i32 {
     match result {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: terminal interface: {}", crate::error::io_message(&e));
+            eprintln!("bachy: terminal interface: {}", crate::error::io_message(&e));
             2
         }
     }

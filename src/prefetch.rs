@@ -11,10 +11,10 @@ use std::time::Duration;
 use crate::oflags::O_NOFOLLOW;
 
 // The launcher hands the shell the list's path in this variable, and the backend it spawns records into it.
-pub const LIST_ENV: &str = "FLEA_PREFETCH";
+pub const LIST_ENV: &str = "BACHY_PREFETCH";
 // The launcher's pid, which exec makes the shell's: only a backend whose parent it is records.
-pub const SHELL_ENV: &str = "FLEA_PREFETCH_SHELL";
-const HEADER: &str = "flea-prefetch 2";
+pub const SHELL_ENV: &str = "BACHY_PREFETCH_SHELL";
+const HEADER: &str = "bachy-prefetch 2";
 // A launch that never lists keeps the last list rather than recording whatever it did instead.
 const RECORD_TIMEOUT_MS: u64 = 10_000;
 // Bounds on a list this process did not write itself: ranges, one range's length, and the list's own size.
@@ -48,13 +48,13 @@ struct Range {
     length: u64,
 }
 
-// $XDG_CACHE_HOME/flea/prefetch, or None when there is no home to put it in.
+// $XDG_CACHE_HOME/bachy/prefetch, or None when there is no home to put it in.
 pub fn list_path() -> Option<PathBuf> {
     let cache = match crate::userfile::env_dir("XDG_CACHE_HOME") {
         Some(dir) => dir,
         None => crate::userfile::env_dir("HOME")?.join(".cache"),
     };
-    Some(cache.join("flea/prefetch"))
+    Some(cache.join("bachy/prefetch"))
 }
 
 // The launcher's side: a helper that queues the reads, waited for only as long as its fork takes.
@@ -75,7 +75,7 @@ pub fn warm(list: &Path) {
     }
 }
 
-// flea --prefetch <list>: forks, so the launcher's wait returns at once and its shell holds no unreaped child.
+// bachy --prefetch <list>: forks, so the launcher's wait returns at once and its shell holds no unreaped child.
 pub fn helper(list: &Path) -> i32 {
     // corner: a fork that fails keeps the work here, and the launcher waits it out, which is still a launch.
     if unsafe { fork() } > 0 {
@@ -129,7 +129,7 @@ struct ListRange<'a> {
     length: u64,
 }
 
-// Sample input: "flea-prefetch 2\nshell 4242 1234567\n0 32768 /usr/lib/libQt6Qml.so.6.11.2\n1048576 4096 /usr/share/fonts/a b.ttf\n"
+// Sample input: "bachy-prefetch 2\nshell 4242 1234567\n0 32768 /usr/lib/libQt6Qml.so.6.11.2\n1048576 4096 /usr/share/fonts/a b.ttf\n"
 fn parse_list(text: &str) -> Vec<ListRange<'_>> {
     let mut lines = text.lines();
     if lines.next() != Some(HEADER) {
@@ -158,7 +158,7 @@ static FIRST_ROWS: OnceLock<mpsc::Sender<()>> = OnceLock::new();
 pub fn record_after_first_rows() {
     let Some(list) = crate::userfile::env_dir(LIST_ENV) else { return };
     let parent = std::os::unix::process::parent_id();
-    // A TUI or test backend under a Flea terminal inherits both variables, but its parent is not the shell.
+    // A TUI or test backend under a Bachy terminal inherits both variables, but its parent is not the shell.
     if !is_launch_shell(parent, std::env::var(SHELL_ENV).ok().as_deref()) {
         return;
     }
@@ -205,7 +205,7 @@ fn start_time(stat: &str) -> Option<&str> {
     stat.rsplit_once(')')?.1.split_whitespace().nth(STAT_STARTTIME_AFTER_NAME)
 }
 
-// Sample input: "flea-prefetch 2\nshell 4242 5561234\n0 4096 /usr/lib/libc.so.6\n"; the second line, which parse_list skips.
+// Sample input: "bachy-prefetch 2\nshell 4242 5561234\n0 4096 /usr/lib/libc.so.6\n"; the second line, which parse_list skips.
 fn recorded_by(list: &Path) -> Option<String> {
     let text = read_bounded(list)?;
     let mut lines = text.lines();

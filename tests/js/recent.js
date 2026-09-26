@@ -1,7 +1,7 @@
 .import "../../ui/js/Recent.js" as Recent
 
 function run(check) {
-    // Where the history lives, which is XDG_DATA_HOME's own file and never a Flea-owned one.
+    // Where the history lives, which is XDG_DATA_HOME's own file and never a Bachy-owned one.
     check("the session's data home is honoured",
           Recent.historyPath("/run/user/1000/data", "/home/gm"), "/run/user/1000/data/recently-used.xbel")
     check("an unset data home falls back to the default",

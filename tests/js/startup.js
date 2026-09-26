@@ -32,7 +32,7 @@ function run(check) {
     check("a chosen folder that was never chosen falls back to home",
           Startup.startPath({ startIn: "folder", startFolder: "" }, HOME, ""), HOME)
     check("a mode this build does not know falls back to home",
-          Startup.startPath({ startIn: "fromANewerFlea" }, HOME, ""), HOME)
+          Startup.startPath({ startIn: "fromANewerBachy" }, HOME, ""), HOME)
 
     // Where a new tab lands, which is its own setting and not the window's.
     var here = "/home/gm/Downloads"
@@ -44,7 +44,7 @@ function run(check) {
     check("a start mode with nothing behind it still lands a new tab on home",
           Startup.newTabPath({ newTab: "start", startIn: "folder" }, here, HOME), HOME)
     check("a tab mode this build does not know clones the current folder",
-          Startup.newTabPath({ newTab: "fromANewerFlea" }, here, HOME), here)
+          Startup.newTabPath({ newTab: "fromANewerBachy" }, here, HOME), here)
 
     // The command line names the window, never a tab opened later inside it.
     check("a new tab never inherits the path the window was asked for",

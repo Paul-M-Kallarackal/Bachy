@@ -14,7 +14,7 @@ function run(check) {
     check("plain text is still a document", Icons.glyphFor("text-plain"), "file-text")
     check("an office document", Icons.glyphFor("x-office-document"), "file-text")
 
-    // FleaWindow.html and GridView.html both draw a symlink row with the link mark, and the backend
+    // BachyWindow.html and GridView.html both draw a symlink row with the link mark, and the backend
     // resolves a link's icon to its target's, so the mode is what decides and the icon name cannot.
     var LNK = 0o120777
     var REG = 0o100644

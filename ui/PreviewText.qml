@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell.Io
-import "." as Flea
+import "." as Bachy
 
 // Text previews: FileView reads the whole file, so a row over the gate is refused, not truncated.
 Item {
@@ -46,7 +46,7 @@ Item {
             flickable: textFlick
         }
 
-        Flea.ViewportScrollBar {
+        Bachy.ViewportScrollBar {
             parent: textFlick
             anchors { top: parent.top; right: parent.right }
             flickable: textFlick

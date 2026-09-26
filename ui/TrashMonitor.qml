@@ -23,7 +23,7 @@ Item {
         // setpriv ties the exec'd helper to this UI; the PPID check covers death before signal registration.
         return ["setpriv", "--pdeathsig", "TERM", "--", "sh", "-c",
             '[ "$PPID" = "$1" ] || exit 1; shift; exec "$@"',
-            "flea-trash", String(Quickshell.processId)].concat(args)
+            "bachy-trash", String(Quickshell.processId)].concat(args)
     }
     function refresh() {
         if (!watching) return

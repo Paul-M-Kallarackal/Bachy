@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Match.js" as Match
 import "js/Picker.js" as Picker
 import "js/Keymap.js" as Keymap
@@ -36,8 +35,8 @@ ListView {
     Keys.onTabPressed: function(event) { root.picker.stepFocus(root, (event.modifiers & Qt.ShiftModifier) !== 0) }
     Keys.onBacktabPressed: root.picker.stepFocus(root, true)
     property bool firstArmed: false
-    Flea.FastScrollHandler { flickable: root }
-    Flea.ViewportScrollBar {
+    Bachy.FastScrollHandler { flickable: root }
+    Bachy.ViewportScrollBar {
         parent: root
         anchors { top: parent.top; right: parent.right }
         flickable: root
@@ -78,7 +77,7 @@ ListView {
             color: Theme.color.accent
         }
 
-        Flea.Row {
+        Bachy.Row {
             anchors.fill: parent
             leadingSlot: root.checkSize + Theme.spacing.gap
             compactDate: true
@@ -102,7 +101,7 @@ ListView {
             border.width: root.checkBorderWidth
             border.color: cell.isMarked ? Theme.color.accent : Theme.color.muted
 
-            Flea.Glyph {
+            Bachy.Glyph {
                 anchors.fill: parent
                 visible: cell.isMarked
                 name: "check"

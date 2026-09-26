@@ -12,7 +12,7 @@ use std::sync::Arc;
 // back, because the card asked for a set and answers can only be matched by the path they name.
 pub fn command(rest: &[String]) -> i32 {
     if rest.is_empty() {
-        eprintln!("flea: shelf thumb takes at least one path");
+        eprintln!("bachy: shelf thumb takes at least one path");
         return 2;
     }
     let mime = Db::load();
@@ -29,7 +29,7 @@ pub fn command(rest: &[String]) -> i32 {
 }
 
 // The cache is the answer whenever it holds one; a miss is produced through the writer every other
-// part of Flea produces one with, so the shelf and the pane share one cache and one failure record.
+// part of Bachy produces one with, so the shelf and the pane share one cache and one failure record.
 fn thumb_of(
     file: &Path,
     mime: &Db,

@@ -7,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const DIR: &str = "omarchy/flea-shelf";
+const DIR: &str = "bachy/shelf";
 const PILE: &str = "shelf.json";
 const DRAGS: &str = "drags.json";
 const DRAGS_LOCK: &str = "drags.json.lock";
@@ -94,7 +94,7 @@ impl Shelf {
 
     // Main rule 10: a pinned row is always there. The flag rides the pile's own entry, so the bar's
     // reader needs no second file, and pinning a path the shelf is not holding puts it on first.
-    // An unpin never stats the file: a pinned row whose file was deleted outside Flea is exactly the
+    // An unpin never stats the file: a pinned row whose file was deleted outside Bachy is exactly the
     // row that has to be unpinnable, and settle will not drop it while the flag is on.
     pub fn pin(&self, paths: &[String], pinned: bool) -> Result<(), String> {
         let mut entries = Vec::new();

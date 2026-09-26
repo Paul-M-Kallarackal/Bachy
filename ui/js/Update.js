@@ -15,17 +15,17 @@ var WORDS = {
     current: "Up to date · %1",
     failed: "Could not check",
     launched: "Updating in terminal",
-    rolling: "flea-git · rolling",
+    rolling: "bachy-git · rolling",
     source: "Built from source",
-    noteLaunched: "Restart Flea when the update finishes",
-    noteFailed: "Offline: Omarchy update still opens",
+    noteLaunched: "Restart Bachy when the update finishes",
+    noteFailed: "Offline: source update still opens",
     noteRolling: "Rolling build: yay -Sua --devel follows main",
     noteSource: "Built locally: rebuild from the checkout",
-    opening: "Opening Omarchy update · restart Flea when it finishes",
-    launchFailed: "Omarchy's updater could not be started."
+    opening: "Opening source update · restart Bachy when it finishes",
+    launchFailed: "The source build updater is unavailable."
 }
 
-// The four words `flea --update check` prints first, see src/update.rs; anything else is a check that failed.
+// The four words `bachy --update check` prints first, see src/update.rs; anything else is a check that failed.
 var ANSWERS = ["available", "current", "failed", "unchecked"]
 
 function idle() {
@@ -42,7 +42,7 @@ function checking(status) {
 
 // Sample input: "available opr 0.3.2-1 0.3.3-1\n", the one line src/update.rs prints.
 function answered(status, text, now) {
-    // A launch is final until Flea restarts: a check that was already running when it began changes nothing.
+    // A launch is final until Bachy restarts: a check that was already running when it began changes nothing.
     if (status.state === "launched")
         return status
     var words = String(text || "").trim().split(" ")
@@ -52,7 +52,7 @@ function answered(status, text, now) {
                           latest: known && words[3] !== "-" ? words[3] : "", checkedAt: now })
 }
 
-// A launch hands the machine to Omarchy until Flea restarts; one that failed leaves the row as it was.
+// A launch hands the machine to Omarchy until Bachy restarts; one that failed leaves the row as it was.
 function launchedFrom(status, started) {
     return started ? copy(status, { state: "launched" }) : status
 }

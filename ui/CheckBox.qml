@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 
 // The one checkbox every surface draws, Containers rule 14. The box is the control and every member
 // wears it; state is filled against empty, so no palette has to separate accent from foreground.
@@ -31,7 +31,7 @@ Item {
         border.color: root.filled || root.focused ? Theme.color.foreground : Theme.color.muted
 
         // The mark is the fill cut away, so the control needs no third colour and no accent at all.
-        Flea.Glyph {
+        Bachy.Glyph {
             anchors.centerIn: parent
             width: Theme.font.bodySmall * 10 / 13
             height: width

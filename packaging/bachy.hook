@@ -1,0 +1,13 @@
+# Issue 173: pacman cannot reach what bachy --default and bachy --picker wrote into each user's home, so it says how.
+[Trigger]
+Type = Package
+Operation = Remove
+Target = bachy
+Target = bachy-bin
+Target = bachy-git
+
+[Action]
+Description = Noting what Bachy leaves in each user's config
+# Pre, because pacman reads its hooks again after the transaction, when this file is already gone.
+When = PreTransaction
+Exec = /usr/bin/printf %s\n "Bachy: if you are removing Bachy for good, its per-user settings from bachy --default and bachy --picker stay behind." "Bachy: then each user undoes them with bachy --default off and bachy --picker off, which need Bachy installed." "Bachy: once Bachy is gone, delete by hand what github.com/thisisgm/bachy/blob/main/docs/install.md says pacman leaves behind."

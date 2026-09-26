@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Exercises overlapping public openShare calls through real Quickshell Process instances.
 set -u
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+QS_BIN=$(command -v qs) || { echo "Quickshell is required" >&2; exit 1; }
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 cd "$(dirname "$0")/.." || exit 1
 
-test_root="$FIXTURE_ROOT/flea-network-open-share-$$"
+test_root="$FIXTURE_ROOT/bachy-network-open-share-$$"
 sandbox_make "$test_root"
 cleanup() { sandbox_remove "$test_root"; }
 trap cleanup EXIT
@@ -24,7 +25,7 @@ case "$1 $2" in
   "mount -li") exit 0 ;;
   "info smb://first/") exit 0 ;;
   "list smb://first/")
-    : > "$FLEA_TEST_LIST_STARTED"
+    : > "$BACHY_TEST_LIST_STARTED"
     sleep 1
     printf 'first-share\n'
     ;;
@@ -43,12 +44,12 @@ EOS
 chmod +x "$test_root/bin/gio"
 
 output=$(env \
-    FLEA_TEST_LIST_STARTED="$list_started" \
+    BACHY_TEST_LIST_STARTED="$list_started" \
     HOME="$test_root/home" \
     PATH="$test_root/bin:/usr/bin:/bin" \
     QT_QPA_PLATFORM=offscreen \
     QT_FORCE_STDERR_LOGGING=1 \
-    timeout 7 qs -p "$test_root/config" 2>&1)
+    timeout 7 "$QS_BIN" -p "$test_root/config" 2>&1)
 
 pass_count=$(printf '%s\n' "$output" | grep -c 'NETWORK_OPEN_SHARE overlap=blocked sequential=open')
 fail_count=$(printf '%s\n' "$output" | grep -c 'NETWORK_OPEN_SHARE FAIL')

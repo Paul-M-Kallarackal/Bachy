@@ -1,11 +1,11 @@
-//@ pragma ShellId flea-arm-prompt-test
+//@ pragma ShellId bachy-arm-prompt-test
 
 import QtQuick
 import QtTest
 import Quickshell
-import "flea" as Flea
-import "flea/js/Status.js" as Status
-import "flea/js/Trash.js" as Trash
+import "bachy" as Bachy
+import "bachy/js/Status.js" as Status
+import "bachy/js/Trash.js" as Trash
 
 // tests/arm-prompt.sh's harness, on its own clock: the real ui/StatusBar.qml shows a dd prompt only while its arm lives and leaves nothing stale, and the real ui/TrashView.qml disarms on another key and on choose().
 ShellRoot {
@@ -47,13 +47,13 @@ ShellRoot {
         implicitHeight: 600
         color: "#303030"
 
-        Flea.StatusBar {
+        Bachy.StatusBar {
             id: bar
             width: 800
             armOwner: owner
         }
 
-        Flea.TrashView {
+        Bachy.TrashView {
             id: view
             y: 40
             width: 800

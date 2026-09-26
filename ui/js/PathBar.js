@@ -34,7 +34,7 @@ function normalize(path) {
     return "/" + out.join("/")
 }
 
-// A file:// URI is what a paste from another application carries, and Flea's own --select takes one
+// A file:// URI is what a paste from another application carries, and Bachy's own --select takes one
 // too. A URI that will not decode is left as it stands rather than dropped: a literal percent in a
 // filename is legal, and refusing the whole line over one would be worse than a listing that fails.
 //

@@ -10,7 +10,7 @@ function rows(state, choice) {
     var on = data.enabled === true
     var out = [{ kind: "group", label: "Shelf", id: "shelf.enabled", master: true,
                   state: on ? "all" : "none", value: on ? "on" : "off" }]
-    out.push({ kind: "check", id: "shelf.bar", label: "Show in bar", mark: "flea",
+    out.push({ kind: "check", id: "shelf.bar", label: "Show in bar", mark: "bachy",
                 available: on, on: data.bar !== false })
     out.push(choice("shelf.rail", "Edge rail", "maximize", ["off", "left", "right", "bottom"],
                      ["Off", "Left", "Right", "Bottom"], railEdge(data.rail)))

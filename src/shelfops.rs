@@ -1,4 +1,4 @@
-// The shelf's own file actions, Actions rule 1: every one is a `flea shelf` call, and they run the
+// The shelf's own file actions, Actions rule 1: every one is a `bachy shelf` call, and they run the
 // same Rust transfer engine, conflict handling, undo and trash the pane runs. Rule 2: no new file
 // operation exists here, because one the pane cannot do would be a feature in the wrong place.
 use crate::backend::opsreq::{run_transfer_checked, transferdone_line, transferitem_line,
@@ -16,19 +16,19 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-const DIR: &str = "omarchy/flea-shelf";
+const DIR: &str = "bachy/shelf";
 const CANCEL: &str = "cancel";
 // The card is another process and this binary carries no signal handling, so a cancel is a file the
 // card writes and the transfer watches. Fast enough that esc feels immediate, slow enough to be free.
 const CANCEL_POLL_MS: u64 = 100;
 
-// flea shelf move|copy <dest> <path>...: the paths are what the card chose, because chosen-or-whole
+// bachy shelf move|copy <dest> <path>...: the paths are what the card chose, because chosen-or-whole
 // is the card's question and the answer crosses as an argument list rather than as a rule here.
 pub fn transfer(moving: bool, rest: &[String]) -> i32 {
     let (dest, paths) = match rest.split_first() {
         Some((dest, paths)) if !paths.is_empty() => (dest, paths.to_vec()),
         _ => {
-            eprintln!("flea: shelf move and copy take a destination, then the paths");
+            eprintln!("bachy: shelf move and copy take a destination, then the paths");
             return 2;
         }
     };
@@ -43,7 +43,7 @@ pub fn transfer(moving: bool, rest: &[String]) -> i32 {
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -52,7 +52,7 @@ pub fn transfer(moving: bool, rest: &[String]) -> i32 {
     let marker = match cancel_file() {
         Ok(marker) => marker,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -69,7 +69,7 @@ pub fn transfer(moving: bool, rest: &[String]) -> i32 {
     // A panicking engine reports no item at all, so joining it is the only thing that can tell a
     // clean run from one that died before it started.
     if engine.join().is_err() {
-        eprintln!("flea: the transfer engine stopped before it finished");
+        eprintln!("bachy: the transfer engine stopped before it finished");
         failed += 1;
     }
     cancel.store(true, Ordering::Relaxed);
@@ -84,21 +84,21 @@ pub fn transfer(moving: bool, rest: &[String]) -> i32 {
     // Rule 4: a move empties what it moved and nothing else; a copy leaves the pile exactly as it was.
     let mut kept = true;
     if let Err(e) = shelf.settle(&moved) {
-        eprintln!("flea: the shelf kept its references ({})", e);
+        eprintln!("bachy: the shelf kept its references ({})", e);
         kept = false;
     }
     if let Err(e) = shelf.repoint(&followed) {
-        eprintln!("flea: a pin stayed on the old path ({})", e);
+        eprintln!("bachy: a pin stayed on the old path ({})", e);
         kept = false;
     }
     if let Err(e) = shelfplaces::remember(&dest_name) {
-        eprintln!("flea: the destination was not remembered ({})", e);
+        eprintln!("bachy: the destination was not remembered ({})", e);
     }
     // Keys board: z undoes, which the landed sentence promises, so a move leaves the one step back
     // on disk. This process is gone by the time the card presses it.
     if moving {
         if let Err(e) = record_undo(&steps) {
-            eprintln!("flea: this move cannot be undone ({})", e);
+            eprintln!("bachy: this move cannot be undone ({})", e);
         }
     }
     i32::from(failed > 0 || !kept)
@@ -162,20 +162,21 @@ pub fn paths(rest: &[String]) -> i32 {
     0
 }
 
-// flea shelf send <peer> <path>...: Taildrop already ships in Flea, and a pile gathered from five
+// bachy shelf send <peer> <path>...: Taildrop already ships in Bachy, and a pile gathered from five
 // folders is the best payload it will ever get. Rule 4: a send leaves the pile exactly as it was,
 // because a send reports only by notification and nobody here knows whether it landed.
 pub fn send(rest: &[String]) -> i32 {
     let (peer, paths) = match rest.split_first() {
         Some((peer, paths)) if !paths.is_empty() => (peer, paths.to_vec()),
         _ => {
-            eprintln!("flea: shelf send takes a peer, then the paths");
+            eprintln!("bachy: shelf send takes a peer, then the paths");
             return 2;
         }
     };
-    let finished = std::process::Command::new("omarchy-tailscale-send")
-        .arg(peer)
+    let finished = std::process::Command::new("tailscale")
+        .args(["file", "cp", "--"])
         .args(&paths)
+        .arg(format!("{}:", peer))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -183,17 +184,17 @@ pub fn send(rest: &[String]) -> i32 {
     match finished {
         Ok(status) if status.success() => 0,
         Ok(_) => {
-            eprintln!("flea: {} did not take that send", peer);
+            eprintln!("bachy: {} did not take that send", peer);
             2
         }
         Err(_) => {
-            eprintln!("flea: this box has no omarchy-tailscale-send to send with");
+            eprintln!("bachy: this box has no tailscale to send with");
             2
         }
     }
 }
 
-// flea shelf peers: the send flyout's rows. Sample input, the fields Taildrop.js reads of
+// bachy shelf peers: the send flyout's rows. Sample input, the fields Taildrop.js reads of
 // `tailscale status --json`: {"Peer":{"nodekey:aa":{"DNSName":"macbookair.tail1234.ts.net.","HostName":"macbookair","Online":true}}}
 pub fn peers() -> i32 {
     let out = std::process::Command::new("tailscale")
@@ -203,11 +204,11 @@ pub fn peers() -> i32 {
         .stderr(std::process::Stdio::null())
         .output();
     let Ok(out) = out else {
-        eprintln!("flea: this box has no tailscale to ask for peers");
+        eprintln!("bachy: this box has no tailscale to ask for peers");
         return 2;
     };
     if !out.status.success() {
-        eprintln!("flea: tailscale would not answer with its status");
+        eprintln!("bachy: tailscale would not answer with its status");
         return 2;
     }
     for peer in peer_names(&String::from_utf8_lossy(&out.stdout)) {
@@ -234,12 +235,12 @@ pub fn peer_names(status: &str) -> Vec<String> {
     out
 }
 
-// flea shelf cancel: esc in the card while an action runs, which the engine reads as its own cancel.
+// bachy shelf cancel: esc in the card while an action runs, which the engine reads as its own cancel.
 pub fn cancel() -> i32 {
     let marker = match cancel_file() {
         Ok(marker) => marker,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -248,13 +249,13 @@ pub fn cancel() -> i32 {
         None => return 2,
     };
     if let Err(e) = uistore::make_dir(dir) {
-        eprintln!("flea: {}", e);
+        eprintln!("bachy: {}", e);
         return 2;
     }
     match std::fs::write(&marker, "cancel\n") {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: the cancel could not be written ({:?})", e.kind());
+            eprintln!("bachy: the cancel could not be written ({:?})", e.kind());
             2
         }
     }

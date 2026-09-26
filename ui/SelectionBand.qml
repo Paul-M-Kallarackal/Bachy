@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 import "js/Filter.js" as Filter
 import "js/Marquee.js" as Marquee
 import "js/Scroll.js" as Scroll

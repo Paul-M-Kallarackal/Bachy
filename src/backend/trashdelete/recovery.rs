@@ -7,14 +7,14 @@ use std::fs::File;
 use std::os::unix::fs::DirBuilderExt;
 use std::path::{Path, PathBuf};
 
-const FINISHED: &[u8] = b"flea recovery complete 1";
+const FINISHED: &[u8] = b"bachy recovery complete 1";
 
 pub fn recovery_root() -> Result<PathBuf, String> {
     let state = match crate::userfile::env_dir("XDG_STATE_HOME") {
         Some(path) => path,
         None => crate::userfile::home()?.join(".local/state"),
     };
-    Ok(state.join("flea/recovery"))
+    Ok(state.join("bachy/recovery"))
 }
 
 pub(super) struct Recovery {
@@ -94,7 +94,7 @@ impl Recovery {
         let quarantine_path = path("quarantine")?;
         let quarantine_name = quarantine_path.file_name().ok_or("Missing quarantine name.")?.to_string_lossy();
         let expected_name = format!("{}.review", quarantine_name);
-        if !quarantine_name.starts_with(".flea-delete-") || self.path.file_name().and_then(OsStr::to_str) != Some(expected_name.as_str())
+        if !quarantine_name.starts_with(".bachy-delete-") || self.path.file_name().and_then(OsStr::to_str) != Some(expected_name.as_str())
             || quarantine_path.parent() != source.parent() {
             return Err("Recovery record does not name its own quarantine.".into());
         }
@@ -256,7 +256,7 @@ pub fn recover(root: &Path) -> Result<RecoveryReport, String> {
     for entry in entries {
         let entry = entry.map_err(|e| e.to_string())?;
         let name = entry.file_name();
-        if !name.to_str().map(|name| name.starts_with(".flea-delete-") && name.ends_with(".review")).unwrap_or(false) { continue; }
+        if !name.to_str().map(|name| name.starts_with(".bachy-delete-") && name.ends_with(".review")).unwrap_or(false) { continue; }
         let path = entry.path();
         let result_for_record = (|| {
             let Some(record) = Manifest::open_inactive(&path)? else { return Ok(false); };

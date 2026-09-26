@@ -134,7 +134,7 @@ impl EditorJob {
         const IGNORE_SIGNAL: usize = 1;
         let handler = unsafe { signal(SIGTTOU, IGNORE_SIGNAL) };
         // Sample input: nvim -f; the user's editor command is shell syntax, while the names path is a positional argument.
-        let child = Command::new("/bin/sh").args(["-c", &format!("exec {} \"$1\"", editor), "flea-bulk-rename"])
+        let child = Command::new("/bin/sh").args(["-c", &format!("exec {} \"$1\"", editor), "bachy-bulk-rename"])
             .arg(path).process_group(0).spawn();
         let child = match child {
             Ok(child) => child,
@@ -179,12 +179,12 @@ impl EditorJob {
 }
 impl Drop for EditorJob {
     fn drop(&mut self) {
-        if !self.restored { if let Err(error) = self.close() { eprintln!("flea: editor cleanup: {}", error); } }
+        if !self.restored { if let Err(error) = self.close() { eprintln!("bachy: editor cleanup: {}", error); } }
     }
 }
 impl Drop for Terminal {
     fn drop(&mut self) {
-        if let Err(error) = self.restore() { eprintln!("flea: {}", error); }
+        if let Err(error) = self.restore() { eprintln!("bachy: {}", error); }
         for &(sig, handler) in &self.handlers {
             unsafe {
                 signal(sig, handler);

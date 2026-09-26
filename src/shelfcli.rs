@@ -1,4 +1,4 @@
-// The shelf's verbs as a command, because the plugin is another process: `flea shelf <verb>` is the
+// The shelf's verbs as a command, because the plugin is another process: `bachy shelf <verb>` is the
 // only way in, and every mutation of the pile is on this side of it.
 use crate::captures;
 use crate::shelf::{now_ms, size_of, Shelf};
@@ -37,32 +37,32 @@ pub fn command(args: &[String]) -> i32 {
         Some("toggle") => summon::toggle(),
         Some("bind") => summon::bind(),
         _ => {
-            eprintln!("flea: shelf takes drag-begin, size, add, open, move, copy, pin, unpin, order, zip, send, peers, paths, places, choose, cancel, forget, captures, thumb, clear, restore, undo, piles, toggle or bind");
+            eprintln!("bachy: shelf takes drag-begin, size, add, open, move, copy, pin, unpin, order, zip, send, peers, paths, places, choose, cancel, forget, captures, thumb, clear, restore, undo, piles, toggle or bind");
             2
         }
     }
 }
 
-// SettingsRest rule 4: `flea shelf order <path> <index>` puts a pin at that place among the pins.
+// SettingsRest rule 4: `bachy shelf order <path> <index>` puts a pin at that place among the pins.
 fn order(rest: &[String]) -> i32 {
     let (path, to) = match (rest.first(), rest.get(1).and_then(|n| n.parse::<usize>().ok())) {
         (Some(path), Some(to)) => (path, to),
         _ => {
-            eprintln!("flea: shelf order takes a path and a position");
+            eprintln!("bachy: shelf order takes a path and a position");
             return 2;
         }
     };
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     match shelf.order(path, to) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }
@@ -72,7 +72,7 @@ fn size(rest: &[String]) -> i32 {
     let path = match rest.first() {
         Some(path) => path,
         None => {
-            eprintln!("flea: shelf size takes one path");
+            eprintln!("bachy: shelf size takes one path");
             return 2;
         }
     };
@@ -82,7 +82,7 @@ fn size(rest: &[String]) -> i32 {
             0
         }
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }
@@ -90,32 +90,32 @@ fn size(rest: &[String]) -> i32 {
 
 fn add(rest: &[String]) -> i32 {
     if rest.is_empty() {
-        eprintln!("flea: shelf add takes at least one path");
+        eprintln!("bachy: shelf add takes at least one path");
         return 2;
     }
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     match shelf.add(rest) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }
 }
 
-// Keys: enter opens the file with its own handler, or reveals the folder in Flea. A folder does not
-// go to gio, which would hand it straight back to Flea's own desktop entry and lose the path.
+// Keys: enter opens the file with its own handler, or reveals the folder in Bachy. A folder does not
+// go to gio, which would hand it straight back to Bachy's own desktop entry and lose the path.
 fn open(rest: &[String]) -> i32 {
     let path = match rest.first() {
         Some(path) => path,
         None => {
-            eprintln!("flea: shelf open takes one path");
+            eprintln!("bachy: shelf open takes one path");
             return 2;
         }
     };
@@ -126,7 +126,7 @@ fn open(rest: &[String]) -> i32 {
     let exe = match std::env::current_exe() {
         Ok(exe) => exe,
         Err(e) => {
-            eprintln!("flea: {} could not be shown ({:?})", path, e.kind());
+            eprintln!("bachy: {} could not be shown ({:?})", path, e.kind());
             return 2;
         }
     };
@@ -142,29 +142,29 @@ fn open(rest: &[String]) -> i32 {
     {
         Ok(_) => 0,
         Err(e) => {
-            eprintln!("flea: {} could not be shown ({:?})", path, e.kind());
+            eprintln!("bachy: {} could not be shown ({:?})", path, e.kind());
             2
         }
     }
 }
 
-// Main rule 10: `p` on a row, and Flea's own menu row, both land here.
+// Main rule 10: `p` on a row, and Bachy's own menu row, both land here.
 fn pin(rest: &[String], pinned: bool) -> i32 {
     if rest.is_empty() {
-        eprintln!("flea: shelf pin and unpin take at least one path");
+        eprintln!("bachy: shelf pin and unpin take at least one path");
         return 2;
     }
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
     match shelf.pin(rest, pinned) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }
@@ -172,13 +172,13 @@ fn pin(rest: &[String], pinned: bool) -> i32 {
 
 fn forget(rest: &[String]) -> i32 {
     if rest.is_empty() {
-        eprintln!("flea: shelf forget takes at least one path");
+        eprintln!("bachy: shelf forget takes at least one path");
         return 2;
     }
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -186,7 +186,7 @@ fn forget(rest: &[String]) -> i32 {
     match shelf.settle(rest) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }
@@ -197,7 +197,7 @@ fn drag_begin(rest: &[String]) -> i32 {
         Some("move") => true,
         Some("copy") => false,
         _ => {
-            eprintln!("flea: shelf drag-begin takes move or copy, then the entries");
+            eprintln!("bachy: shelf drag-begin takes move or copy, then the entries");
             return 2;
         }
     };
@@ -205,7 +205,7 @@ fn drag_begin(rest: &[String]) -> i32 {
     let shelf = match Shelf::user() {
         Ok(shelf) => shelf,
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             return 2;
         }
     };
@@ -215,7 +215,7 @@ fn drag_begin(rest: &[String]) -> i32 {
             0
         }
         Err(e) => {
-            eprintln!("flea: {}", e);
+            eprintln!("bachy: {}", e);
             2
         }
     }

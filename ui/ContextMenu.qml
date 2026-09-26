@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Keymap.js" as Keymap
 import "js/Menu.js" as Menu
 import "js/MenuRefresh.js" as MenuRefresh
@@ -140,7 +139,7 @@ Item {
             openWithApps: root.openWithApps,
             openWithLoaded: root.openWithLoaded,
             rowMode: root.rowMode, selectionCount: root.selectionCount,
-            scripts: Flea.Scripts.entries, localSendInstalled: root.localSend.installed, localSendPeers: root.localSend.peers, localSendChecking: view.localSendChecking,
+            scripts: Bachy.Scripts.entries, localSendInstalled: root.localSend.installed, localSendPeers: root.localSend.peers, localSendChecking: view.localSendChecking,
             // The Menus settings section's stored set; ui/js/Menu.js applyHidden is what reads it.
             hiddenActions: ViewState.menuHidden,
             updateVersion: UpdateCheck.menuVersion
@@ -337,7 +336,7 @@ Item {
     }
 
     // One row off the model, only so the two heights above are read from MenuRow rather than repeated here.
-    Flea.MenuRow {
+    Bachy.MenuRow {
         id: separatorProbe
         visible: false
         entry: ({ separator: true })
@@ -369,7 +368,7 @@ Item {
         // Mirrors hyprland decoration:rounding, same as NetworkDialog; 0 on a stock box stays square.
         radius: Style.cornerRadius
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: scroll
             anchors.fill: parent
             anchors.topMargin: Theme.spacing.rowPaddingY
@@ -381,7 +380,7 @@ Item {
             Repeater {
                 id: menuRows
                 model: root.entries
-                delegate: Flea.MenuRow {
+                delegate: Bachy.MenuRow {
                     id: row
                     required property var modelData
                     required property int index
@@ -407,11 +406,11 @@ Item {
             }
         }
         }
-        Flea.MenuEdgeFade {
+        Bachy.MenuEdgeFade {
             anchors.top: parent.top
             visible: scroll.contentY > 0
         }
-        Flea.MenuEdgeFade {
+        Bachy.MenuEdgeFade {
             anchors.bottom: parent.bottom
             visible: scroll.contentY + scroll.height < scroll.contentHeight
             rotation: 180
@@ -435,7 +434,7 @@ Item {
         border.color: Theme.color.muted
         radius: Style.cornerRadius
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: subScroll
             anchors.fill: parent
             anchors.topMargin: Theme.spacing.rowPaddingY
@@ -447,7 +446,7 @@ Item {
             Repeater {
                 id: subRows
                 model: root.submenuEntries
-                delegate: Flea.MenuRow {
+                delegate: Bachy.MenuRow {
                     id: subRow
                     required property var modelData
                     required property int index

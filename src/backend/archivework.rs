@@ -5,7 +5,7 @@ use crate::backend::archive::Formats;
 use crate::backend::archivespec::ListSpec;
 use crate::backend::archivelist::parse_reader;
 use crate::backend::opsreq::op_err;
-use crate::error::{from_io, FleaError};
+use crate::error::{from_io, BachyError};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
@@ -14,7 +14,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 // A private directory beside the destination, so the rename that follows never crosses a filesystem.
-pub(crate) const WORK_PREFIX: &str = ".flea-work-";
+pub(crate) const WORK_PREFIX: &str = ".bachy-work-";
 // A cancel is observed within this; a killed child is reaped on the next round.
 const CANCEL_STEP: Duration = Duration::from_millis(50);
 
@@ -34,7 +34,7 @@ const WORK_ATTEMPTS: usize = 64;
 impl Work {
     // create_dir, not create_dir_all: a name already taken is a collision and must never merge, and
     // create_new semantics are also what stops this from adopting somebody else's live directory.
-    pub fn new(beside: &Path, tag: &str) -> Result<Work, FleaError> {
+    pub fn new(beside: &Path, tag: &str) -> Result<Work, BachyError> {
         let mut last = String::new();
         for _ in 0..WORK_ATTEMPTS {
             let seq = WORK_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -67,7 +67,7 @@ impl Drop for Work {
 // what names the operation this jail is running, because the same jail runs the archive tools and
 // the image converter: reporting every one of them as "archive" told an operator converting a PNG
 // that the archive tool had failed.
-pub fn run_boxed(what: &str, inner: Vec<String>, read_only: &Path, writable: &Path) -> Result<(), FleaError> {
+pub fn run_boxed(what: &str, inner: Vec<String>, read_only: &Path, writable: &Path) -> Result<(), BachyError> {
     // Fail closed: the jail is the only containment for these tools, so a missing bwrap or prlimit
     // refuses the job rather than running it unsandboxed, the same rule thumbs.rs already follows.
     if !sandbox::available() {
@@ -92,12 +92,12 @@ pub fn run_boxed(what: &str, inner: Vec<String>, read_only: &Path, writable: &Pa
 
 // run_boxed, watched for a cancel: kill and reap here, so nothing is renamed and stderr is drained.
 pub fn run_boxed_cancellable(what: &str, inner: Vec<String>, read_only: &Path, writable: &Path,
-                             cancel: &AtomicBool) -> Result<(), FleaError> {
+                             cancel: &AtomicBool) -> Result<(), BachyError> {
     run_boxed_cancellable_inner(what, inner, read_only, writable, cancel, None)
 }
 
 fn run_boxed_cancellable_inner(what: &str, inner: Vec<String>, read_only: &Path, writable: &Path,
-                               cancel: &AtomicBool, started: Option<&AtomicU32>) -> Result<(), FleaError> {
+                               cancel: &AtomicBool, started: Option<&AtomicU32>) -> Result<(), BachyError> {
     if !sandbox::available() {
         let tool = inner.first().map_or("", |s| s.as_str());
         return Err(op_err(what, tool, "the sandbox is unavailable: bwrap or prlimit is not on PATH"));
@@ -151,7 +151,7 @@ fn run_boxed_cancellable_inner(what: &str, inner: Vec<String>, read_only: &Path,
 
 #[cfg(test)]
 fn run_boxed_cancellable_observed(what: &str, inner: Vec<String>, read_only: &Path, writable: &Path,
-                                  cancel: &AtomicBool, started: &AtomicU32) -> Result<(), FleaError> {
+                                  cancel: &AtomicBool, started: &AtomicU32) -> Result<(), BachyError> {
     run_boxed_cancellable_inner(what, inner, read_only, writable, cancel, Some(started))
 }
 
@@ -173,7 +173,7 @@ pub fn archive_produced_count(formats: &Formats, archive: &Path) -> Option<usize
 
 // The extract owns this token too: an empty staging directory is the one branch that reads the archive again.
 pub fn archive_produced_count_cancellable(formats: &Formats, archive: &Path,
-                                          cancel: &AtomicBool) -> Result<Option<usize>, FleaError> {
+                                          cancel: &AtomicBool) -> Result<Option<usize>, BachyError> {
     let (inner, spec) = match formats.list_argv(archive) {
         Some(value) => value,
         None => return Ok(None),
@@ -183,7 +183,7 @@ pub fn archive_produced_count_cancellable(formats: &Formats, archive: &Path,
 
 fn archive_produced_count_inner(inner: Vec<String>, spec: ListSpec, read_only: &Path,
                                 cancel: &AtomicBool, started: Option<&AtomicU32>,
-                                ready: Option<Arc<AtomicBool>>) -> Result<Option<usize>, FleaError> {
+                                ready: Option<Arc<AtomicBool>>) -> Result<Option<usize>, BachyError> {
     if !sandbox::available() {
         return Ok(None);
     }
@@ -278,7 +278,7 @@ impl<R: Read> Read for ReadyReader<R> {
 #[cfg(test)]
 fn archive_produced_count_with_inner(inner: Vec<String>, spec: ListSpec, read_only: &Path,
                                      cancel: &AtomicBool, started: &AtomicU32,
-                                     ready: &Arc<AtomicBool>) -> Result<Option<usize>, FleaError> {
+                                     ready: &Arc<AtomicBool>) -> Result<Option<usize>, BachyError> {
     archive_produced_count_inner(inner, spec, read_only, cancel, Some(started),
                                  Some(Arc::clone(ready)))
 }

@@ -12,7 +12,7 @@ transferlive_ms_per_s=1000
 transferlive_si_step=1000
 # The throughput sample: this much fresh random data, then one read/write copy of it.
 transferlive_probe_mib=512
-# src/backend/copyfile.rs CHUNK, so the sample copies in the same 256 KiB reads and writes Flea's own loop does.
+# src/backend/copyfile.rs CHUNK, so the sample copies in the same 256 KiB reads and writes Bachy's own loop does.
 transferlive_chunk=256K
 # The payload aims at this long a copy at the sampled rate; the sample runs in page cache, so a real leg only runs longer.
 transferlive_target_s=8
@@ -129,7 +129,7 @@ transferlive_teardown() {
     for pid in "${transferlive_writer_pids[@]}"; do kill "$pid" 2>/dev/null || true; done
     for pid in "${transferlive_writer_pids[@]}"; do wait "$pid" 2>/dev/null || true; done
     transferlive_writer_pids=()
-    ( kill_flea ) || drained=0
+    ( kill_bachy ) || drained=0
     if [[ -n "$transferlive_bus_pid" ]]; then kill "$transferlive_bus_pid" 2>/dev/null || true; fi
     transferlive_bus_pid=""
     if [[ -n "$transferlive_root" ]]; then sandbox_remove "$transferlive_root"; fi
@@ -502,7 +502,7 @@ transferlive_one() {
     transferlive_watch one "$want" 1 'big\.bin'
     transferlive_settled one "Copied 1 item · z undoes"
     transferlive_sample_one="[$transferlive_seen_first] [$transferlive_seen_last]"
-    kill_flea
+    kill_bachy
     transferlive_holds "$dir/to" "big.bin"
     menus_same_file "one: the copy is byte-identical to its source" "$dir/big.bin" "$dir/to/big.bin"
     sandbox_remove "$dir"
@@ -548,7 +548,7 @@ transferlive_batch() {
     printf 'TRANSFERLIVE_BATCH_TOTAL of=[%s] skipped_only_would_read=[%s] all_three_would_read=[%s] totaled_lines=%s before_the_sweep=[%s]\n' \
         "$want" "$skipped" "$every" "$transferlive_seen_totaled" "$transferlive_seen_early"
     transferlive_sample_batch="[$transferlive_seen_first] [$transferlive_seen_last]"
-    kill_flea
+    kill_bachy
     transferlive_holds "$dir/to" "a.bin b.bin c.bin"
     [[ "$(cat "$dir/to/b.bin")" == there ]] || fail "transferlive: batch: Skip wrote over the b.bin already there"
     for name in a.bin c.bin; do
@@ -581,7 +581,7 @@ transferlive_replace() {
     transferlive_watch replace "$want" 1 'big\.bin'
     transferlive_settled replace "Copied 1 item · z undoes"
     transferlive_sample_replace="[$transferlive_seen_first] [$transferlive_seen_last]"
-    kill_flea
+    kill_bachy
     [[ "$(cat "$XDG_DATA_HOME/Trash/files/big.bin" 2>/dev/null)" == there ]] \
         || fail "transferlive: replace: the replaced big.bin is not in this case's Trash: $(ls -A "$XDG_DATA_HOME/Trash/files" 2>&1)"
     transferlive_holds "$dir/to" "big.bin"

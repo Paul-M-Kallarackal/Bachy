@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Commons
 
 // The Hyprland droplet, reproduced rather than recut, the same ruling that brought TailscaleMark and
 // DropboxMark back: a brand row carries the brand's own mark and never a generic glyph. Outside the
-// cut and outside Glyph.qml, where FleaMark sits.
+// cut and outside Glyph.qml, where BachyMark sits.
 Item {
     id: root
 

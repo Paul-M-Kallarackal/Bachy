@@ -4,7 +4,7 @@ use crate::backend::copyfile::{copy_any, move_any, Progress};
 use crate::backend::ops;
 use crate::backend::trash;
 use crate::backend::undo::{self, Entry, ItemIdentity, Step};
-use crate::error::{from_io, io_message, FleaError};
+use crate::error::{from_io, io_message, BachyError};
 use crate::json::escape;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -25,7 +25,7 @@ pub enum OpMsg {
                    retry: Vec<(PathBuf, ItemIdentity)> },
     Trashed { ok: usize, failed: usize, entry: Entry },
     Duplicated { ok: bool, path: String, err: String, entry: Entry },
-    RedoDone { journal: super::undo::Journal, result: Result<String, FleaError> },
+    RedoDone { journal: super::undo::Journal, result: Result<String, BachyError> },
     MenuDeleteDone { line: String },
     // A terminal line for a slot-holding operation: written like Meta, and it releases the slot.
     SlotDone { line: String },
@@ -101,8 +101,8 @@ pub fn undone_line(op: &str, ok: bool) -> String {
     format!(r#"{{"t":"undone","op":"{}","ok":{}}}"#, escape(op), ok)
 }
 
-// A destination Flea will not create as a side effect, checked once before any item is touched.
-pub fn usable_dest(dest: &str) -> Result<PathBuf, FleaError> {
+// A destination Bachy will not create as a side effect, checked once before any item is touched.
+pub fn usable_dest(dest: &str) -> Result<PathBuf, BachyError> {
     let p = PathBuf::from(dest);
     if !p.is_absolute() {
         return Err(op_err("transfer", dest, "a destination must be an absolute path"));
@@ -114,8 +114,8 @@ pub fn usable_dest(dest: &str) -> Result<PathBuf, FleaError> {
     }
 }
 
-pub fn op_err(where_: &str, path: &str, msg: &str) -> FleaError {
-    FleaError { where_: where_.to_string(), path: path.to_string(), msg: msg.to_string() }
+pub fn op_err(where_: &str, path: &str, msg: &str) -> BachyError {
+    BachyError { where_: where_.to_string(), path: path.to_string(), msg: msg.to_string() }
 }
 
 fn base_name(p: &Path) -> String {
@@ -323,7 +323,7 @@ fn one_item(
     tx: &Sender<OpMsg>,
     settled: &AtomicU64,
     steps: &mut Vec<Step>,
-) -> Result<(), FleaError> {
+) -> Result<(), BachyError> {
     let mut last = Instant::now() - PROGRESS_EVERY;
     let mut sink = |done: u64, total: u64| {
         if last.elapsed() < PROGRESS_EVERY {

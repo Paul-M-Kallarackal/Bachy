@@ -169,9 +169,10 @@ impl Taildrop {
             ));
         }
         self.child = Some(
-            Command::new("omarchy-tailscale-send")
-                .arg(&peer.address)
+            Command::new("tailscale")
+                .args(["file", "cp", "--"])
                 .args(paths)
+                .arg(format!("{}:", peer.address))
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())

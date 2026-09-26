@@ -4,7 +4,7 @@
 
 marquee_guard() {
     local target="$1" canonical
-    [[ -n "$target" && "$target" == /* && -f "$marquee_box/.flea-test-sandbox" ]] || fail "marquee: invalid sandbox target"
+    [[ -n "$target" && "$target" == /* && -f "$marquee_box/.bachy-test-sandbox" ]] || fail "marquee: invalid sandbox target"
     canonical=$(realpath -m -- "$target") || fail "marquee: target resolution failed"
     [[ "$canonical" == "$marquee_box/"* && "$canonical" != "$marquee_box" ]] || fail "marquee: target escaped own sandbox"
 }
@@ -254,7 +254,7 @@ marquee_scroll() {
     marquee_release
     marquee_expect selectedIndices '' "Escape restores the empty pre-scroll selection"
     marquee_expect cursor 39 "Escape restores the pre-scroll cursor"
-    kill_flea
+    kill_bachy
 }
 
 marquee_columns_boundary() {
@@ -271,7 +271,7 @@ marquee_columns_boundary() {
     state=$(ipc listingWindowState) || fail "marquee: initial held-window observation failed"
     window_size=$(jq -er '.windowSize | select(. > 0)' <<< "$state") || fail "marquee: invalid held-window budget"
     total=$((window_size * 2 + 1)); last=$((total - 1))
-    kill_flea
+    kill_bachy
     for ((i = 1; i < total; i++)); do
         printf -v name 'file-%06d.txt' "$i"
         printf 'column %s\n' "$i" > "$dir/$name" || fail "marquee: Columns boundary file creation failed"
@@ -336,7 +336,7 @@ marquee_columns_boundary() {
     cardsize_expect visibleRowName "$name" "$first"
     marquee_expect selectedIndices "$selected" "Columns marks survive the release cursor's viewport refill"
     printf 'MARQUEE_COLUMNS_BOUNDARY total=%s old_held=%s first_selected=%s retained=%s\n' "$total" "$original_held" "$first" "$selected"
-    kill_flea
+    kill_bachy
 }
 
 marquee_filtered() {
@@ -368,7 +368,7 @@ marquee_filtered() {
         key -k Escape >/dev/null || fail "marquee: filter dismissal failed"
         marquee_expect drawnCount 8 "$mode filter dismissal restores the full listing"
         marquee_expect selectedIndices '0,2,4,6' "$mode filter dismissal cannot reinterpret marks as view positions"
-        kill_flea
+        kill_bachy
     done
 }
 
@@ -423,7 +423,7 @@ marquee_targets() {
             [[ "$(cat "$dir/file-$i.txt")" == "keyboard $i" ]] || fail "marquee: undo did not restore exact banded contents"
         done
         printf 'MARQUEE_KEYBOARD %s copy=4 trash=4 undo=4\n' "$mode"
-        kill_flea
+        kill_bachy
     done
 }
 
@@ -434,7 +434,7 @@ case_marquee() (
     local trash_box trash_checks=0 trash_parent_bus_id="" trash_private_bus_id="" trash_bus_address="" trash_bus_pid="" trash_provider_pid=""
     [[ "$(realpath -e "$(command -v gio)")" == /usr/bin/gio ]] || fail "marquee: product gio resolves to a stub"
     marquee_box=$(mktemp -d "$fixture_root/marquee.XXXXXXXX") || fail "marquee: sandbox creation failed"
-    printf 'native mouse-selection fixture\n' > "$marquee_box/.flea-test-sandbox"
+    printf 'native mouse-selection fixture\n' > "$marquee_box/.bachy-test-sandbox"
     marquee_home="$marquee_box/home"
     fixture_home_make "$marquee_home"
     export XDG_CONFIG_HOME="$marquee_home/.config" XDG_DATA_HOME="$marquee_box/data" XDG_CACHE_HOME="$marquee_box/cache"
@@ -469,7 +469,7 @@ case_marquee() (
             state=$(ipc dualState) || fail "marquee: dual-pane observation failed"
             jq -e --argjson marks "$other" '.active and .focused == 1 and .panes[0].selected == $marks and .panes[1].selected == [0,3]' <<< "$state" >/dev/null \
                 || fail "marquee: mouse marks leaked between dual panes: $state"
-            kill_flea
+            kill_bachy
         done
     fi
     if [[ "$group" != contexts ]]; then

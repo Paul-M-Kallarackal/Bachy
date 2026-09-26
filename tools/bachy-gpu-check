@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Background-only readiness check. The caller has already selected Intel.
+set -euo pipefail
+binary=$1
+state=$2
+icd=$3
+exec 9>"$state/check.lock"
+flock -n 9 || exit 0
+[[ ! -f "$state/ready" ]] || exit 0
+# Give the first window time to draw before waking the discrete GPU.
+sleep 0.5
+probe="$state/probe.$$"
+trap 'rm -f -- "$probe"' EXIT
+if timeout 15 env VK_DRIVER_FILES="$icd" VK_ICD_FILENAMES="$icd" \
+    "$binary" --probe-vulkan >"$probe" && grep -q '^0x10de:' "$probe"; then
+  printf '%s\n' "$icd" >"$probe"
+  mv -- "$probe" "$state/ready"
+  rm -f -- "$state/failed"
+  echo 'Bachy: NVIDIA check succeeded; future windows will use NVIDIA.'
+else
+  touch "$state/failed"
+  echo 'Bachy: NVIDIA check failed or timed out; keeping Intel.' >&2
+fi

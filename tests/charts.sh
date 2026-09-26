@@ -4,7 +4,7 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-bench=${FLEA_BENCH_DIR:-docs/bench}
+bench=${BACHY_BENCH_DIR:-docs/bench}
 for csv in scale-rc-2026.csv media-rc-2044.csv; do
   # These ship in the repo. A missing one used to skip and still print ok, which is green on
   # every machine that is not the box the bench was run on.
@@ -26,7 +26,7 @@ case $out_dir in
 esac
 trap 'rm -rf "$out_dir"' EXIT
 
-./tools/flea-bench-chart "$out_dir" >/dev/null || { echo "FAIL the generator did not run"; exit 1; }
+./tools/bachy-bench-chart "$out_dir" >/dev/null || { echo "FAIL the generator did not run"; exit 1; }
 
 stale=0
 for f in $art; do
@@ -34,7 +34,7 @@ for f in $art; do
     echo "FAIL the generator wrote no $f"
     stale=1
   elif ! cmp -s "$out_dir/$f" "docs/images/$f"; then
-    echo "FAIL docs/images/$f is stale, run ./tools/flea-bench-chart"
+    echo "FAIL docs/images/$f is stale, run ./tools/bachy-bench-chart"
     stale=1
   fi
 done

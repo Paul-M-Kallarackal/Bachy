@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 
 // The Omarchy spiral as the activity mark: a stroke-dash crawl along the brand path, never a
-// rotation. This and EmptyState's FleaMark are the only two places the spiral appears; rows
+// rotation. This and EmptyState's BachyMark are the only two places the spiral appears; rows
 // and menus never draw it, per the icon-language spec.
 Item {
     id: root
@@ -33,7 +33,7 @@ Item {
             // so 30+27=57 is exactly one period; the animation walks one period per cycle and the
             // loop point is therefore invisible.
             dashPattern: [30, 27]
-            PathSvg { path: "M21 21H3V3h18v14H7V7h10v6h-6" }
+            PathSvg { path: "M3 7V4h7l3 3h8v13H3V7" }
         }
     }
 

@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "." as Flea
+import "." as Bachy
 import "js/DirSizes.js" as DirSizes
 import "js/Dropbox.js" as Dropbox
 import "js/Filter.js" as Filter
@@ -23,7 +23,7 @@ FocusScope {
     enabled: !root.settingsPanel || !root.settingsPanel.opened
     property var backend: null
     property string path: ""
-    // Set once by shell.qml from FLEA_SELECT; applied to the first `rows` this pane receives, then forgotten.
+    // Set once by shell.qml from BACHY_SELECT; applied to the first `rows` this pane receives, then forgotten.
     property string pendingSelect: ""
     // Set with pendingSelect by a right click on a peeked column row: the menu opens on the row once it is the cursor.
     property bool pendingMenu: false
@@ -384,10 +384,10 @@ FocusScope {
     // A path the caller already resolved, for the columns view's neighbour rows, which have no cursor.
     function openFile(path) { wire.opener.open(path) }
 
-    // A terminal in the directory being shown, through ui/Opener.qml's flea --terminal.
+    // A terminal in the directory being shown, through ui/Opener.qml's bachy --terminal.
     function openTerminal() { wire.opener.openTerminal(root.path) }
 
-    function newWindow() { Quickshell.execDetached([Quickshell.env("FLEA_BIN") || "flea", root.path]) }
+    function newWindow() { Quickshell.execDetached([Quickshell.env("BACHY_BIN") || "bachy", root.path]) }
 
     // Quoted when it holds whitespace, because this one is pasted into a shell: see ui/js/Format.js.
     function copyDirPath() { wire.opener.copyText(Format.shellQuoted(root.path)) }
@@ -398,12 +398,12 @@ FocusScope {
         return base === "/" ? "/" + name : base + "/" + name
     }
 
-    Flea.PaneWire {
+    Bachy.PaneWire {
         id: wire
         pane: root
     }
 
-    Flea.PaneRail {
+    Bachy.PaneRail {
         id: railHost
         anchors.left: parent.left
         // Over the listing, because with auto-hide on the rail is an overlay and not a column.
@@ -411,7 +411,7 @@ FocusScope {
         pane: root
     }
 
-    Flea.PanePath {
+    Bachy.PanePath {
         id: panePath
         anchors { left: railHost.right; right: parent.right; top: parent.top }
         height: root.dualMode && !trashHost.opened ? Theme.chromeHeight : 0
@@ -430,7 +430,7 @@ FocusScope {
         onActiveChanged: if (active && focusPointer.point.position.x >= root.sidebarWidth) root.focusRequested()
     }
 
-    Flea.Header {
+    Bachy.Header {
         id: header
         // Only the list view has columns to head, and neither the grid board nor the columns board
         // draws one; the strip collapses rather than hiding, so the view below starts at the top of
@@ -466,7 +466,7 @@ FocusScope {
     readonly property Item listSlot: root.viewMode === "grid" ? gridLoader : root.viewMode === "columns" ? columnsLoader : list
     readonly property int cursorStride: root.viewMode === "grid" && gridLoader.item ? gridLoader.item.columns : 1
 
-    Flea.FilterStrip {
+    Bachy.FilterStrip {
         id: filterStrip
         anchors.top: header.bottom
         anchors.left: railHost.right
@@ -531,7 +531,7 @@ FocusScope {
     readonly property alias pathStrip: panePath
     signal switchPane()
 
-    Flea.List {
+    Bachy.List {
         id: list
         visible: !trashHost.opened && root.viewMode === "list"
         focus: visible
@@ -559,7 +559,7 @@ FocusScope {
         color: Theme.color.accent
     }
 
-    Flea.TrashHost {
+    Bachy.TrashHost {
         id: trashHost
         pane: root
         overlayParent: root.overlayParent
@@ -572,7 +572,7 @@ FocusScope {
     readonly property alias opener: wire.opener
     readonly property var dropboxService: root.sidebar ? root.sidebar.providerService : null
 
-    Flea.ContextMenu {
+    Bachy.ContextMenu {
         id: menu
         parent: root.overlayParent || root
         focusOwner: root.listArea
@@ -594,7 +594,7 @@ FocusScope {
         clipboardAvailable: root.clipboard.paths.length > 0
         // MenuAdditions rule 2: the scripts directory is read when a menu opens and never watched.
         // Directive 71: and the devices are asked for then too, the way Taildrop asks for its peers.
-        onSnapshotRequested: { menuActions.snapshot(); Flea.Scripts.refresh(); menuActions.localSend.refresh(menu.localSend.installed) }
+        onSnapshotRequested: { menuActions.snapshot(); Bachy.Scripts.refresh(); menuActions.localSend.refresh(menu.localSend.installed) }
         onRefused: function(reason) { root.message(reason, true) }
         rowIsArchive: root.cursorRow !== null && !root.cursorRow.d && Archive.isArchive(root.cursorRow.n)
         rowIsImage: root.cursorRow !== null && root.cursorRow.i === "image-x-generic"
@@ -612,21 +612,21 @@ FocusScope {
         }
     }
 
-    Flea.PaneMenuActions {
+    Bachy.PaneMenuActions {
         id: menuActions
         parent: root.overlayParent || root
         pane: root
     }
 
     // Every paste and drop asks through here first, see ui/js/Collide.js.
-    Flea.CollideHost { id: collideHost; parent: root.overlayParent || root; pane: root }
+    Bachy.CollideHost { id: collideHost; parent: root.overlayParent || root; pane: root }
     readonly property alias collide: collideHost
 
     // The one ui/ContextMenu.qml this pane owns, for ui/Ipc.qml: entries, flyout and row geometry
     // are read off it directly, so a new reader costs the seam a line and this file none.
     function contextMenu() { return menu }
 
-    Flea.PaneStates {
+    Bachy.PaneStates {
         id: paneStates
         pane: root
         trashOpen: trashHost.opened

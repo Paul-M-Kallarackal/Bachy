@@ -1,4 +1,4 @@
-//@ pragma ShellId flearetryprobe
+//@ pragma ShellId bachyretryprobe
 
 import Quickshell
 import QtQuick

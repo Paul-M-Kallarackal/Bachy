@@ -1,4 +1,4 @@
-// flea --picker: the per-user step that routes the desktop's file chooser here, see docs/install.md.
+// bachy --picker: the per-user step that routes the desktop's file chooser here, see docs/install.md.
 use crate::hyprkeys;
 use crate::userfile::{config_home, create_file, data_file, replace_file};
 use std::fs;
@@ -6,16 +6,16 @@ use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-// The interface Flea's backend implements, and the only key in portals.conf that is Flea's to write.
+// The interface Bachy's backend implements, and the only key in portals.conf that is Bachy's to write.
 const IFACE: &str = "org.freedesktop.impl.portal.FileChooser";
-// gtk stays behind flea, so a box whose flea.portal went missing still has a chooser at all.
-const PREFERRED: &str = "flea;gtk";
-// What tools/flea-portal registers as; xdg-desktop-portal names a backend by this file's stem.
-const PORTAL_FILE: &str = "flea.portal";
+// gtk stays behind bachy, so a box whose bachy.portal went missing still has a chooser at all.
+const PREFERRED: &str = "bachy;gtk";
+// What tools/bachy-portal registers as; xdg-desktop-portal names a backend by this file's stem.
+const PORTAL_FILE: &str = "bachy.portal";
 const GROUP: &str = "[preferred]";
-// The comment Flea leaves above its line when it replaced another backend, so `off` can put that one back.
-// Sample line: # flea replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk
-const REPLACED: &str = "# flea replaced: ";
+// The comment Bachy leaves above its line when it replaced another backend, so `off` can put that one back.
+// Sample line: # bachy replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk
+const REPLACED: &str = "# bachy replaced: ";
 // A desktop-specific configuration is <desktop>-portals.conf; the plain portals.conf has no dash before it.
 const DESKTOP_SUFFIX: &str = "-portals.conf";
 // The same restart Settings > About runs; try-restart leaves a portal that is not running alone, and its next start reads the file anyway.
@@ -23,8 +23,8 @@ const RESTART: [&str; 3] = ["--user", "try-restart", "xdg-desktop-portal.service
 const RESTARTED: &str = "xdg-desktop-portal restarted if it was running, so file dialogs follow now";
 const AT_STARTUP: &str = "xdg-desktop-portal reads this at startup: systemctl --user restart xdg-desktop-portal";
 
-// flea --picker
-// --default asks this before claiming, because a box with no flea.portal has nothing to prefer.
+// bachy --picker
+// --default asks this before claiming, because a box with no bachy.portal has nothing to prefer.
 pub fn backend_installed() -> bool {
     installed_portal().is_some()
 }
@@ -32,7 +32,7 @@ pub fn backend_installed() -> bool {
 pub fn claim() -> i32 {
     if installed_portal().is_none() {
         eprintln!(
-            "flea: {} is not installed in any portal directory, so there is no backend to prefer; install the package first",
+            "bachy: {} is not installed in any portal directory, so there is no backend to prefer; install the package first",
             PORTAL_FILE
         );
         return 1;
@@ -41,14 +41,14 @@ pub fn claim() -> i32 {
     let target = match effective_conf() {
         Ok(target) => target,
         Err(why) => {
-            eprintln!("flea: {}", why);
+            eprintln!("bachy: {}", why);
             return 1;
         }
     };
     report(claim_chooser(target), hyprkeys::float_claim())
 }
 
-// flea --picker off
+// bachy --picker off
 pub fn release() -> i32 {
     report(release_chooser(), hyprkeys::float_release())
 }
@@ -61,7 +61,7 @@ fn report(routing: Result<String, String>, window: Result<String, String>) -> i3
         match half {
             Ok(line) => println!("{}", line),
             Err(why) => {
-                eprintln!("flea: {}", why);
+                eprintln!("bachy: {}", why);
                 status = 1;
             }
         }
@@ -112,14 +112,14 @@ fn claim_chooser((path, desktop_file): (PathBuf, bool)) -> Result<String, String
     if desktop_file {
         line.push_str(", the file xdg-desktop-portal reads on this desktop");
     }
-    match before.filter(|had| !is_fleas(had)) {
+    match before.filter(|had| !is_bachys(had)) {
         Some(had) => line.push_str(&format!("; it named {} before, and the undo below puts that back", had)),
         None => line.push_str("; every other interface keeps the routing it had"),
     }
     Ok(line)
 }
 
-// Every user portal file is cleaned: an older Flea wrote portals.conf even where a desktop file hid it.
+// Every user portal file is cleaned: an older Bachy wrote portals.conf even where a desktop file hid it.
 fn release_chooser() -> Result<String, String> {
     let plain = conf_path()?;
     let mut lines = Vec::new();
@@ -128,12 +128,12 @@ fn release_chooser() -> Result<String, String> {
     }
     lines.extend(release_file(&plain, true)?);
     if lines.is_empty() {
-        return Ok(format!("{}: nothing to undo, no portal configuration names Flea", IFACE));
+        return Ok(format!("{}: nothing to undo, no portal configuration names Bachy", IFACE));
     }
     Ok(lines.join("\n"))
 }
 
-// One file's undo; `own_file` is portals.conf, which Flea may have created and so may remove.
+// One file's undo; `own_file` is portals.conf, which Bachy may have created and so may remove.
 fn release_file(path: &Path, own_file: bool) -> Result<Option<String>, String> {
     let text = match fs::read_to_string(path) {
         Ok(t) => t,
@@ -146,13 +146,13 @@ fn release_file(path: &Path, own_file: bool) -> Result<Option<String>, String> {
     // A file left holding nothing but the group heading was this command's own, so it goes with the key.
     if own_file && next.trim() == GROUP {
         fs::remove_file(path).map_err(|e| format!("{} could not be removed ({:?})", path.display(), e.kind()))?;
-        return Ok(Some(format!("{}: Flea's line removed, and {} held nothing else, so it is gone", IFACE, path.display())));
+        return Ok(Some(format!("{}: Bachy's line removed, and {} held nothing else, so it is gone", IFACE, path.display())));
     }
     let restored = preferred_value(&next, IFACE);
     replace_file(path, &next)?;
     Ok(Some(match restored {
         Some(had) => format!("{}: {} put back in {}", IFACE, had, path.display()),
-        None => format!("{}: Flea's line removed from {}", IFACE, path.display()),
+        None => format!("{}: Bachy's line removed from {}", IFACE, path.display()),
     }))
 }
 
@@ -215,11 +215,11 @@ fn installed_portal() -> Option<PathBuf> {
     data_file(&format!("xdg-desktop-portal/portals/{}", PORTAL_FILE))
 }
 
-// portals.conf(5) is a key file, of which only one key in one group is Flea's:
+// portals.conf(5) is a key file, of which only one key in one group is Bachy's:
 //   [preferred]
 //   default=hyprland;gtk
-//   # flea replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk
-//   org.freedesktop.impl.portal.FileChooser=flea;gtk
+//   # bachy replaced: org.freedesktop.impl.portal.FileChooser=gnome;gtk
+//   org.freedesktop.impl.portal.FileChooser=bachy;gtk
 // Returns the file with `key=value` in [preferred], or None when it already says exactly that. A
 // default= line is never touched: it is what every other interface still resolves through.
 pub fn set_preferred(text: &str, key: &str, value: &str) -> Option<String> {
@@ -234,10 +234,10 @@ pub fn set_preferred(text: &str, key: &str, value: &str) -> Option<String> {
         out.push_str(&line);
         return Some(out);
     }
-    // A backend that is not Flea's earns a note; an older note survives only over a Flea-spelled line it still explains.
+    // A backend that is not Bachy's earns a note; an older note survives only over a Bachy-spelled line it still explains.
     let had = preferred_value(text, key);
-    let note = had.clone().filter(|had| had.as_str() != value && !is_fleas(had));
-    let keep_old_note = had.as_deref().is_some_and(is_fleas);
+    let note = had.clone().filter(|had| had.as_str() != value && !is_bachys(had));
+    let keep_old_note = had.as_deref().is_some_and(is_bachys);
     let mut out = String::with_capacity(text.len() + line.len() * 2);
     let mut in_group = false;
     let mut written = false;
@@ -276,7 +276,7 @@ pub fn set_preferred(text: &str, key: &str, value: &str) -> Option<String> {
     Some(out)
 }
 
-// Flea's `key` line in [preferred] goes, or becomes the backend a REPLACED note names; None when no line is Flea's.
+// Bachy's `key` line in [preferred] goes, or becomes the backend a REPLACED note names; None when no line is Bachy's.
 pub fn drop_preferred(text: &str, key: &str) -> Option<String> {
     let replaced = group_lines(text).find_map(|body| body.strip_prefix(REPLACED).and_then(|l| key_value(l, key)).map(str::to_string));
     let mut out = String::with_capacity(text.len());
@@ -288,7 +288,7 @@ pub fn drop_preferred(text: &str, key: &str) -> Option<String> {
             in_group = body.trim() == GROUP;
         } else if in_group && is_marker(body, key) {
             continue;
-        } else if in_group && key_value(body, key).is_some_and(is_fleas) {
+        } else if in_group && key_value(body, key).is_some_and(is_bachys) {
             changed = true;
             if let Some(had) = &replaced {
                 out.push_str(&format!("{}={}\n", key, had));
@@ -322,14 +322,14 @@ fn key_value<'a>(body: &'a str, key: &str) -> Option<&'a str> {
     body.strip_prefix(key).and_then(|rest| rest.strip_prefix('=')).map(str::trim)
 }
 
-// Sample input: "# flea replaced: <key>=gnome;gtk" is a marker for <key>.
+// Sample input: "# bachy replaced: <key>=gnome;gtk" is a marker for <key>.
 fn is_marker(body: &str, key: &str) -> bool {
     body.strip_prefix(REPLACED).is_some_and(|rest| key_value(rest, key).is_some())
 }
 
-// Flea's own value, and the bare "flea" an earlier hand edit may have used.
-fn is_fleas(value: &str) -> bool {
-    value.split(';').next() == Some("flea")
+// Bachy's own value, and the bare "bachy" an earlier hand edit may have used.
+fn is_bachys(value: &str) -> bool {
+    value.split(';').next() == Some("bachy")
 }
 
 #[cfg(test)]

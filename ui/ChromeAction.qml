@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 
 // A control in a chrome strip, drawn under GM's 2026-09-11 ruling. Two inks: a STRUCTURAL RULE
 // recedes at the hairline, and a CONTROL FRAME advances in the control's own role. Drawing both in
@@ -33,7 +32,7 @@ Item {
     // the frame rises to the control's own ink under the pointer or the keyboard. A destructive
     // control therefore rests exactly as the confirm dialog draws it, a plain frame carrying error
     // text, and earns the error frame only when it is reached for: an error frame at rest is louder
-    // than anything else Flea draws, and it was. A primary control still carries its wash at rest.
+    // than anything else Bachy draws, and it was. A primary control still carries its wash at rest.
     readonly property color frame: !root.available ? Theme.color.muted
         : (root.activeFocus || hover.hovered || tap.pressed) ? root.ink
         : Theme.color.muted

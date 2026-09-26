@@ -1,4 +1,4 @@
-// `flea --thumb-worker`: libffmpegthumbnailer linked once, then one forked and confined child per video; see AGENTS.md "Thumbnail worker".
+// `bachy --thumb-worker`: libffmpegthumbnailer linked once, then one forked and confined child per video; see AGENTS.md "Thumbnail worker".
 use crate::backend::fdpass;
 use crate::backend::sandbox;
 use crate::backend::thumbs::JOB_TIMEOUT;
@@ -541,8 +541,8 @@ mod tests {
     use std::process::Command;
 
     // The probe confines a second copy of this test binary, so nothing it locks down can reach the harness running every other test.
-    const CONFINE_PROBE: &str = "FLEA_CONFINE_PROBE";
-    const CONFINE_BUSY: &str = "FLEA_CONFINE_BUSY";
+    const CONFINE_PROBE: &str = "BACHY_CONFINE_PROBE";
+    const CONFINE_BUSY: &str = "BACHY_CONFINE_BUSY";
     const THIS_TEST: &str = "backend::thumbworker::tests::a_confined_child_holds_only_its_job_and_can_write_or_signal_nothing";
     // Every descriptor below this is looked at, which covers PARK_FD and anything a leak could leave.
     const FD_CEILING: c_int = 1024;
@@ -863,7 +863,7 @@ mod tests {
         let chmod = unsafe { fchmod(INPUT_FD, mode) } == 0;
         let times = unsafe { futimens(INPUT_FD, &KEEP_TIMES) } == 0;
         let truncate_errno = errno_of(unsafe { truncate(INPUT_PATH.as_ptr(), 0) });
-        let xattr = errno_of(unsafe { fsetxattr(INPUT_FD, c"user.flea_probe".as_ptr(), b"1".as_ptr() as *const c_void, 1, 0) });
+        let xattr = errno_of(unsafe { fsetxattr(INPUT_FD, c"user.bachy_probe".as_ptr(), b"1".as_ptr() as *const c_void, 1, 0) });
         let mut flags: c_long = 0;
         let ioctl_errno = errno_of(unsafe { ioctl(INPUT_FD, FS_IOC_GETFLAGS, &mut flags) });
         let fork_errno = forked_and_reaped();
@@ -940,7 +940,7 @@ mod tests {
 
     #[test]
     fn a_library_that_is_not_there_is_refused() {
-        assert!(Decoder::load(c"libflea-definitely-not-here.so.9").is_none());
+        assert!(Decoder::load(c"libbachy-definitely-not-here.so.9").is_none());
     }
 
     #[test]

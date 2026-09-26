@@ -3,9 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
-if [[ "${FLEA_NETWORK_SELF_TEST:-}" == "1" && -z "${FLEA_NETWORK_SELF_TEST_CHILD:-}" ]]; then
-    . ./tools/flea-sandbox-guard
-    self_dir="$FIXTURE_ROOT/flea-network-live-$$"
+if [[ "${BACHY_NETWORK_SELF_TEST:-}" == "1" && -z "${BACHY_NETWORK_SELF_TEST_CHILD:-}" ]]; then
+    . ./tools/bachy-sandbox-guard
+    self_dir="$FIXTURE_ROOT/bachy-network-live-$$"
     self_cleanup() { sandbox_remove "$self_dir"; }
     trap self_cleanup EXIT HUP INT TERM
     sandbox_make "$self_dir"
@@ -110,11 +110,11 @@ remove)
 *) exit 2 ;;
 esac
 EOS
-    cat > "$self_dir/bin/flea" <<'EOS'
+    cat > "$self_dir/bin/bachy" <<'EOS'
 #!/bin/sh
 exit 0
 EOS
-    chmod +x "$self_dir/bin/timeout" "$self_dir/bin/gio" "$self_dir/bin/flea"
+    chmod +x "$self_dir/bin/timeout" "$self_dir/bin/gio" "$self_dir/bin/bachy"
 
     self_failures=0
     self_fail() {
@@ -125,11 +125,11 @@ EOS
     fake_secret='not-a-real-network-password'
     bash_dir=$(dirname "$(command -v bash)")
     child_env=(
-        FLEA_NETWORK_LIVE=1
-        FLEA_BIN="$self_dir/bin/flea"
-        FLEA_NETWORK_SELF_TEST_CHILD=1
-        FLEA_NETWORK_TEST_GVFS_ROOT="$self_dir/remote"
-        FLEA_NETWORK_TEST_CASE_ID="$run_id"
+        BACHY_NETWORK_LIVE=1
+        BACHY_BIN="$self_dir/bin/bachy"
+        BACHY_NETWORK_SELF_TEST_CHILD=1
+        BACHY_NETWORK_TEST_GVFS_ROOT="$self_dir/remote"
+        BACHY_NETWORK_TEST_CASE_ID="$run_id"
         FAKE_GIO_STATE="$self_dir/state"
         FAKE_GIO_REMOTE="$self_dir/remote"
         FAKE_GIO_SECRET="$fake_secret"
@@ -140,7 +140,7 @@ EOS
 
     webdav_output="$self_dir/webdav.output"
     if printf '%s\n%s\n' "$fake_secret" "$fake_secret" | env "${child_env[@]}" \
-        FLEA_NETWORK_TEST_CASE=webdav-failure ./tests/network-live.sh tester slot.test unraid.test \
+        BACHY_NETWORK_TEST_CASE=webdav-failure ./tests/network-live.sh tester slot.test unraid.test \
         > "$webdav_output" 2>&1; then
         webdav_status=0
     else
@@ -150,7 +150,7 @@ EOS
     webdav_last=$(tail -n 1 "$webdav_output")
     grep -Fq 'WebDAV intentional failure after marker' "$webdav_output" \
         || self_fail "WebDAV failure hook did not run: $webdav_last"
-    webdav_dir="$self_dir/remote/home42/tester/000-flea-network-test-webdav-$run_id"
+    webdav_dir="$self_dir/remote/home42/tester/000-bachy-network-test-webdav-$run_id"
     [[ ! -e "$webdav_dir" ]] || self_fail "WebDAV fallback left $webdav_dir"
     grep -Fq 'list sftp://tester@slot.test/' "$self_dir/state/operations" \
         || self_fail "WebDAV cleanup did not resolve Ultra home over SFTP"
@@ -165,7 +165,7 @@ EOS
     printf '%s\n' 'sftp://tester@slot.test/' > "$self_dir/state/mounts"
     sftp_output="$self_dir/sftp.output"
     if printf '%s\n%s\n' "$fake_secret" "$fake_secret" | env "${child_env[@]}" \
-        FAKE_GIO_FAIL_CAT_ALPHA=1 FLEA_NETWORK_TEST_CASE=premounted-sftp \
+        FAKE_GIO_FAIL_CAT_ALPHA=1 BACHY_NETWORK_TEST_CASE=premounted-sftp \
         ./tests/network-live.sh tester slot.test unraid.test > "$sftp_output" 2>&1; then
         sftp_status=0
     else
@@ -189,8 +189,8 @@ EOS
     failure_id=$((run_id + 1))
     cleanup_output="$self_dir/cleanup.output"
     if printf '%s\n%s\n' "$fake_secret" "$fake_secret" | env "${child_env[@]}" \
-        FLEA_NETWORK_TEST_CASE_ID="$failure_id" FAKE_GIO_FAIL_LIST=1 \
-        FLEA_NETWORK_TEST_CASE=webdav-failure ./tests/network-live.sh tester slot.test unraid.test \
+        BACHY_NETWORK_TEST_CASE_ID="$failure_id" FAKE_GIO_FAIL_LIST=1 \
+        BACHY_NETWORK_TEST_CASE=webdav-failure ./tests/network-live.sh tester slot.test unraid.test \
         > "$cleanup_output" 2>&1; then
         cleanup_status=0
     else
@@ -199,8 +199,8 @@ EOS
     [[ "$cleanup_status" -ne 0 ]] || self_fail "failed fallback returned zero"
     grep -Fq 'network-live: FAIL cleanup did not remove owned test state' "$cleanup_output" \
         || self_fail "failed fallback was not surfaced"
-    cleanup_dir="$self_dir/remote/home42/tester/000-flea-network-test-webdav-$failure_id"
-    [[ -f "$cleanup_dir/.flea-test-sandbox" ]] \
+    cleanup_dir="$self_dir/remote/home42/tester/000-bachy-network-test-webdav-$failure_id"
+    [[ -f "$cleanup_dir/.bachy-test-sandbox" ]] \
         || self_fail "failed fallback did not preserve marker"
     [[ ! -s "$self_dir/state/mounts" ]] || self_fail "failed fallback left a mount"
     ! grep -Fq -- "$fake_secret" "$cleanup_output" \
@@ -211,8 +211,8 @@ EOS
     inaccessible_id=$((run_id + 2))
     inaccessible_output="$self_dir/inaccessible.output"
     if printf '%s\n%s\n' "$fake_secret" "$fake_secret" | env "${child_env[@]}" \
-        FLEA_NETWORK_TEST_CASE_ID="$inaccessible_id" FAKE_GIO_FAIL_INFO_AFTER_ALPHA=1 \
-        FAKE_GIO_FAIL_CAT_ALPHA=1 FLEA_NETWORK_TEST_CASE=post-marker-sftp \
+        BACHY_NETWORK_TEST_CASE_ID="$inaccessible_id" FAKE_GIO_FAIL_INFO_AFTER_ALPHA=1 \
+        FAKE_GIO_FAIL_CAT_ALPHA=1 BACHY_NETWORK_TEST_CASE=post-marker-sftp \
         ./tests/network-live.sh tester slot.test unraid.test > "$inaccessible_output" 2>&1; then
         inaccessible_status=0
     else
@@ -221,8 +221,8 @@ EOS
     [[ "$inaccessible_status" -ne 0 ]] || self_fail "inaccessible marker-owned SFTP returned zero"
     grep -Fq 'network-live: FAIL cleanup did not remove owned test state' "$inaccessible_output" \
         || self_fail "inaccessible marker-owned SFTP was not surfaced"
-    inaccessible_dir="$self_dir/remote/home42/tester/000-flea-network-test-sftp-$inaccessible_id"
-    [[ -f "$inaccessible_dir/.flea-test-sandbox" ]] \
+    inaccessible_dir="$self_dir/remote/home42/tester/000-bachy-network-test-sftp-$inaccessible_id"
+    [[ -f "$inaccessible_dir/.bachy-test-sandbox" ]] \
         || self_fail "inaccessible marker-owned SFTP lost its marker"
     [[ ! -s "$self_dir/state/mounts" ]] || self_fail "inaccessible marker-owned SFTP left a mount"
     ! grep -Fq -- "$fake_secret" "$inaccessible_output" \
@@ -233,18 +233,18 @@ EOS
     ui_failure_id=$((run_id + 3))
     ui_failure_output="$self_dir/ui-failure.output"
     if printf '%s\n%s\n' "$fake_secret" "$fake_secret" | env "${child_env[@]}" \
-        FLEA_NETWORK_TEST_CASE_ID="$ui_failure_id" FLEA_NETWORK_TEST_CASE=sftp-ui-failure \
+        BACHY_NETWORK_TEST_CASE_ID="$ui_failure_id" BACHY_NETWORK_TEST_CASE=sftp-ui-failure \
         ./tests/network-live.sh tester slot.test unraid.test > "$ui_failure_output" 2>&1; then
         ui_failure_status=0
     else
         ui_failure_status=$?
     fi
     [[ "$ui_failure_status" -ne 0 ]] || self_fail "SFTP UI failure hook returned zero"
-    grep -Fq 'network-live: FAIL SFTP Flea UI' "$ui_failure_output" \
+    grep -Fq 'network-live: FAIL SFTP Bachy UI' "$ui_failure_output" \
         || self_fail "SFTP UI failure hook did not run"
     ! grep -Fq 'network-live: FAIL cleanup did not remove owned test state' "$ui_failure_output" \
         || self_fail "SFTP UI failure did not remount for cleanup"
-    ui_failure_dir="$self_dir/remote/home42/tester/000-flea-network-test-sftp-$ui_failure_id"
+    ui_failure_dir="$self_dir/remote/home42/tester/000-bachy-network-test-sftp-$ui_failure_id"
     [[ ! -e "$ui_failure_dir" ]] || self_fail "SFTP UI failure left $ui_failure_dir"
     [[ ! -s "$self_dir/state/mounts" ]] || self_fail "SFTP UI failure left a mount"
     ! grep -Fq -- "$fake_secret" "$ui_failure_output" \
@@ -268,7 +268,7 @@ refuse() {
     exit 1
 }
 
-[[ "${FLEA_NETWORK_LIVE:-}" == "1" ]] || fail "set FLEA_NETWORK_LIVE=1"
+[[ "${BACHY_NETWORK_LIVE:-}" == "1" ]] || fail "set BACHY_NETWORK_LIVE=1"
 [[ "$#" -eq 3 ]] || fail "usage: network-live.sh USER ULTRA_HOST UNRAID_HOST"
 slot_user=$1
 slot_host=$2
@@ -276,8 +276,8 @@ unraid_host=$3
 [[ "$slot_user" =~ ^[A-Za-z0-9._-]+$ ]] || fail "invalid Ultra username"
 [[ "$slot_host" =~ ^[A-Za-z0-9._-]+$ ]] || fail "invalid Ultra host"
 [[ "$unraid_host" =~ ^[A-Za-z0-9._-]+$ ]] || fail "invalid Unraid host"
-flea_bin=${FLEA_BIN:-./target/debug/flea}
-[[ -x "$flea_bin" ]] || fail "build Flea before live network tests"
+bachy_bin=${BACHY_BIN:-./target/debug/bachy}
+[[ -x "$bachy_bin" ]] || fail "build Bachy before live network tests"
 IFS= read -r slot_password || fail "missing Ultra slot password on stdin"
 IFS= read -r webdav_password || fail "missing Ultra WebDAV password on stdin"
 [[ -n "$slot_password" && -n "$webdav_password" ]] || fail "empty network credential"
@@ -295,7 +295,7 @@ cleanup_case() {
         cleanup_token=$case_token
     elif [[ "$case_marker_owned" -eq 1 && -n "$case_uri" && -n "$case_token" ]]; then
         if gio info "$case_uri" >/dev/null 2>&1; then
-            marker=$(gio cat "$case_uri/.flea-test-sandbox" 2>/dev/null) \
+            marker=$(gio cat "$case_uri/.bachy-test-sandbox" 2>/dev/null) \
                 || cleanup_status=1
             if [[ "$marker" == "$case_token" ]]; then
                 for name in renamed.txt beta.txt alpha.txt; do
@@ -307,7 +307,7 @@ cleanup_case() {
                     gio remove "$case_uri/subdir" >/dev/null 2>&1 || cleanup_status=1
                 fi
                 if [[ "$cleanup_status" -eq 0 ]]; then
-                    gio remove "$case_uri/.flea-test-sandbox" >/dev/null 2>&1 || cleanup_status=1
+                    gio remove "$case_uri/.bachy-test-sandbox" >/dev/null 2>&1 || cleanup_status=1
                 fi
                 if [[ "$cleanup_status" -eq 0 ]]; then
                     gio remove "$case_uri" >/dev/null 2>&1 || cleanup_status=1
@@ -378,7 +378,7 @@ mount_with() {
     case "$mode" in
     anonymous) timeout 30 gio mount --anonymous "$uri" >/dev/null 2>&1 ;;
     none) timeout 30 gio mount "$uri" >/dev/null 2>&1 ;;
-    password) printf '%s\n' "$password" | FLEA_GIO_AUTH_TIMEOUT=30 ./tools/flea-gio-auth "$uri" ;;
+    password) printf '%s\n' "$password" | BACHY_GIO_AUTH_TIMEOUT=30 ./tools/bachy-gio-auth "$uri" ;;
     *) return 2 ;;
     esac
 }
@@ -409,7 +409,7 @@ cleanup_webdav_over_sftp() (
         exit "$cleanup_status"
     }
     trap cleanup_mount EXIT
-    [[ "$test_dir" =~ ^000-flea-network-test-webdav-[0-9]+$ ]] || return 1
+    [[ "$test_dir" =~ ^000-bachy-network-test-webdav-[0-9]+$ ]] || return 1
     uri="sftp://$slot_user@$slot_host/"
     require_uri_unmounted "$uri" "WebDAV cleanup"
     mount_with password "$uri" "$slot_password" || { printf 'network-live: cleanup stage=mount failed\n' >&2; return 1; }
@@ -419,9 +419,9 @@ cleanup_webdav_over_sftp() (
     home_dir=$(ultra_home_dir "$uri") || { printf 'network-live: cleanup stage=home failed\n' >&2; return 1; }
     target="$local_path/$home_dir/$slot_user/$test_dir"
     [[ -e "$target" ]] || return 0
-    [[ -f "$target/.flea-test-sandbox" ]] \
+    [[ -f "$target/.bachy-test-sandbox" ]] \
         || { printf 'network-live: cleanup stage=marker-missing failed\n' >&2; return 1; }
-    marker=$(<"$target/.flea-test-sandbox")
+    marker=$(<"$target/.bachy-test-sandbox")
     [[ "$marker" == "$token" ]] \
         || { printf 'network-live: cleanup stage=marker-mismatch failed\n' >&2; return 1; }
     rm -f "$target/renamed.txt" "$target/beta.txt" "$target/alpha.txt" \
@@ -430,7 +430,7 @@ cleanup_webdav_over_sftp() (
         rmdir "$target/subdir" \
             || { printf 'network-live: cleanup stage=subdir failed\n' >&2; return 1; }
     fi
-    rm -f "$target/.flea-test-sandbox" \
+    rm -f "$target/.bachy-test-sandbox" \
         || { printf 'network-live: cleanup stage=marker failed\n' >&2; return 1; }
     rmdir "$target" || { printf 'network-live: cleanup stage=rmdir failed\n' >&2; return 1; }
 )
@@ -447,8 +447,8 @@ run_case() {
     mounted_uri=$uri
 
     local_path=$(gio info "$uri" 2>/dev/null | sed -n 's/^local path: //p')
-    if [[ -n "${FLEA_NETWORK_SELF_TEST_CHILD:-}" ]]; then
-        [[ "$local_path" == "${FLEA_NETWORK_TEST_GVFS_ROOT:?}/"* && -d "$local_path" ]] \
+    if [[ -n "${BACHY_NETWORK_SELF_TEST_CHILD:-}" ]]; then
+        [[ "$local_path" == "${BACHY_NETWORK_TEST_GVFS_ROOT:?}/"* && -d "$local_path" ]] \
             || fail "$protocol has no self-test FUSE path"
     else
         [[ "$local_path" == "/run/user/$(id -u)/gvfs/"* && -d "$local_path" ]] \
@@ -469,22 +469,22 @@ run_case() {
         product_root=$work_path
     fi
 
-    case_id=${FLEA_NETWORK_TEST_CASE_ID:-$$}
+    case_id=${BACHY_NETWORK_TEST_CASE_ID:-$$}
     [[ "$case_id" =~ ^[0-9]+$ ]] || fail "$protocol invalid test case ID"
-    test_dir="000-flea-network-test-${protocol,,}-$case_id"
+    test_dir="000-bachy-network-test-${protocol,,}-$case_id"
     case_uri="$work_uri/$test_dir"
     case_path="$work_path/$test_dir"
     ! gio info "$case_uri" >/dev/null 2>&1 || fail "$protocol sandbox already exists"
-    case_token="flea-network-live-${protocol,,}-$case_id"
-    content="flea-${protocol,,}-roundtrip-$case_id"
+    case_token="bachy-network-live-${protocol,,}-$case_id"
+    content="bachy-${protocol,,}-roundtrip-$case_id"
 
     gio mkdir "$case_uri" >/dev/null || fail "$protocol sandbox mkdir"
-    printf '%s\n' "$case_token" | gio save -c "$case_uri/.flea-test-sandbox" >/dev/null \
+    printf '%s\n' "$case_token" | gio save -c "$case_uri/.bachy-test-sandbox" >/dev/null \
         || fail "$protocol marker write"
     case_marker_owned=1
     printf '%s\n' "$content" | gio save -c "$case_uri/alpha.txt" >/dev/null \
         || fail "$protocol write"
-    if [[ "$protocol" == WebDAV && "${FLEA_NETWORK_TEST_CASE:-}" == webdav-failure ]]; then
+    if [[ "$protocol" == WebDAV && "${BACHY_NETWORK_TEST_CASE:-}" == webdav-failure ]]; then
         fail "$protocol intentional failure after marker"
     fi
     [[ "$(gio cat "$case_uri/alpha.txt")" == "$content" ]] || fail "$protocol read"
@@ -505,22 +505,22 @@ run_case() {
             form_host=$authority
         fi
         ui_env=(
-            "FLEA_BIN=$flea_bin"
-            "FLEA_GIO_AUTH=$PWD/tools/flea-gio-auth"
-            "FLEA_NETWORK_LIVE_URI=$product_uri"
-            "FLEA_NETWORK_LIVE_MOUNT_URI=$uri"
-            "FLEA_NETWORK_LIVE_ROOT=$product_root"
-            "FLEA_NETWORK_LIVE_RELATIVE=${case_path#"$product_root"/}"
-            "FLEA_NETWORK_LIVE_MOUNT_RELATIVE=${case_path#"$local_path"/}"
-            "FLEA_NETWORK_LIVE_PROTOCOL=$protocol"
-            "FLEA_NETWORK_LIVE_HOST=$form_host"
-            "FLEA_NETWORK_LIVE_PATH=$form_path"
-            "FLEA_NETWORK_LIVE_USER=$form_user"
-            "FLEA_NETWORK_LIVE_AUTH=$([[ "$mode" == password ]] && printf password || printf none)"
+            "BACHY_BIN=$bachy_bin"
+            "BACHY_GIO_AUTH=$PWD/tools/bachy-gio-auth"
+            "BACHY_NETWORK_LIVE_URI=$product_uri"
+            "BACHY_NETWORK_LIVE_MOUNT_URI=$uri"
+            "BACHY_NETWORK_LIVE_ROOT=$product_root"
+            "BACHY_NETWORK_LIVE_RELATIVE=${case_path#"$product_root"/}"
+            "BACHY_NETWORK_LIVE_MOUNT_RELATIVE=${case_path#"$local_path"/}"
+            "BACHY_NETWORK_LIVE_PROTOCOL=$protocol"
+            "BACHY_NETWORK_LIVE_HOST=$form_host"
+            "BACHY_NETWORK_LIVE_PATH=$form_path"
+            "BACHY_NETWORK_LIVE_USER=$form_user"
+            "BACHY_NETWORK_LIVE_AUTH=$([[ "$mode" == password ]] && printf password || printf none)"
         )
         mounted_uri=$uri
         ui_status=0
-        if [[ -n "${FLEA_NETWORK_SELF_TEST_CHILD:-}" && "${FLEA_NETWORK_TEST_CASE:-}" == sftp-ui-failure ]]; then
+        if [[ -n "${BACHY_NETWORK_SELF_TEST_CHILD:-}" && "${BACHY_NETWORK_TEST_CASE:-}" == sftp-ui-failure ]]; then
             ui_status=1
         elif [[ "$mode" == password ]]; then
             printf '%s' "$password" | env "${ui_env[@]}" ./tests/ui.sh networklive || ui_status=$?
@@ -532,13 +532,13 @@ run_case() {
                 :
             else
                 mount_status=$?
-                [[ "$mount_status" -eq 1 ]] || fail "$protocol cannot inspect mount after Flea UI failure"
-                mount_with "$mode" "$uri" "$password" || fail "$protocol cleanup remount after Flea UI failure"
+                [[ "$mount_status" -eq 1 ]] || fail "$protocol cannot inspect mount after Bachy UI failure"
+                mount_with "$mode" "$uri" "$password" || fail "$protocol cleanup remount after Bachy UI failure"
             fi
-            fail "$protocol Flea UI"
+            fail "$protocol Bachy UI"
         fi
         mounted_uri=""
-        mount_with "$mode" "$uri" "$password" || fail "$protocol remount after Flea UI"
+        mount_with "$mode" "$uri" "$password" || fail "$protocol remount after Bachy UI"
         mounted_uri=$uri
         local_path=$(gio info "$uri" 2>/dev/null | sed -n 's/^local path: //p')
         if [[ "$resolver" == "ultra-home" ]]; then
@@ -547,7 +547,7 @@ run_case() {
             work_path=$local_path
         fi
         case_path="$work_path/$test_dir"
-        [[ -f "$case_path/alpha.txt" ]] || fail "$protocol file absent after Flea UI"
+        [[ -f "$case_path/alpha.txt" ]] || fail "$protocol file absent after Bachy UI"
     elif [[ "$ui_mode" == skip ]]; then
         printf 'network-live: %s focused ui=skipped; full UI remains B3/V2\n' "$protocol"
     else
@@ -560,11 +560,11 @@ run_case() {
         "{\"c\":\"rename\",\"path\":\"$case_path/beta.txt\",\"to\":\"renamed.txt\"}" \
         '{"c":"undo"}' \
         "{\"c\":\"rename\",\"path\":\"$case_path/beta.txt\",\"to\":\"renamed.txt\"}" \
-        '{"c":"quit"}' | "$flea_bin" --backend 2>/dev/null)
+        '{"c":"quit"}' | "$bachy_bin" --backend 2>/dev/null)
     [[ "$(grep -c '"t":"renamed","ok":true' <<< "$backend_output")" -eq 2 ]] \
-        || fail "$protocol Flea rename"
+        || fail "$protocol Bachy rename"
     [[ "$(grep -c '"t":"undone","op":"rename","ok":true' <<< "$backend_output")" -eq 1 ]] \
-        || fail "$protocol Flea rename undo"
+        || fail "$protocol Bachy rename undo"
     [[ -f "$case_path/renamed.txt" && ! -e "$case_path/beta.txt" ]] || fail "$protocol renamed state"
     rmdir_mode=fuse
     if [[ "$protocol" != "WebDAV" ]]; then
@@ -580,7 +580,7 @@ run_case() {
         mounted_uri=""
         cleanup_webdav_over_sftp "$test_dir" "$case_token" || fail "$protocol SFTP cleanup"
     else
-        gio remove "$case_uri/.flea-test-sandbox" >/dev/null || fail "$protocol marker delete"
+        gio remove "$case_uri/.bachy-test-sandbox" >/dev/null || fail "$protocol marker delete"
         gio remove "$case_uri" >/dev/null || fail "$protocol sandbox rmdir"
     fi
     case_marker_owned=0
@@ -616,17 +616,17 @@ expect_mount_failure() {
     printf 'network-live: %s rejected=ok\n' "$label"
 }
 
-if [[ -n "${FLEA_NETWORK_CLEAN_WEBDAV_DIR:-}" ]]; then
-    cleanup_webdav_over_sftp "$FLEA_NETWORK_CLEAN_WEBDAV_DIR" \
-        "flea-network-live-webdav-${FLEA_NETWORK_CLEAN_WEBDAV_DIR##*-}" \
+if [[ -n "${BACHY_NETWORK_CLEAN_WEBDAV_DIR:-}" ]]; then
+    cleanup_webdav_over_sftp "$BACHY_NETWORK_CLEAN_WEBDAV_DIR" \
+        "bachy-network-live-webdav-${BACHY_NETWORK_CLEAN_WEBDAV_DIR##*-}" \
         || fail "WebDAV recovery cleanup"
     printf 'network-live: WebDAV recovery cleanup=ok\n'
     exit 0
 fi
 
-live_case=${FLEA_NETWORK_LIVE_CASE:-}
+live_case=${BACHY_NETWORK_LIVE_CASE:-}
 [[ -z "$live_case" || "$live_case" == ftps ]] || fail "unknown live network case"
-selected_case=${live_case:-${FLEA_NETWORK_TEST_CASE:-}}
+selected_case=${live_case:-${BACHY_NETWORK_TEST_CASE:-}}
 case "$selected_case" in
 ftps)
     run_case FTPS "ftps://$slot_user@$slot_host/" password "$slot_password" root
@@ -656,8 +656,8 @@ esac
 if [[ -z "$selected_case" ]]; then
     expect_mount_failure FTP-plaintext "ftp://$slot_user@$slot_host/" password "$slot_password"
     expect_mount_failure WebDAV-plaintext "dav://$slot_user@$slot_user.$slot_host/webdav" password "$webdav_password"
-    expect_mount_failure WebDAV-wrong-password "davs://$slot_user@$slot_user.$slot_host/webdav" password "flea-known-wrong-password"
-    expect_mount_failure unreachable "smb://198.51.100.1/flea-unreachable" anonymous ""
+    expect_mount_failure WebDAV-wrong-password "davs://$slot_user@$slot_user.$slot_host/webdav" password "bachy-known-wrong-password"
+    expect_mount_failure unreachable "smb://198.51.100.1/bachy-unreachable" anonymous ""
 fi
 
 slot_password=""

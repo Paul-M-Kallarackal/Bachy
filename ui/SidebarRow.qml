@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Commons
 import "js/Format.js" as Format
 
 // One rail row, shared by the Favorites, Network and Devices groups so the three read alike; see

@@ -4,7 +4,7 @@
 set -u
 set -o pipefail
 # Hard rule 9's guard, which owns FIXTURE_ROOT and every create and delete this suite makes.
-. "$(dirname "$0")/../tools/flea-sandbox-guard"
+. "$(dirname "$0")/../tools/bachy-sandbox-guard"
 
 fail() {
     printf 'FAIL: %s\n' "$*" >&2
@@ -37,8 +37,8 @@ fi
 [[ -n "$QT_QPA_PLATFORMTHEME" ]] || fail "no session, and no running client, published QT_QPA_PLATFORMTHEME, so every row would draw no icon at all"
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-flea_ui="$repo/ui"
-flea_bin="${FLEA_BIN:-$repo/target/release/flea}"
+bachy_ui="$repo/ui"
+bachy_bin="${BACHY_BIN:-$repo/target/release/bachy}"
 # Sample input: let finished = Command::new("gio")
 # Every opener stub below is named from the product's own exec target, the same derivation
 # tests/modes.sh makes: a stub named by hand goes stale the day the target is renamed, and the run
@@ -53,22 +53,22 @@ open_handoff=$(handoff_in "$repo/src/open.rs")
 case "$open_handoff" in
     ''|*[!a-z0-9-]*) fail "src/open.rs must name exactly one handoff; got '$open_handoff'" ;;
 esac
-bench_dir="${FLEA_BENCH_DIR:-$FIXTURE_ROOT/flea-bench-btrfs}"
+bench_dir="${BACHY_BENCH_DIR:-$FIXTURE_ROOT/bachy-bench-btrfs}"
 # Every root sits under the fixture root and takes no override, because a root the environment can
 # replace is a root nothing checks: these four are deleted whole on every exit path.
-fixture_root="$FIXTURE_ROOT/flea-ui-fixtures-$$"
+fixture_root="$FIXTURE_ROOT/bachy-ui-fixtures-$$"
 # Hard links need the media fixture's filesystem, and the pid keeps a previous run's cache entries out of this delta.
-thumb_fixture="$FIXTURE_ROOT/flea-ui-thumbs-$$"
+thumb_fixture="$FIXTURE_ROOT/bachy-ui-thumbs-$$"
 # Its own tree because case_hashcache redirects the whole cache root into it.
-hash_fixture="$FIXTURE_ROOT/flea-ui-hash-$$"
+hash_fixture="$FIXTURE_ROOT/bachy-ui-hash-$$"
 # Its own tree again, because case_stale redirects the cache root as well and regenerates an entry inside it.
-stale_fixture="$FIXTURE_ROOT/flea-ui-stale-$$"
+stale_fixture="$FIXTURE_ROOT/bachy-ui-stale-$$"
 thumb_rows=200
 # A settle is 120 ms and a round trip through the pool is tens of ms, so a screen has a second.
 thumb_fill_s=20
 # 1500 detents are 432,000 px at this box's 288 px notch: past the end of the two 200-row cases (thumbs, renamelife) many times over, and about 11,700 of nosweep's 100,000 rows.
 fling_clicks=1500
-# 15 shots 0.2 s apart span one 2800 ms replay of ui/FleaMark.qml's draw, whose mark is lit from about 0.4 s to 2.8 s of it.
+# 15 shots 0.2 s apart span one 2800 ms replay of ui/BachyMark.qml's draw, whose mark is lit from about 0.4 s to 2.8 s of it.
 mark_poll_shots=15
 mark_poll_s=0.2
 # The backend's own DRAIN_LIMIT is 25 s, so anything alive past this is wedged rather than draining.
@@ -76,12 +76,12 @@ drain_wait_s=30
 # Hard rule 9 covers writes, not only deletes: an overridable path that is truncated or written into
 # is the same hazard as one that is deleted, so both of these are pinned rather than taken from the
 # environment. Neither override had a caller.
-run_root=$(mktemp -d /tmp/flea-ui-run.XXXXXXXX) || fail "cannot create native evidence sandbox"
-printf 'flea native evidence\n' > "$run_root/.flea-test-sandbox"
-export FLEA_TEST_RUN_ROOT="$run_root"
+run_root=$(mktemp -d /tmp/bachy-ui-run.XXXXXXXX) || fail "cannot create native evidence sandbox"
+printf 'bachy native evidence\n' > "$run_root/.bachy-test-sandbox"
+export BACHY_TEST_RUN_ROOT="$run_root"
 evidence_dir="$run_root/evidence"
 # Quickshell truncates nothing, so each case gets a fresh log and every log lands in the run log.
-flea_log="$run_root/flea.log"
+bachy_log="$run_root/bachy.log"
 run_log="$run_root/run.log"
 # One case's own output, re-read for the refusal check rather than piped. Pid-scoped like every
 # fixture root here, because two runs sharing it would read each other's output, and truncated before
@@ -130,37 +130,37 @@ stale_mtime_back_s=86400
 preview_play_wait_s=5
 
 ipc() {
-    omarchy-drive ipc -p "$flea_ui/boot" flea "$@"
+    omarchy-drive ipc -p "$bachy_ui/boot" bachy "$@"
 }
 
 # Window class used by every preflight, focus check and injected keystroke.
-flea_window_class=com.thisisgm.flea
+bachy_window_class=local.bachy.FileManager
 
 settle() {
     sleep "$settle_s"
 }
 
-flea_pids() {
+bachy_pids() {
     local pid pids process result=0
     pids=$(pgrep -x qs) || result=$?
     (( result <= 1 )) || return "$result"
     for pid in $pids; do
-        process=$(flea_process_dir "$pid") || return 3
+        process=$(bachy_process_dir "$pid") || return 3
         [[ -r "$process/cmdline" ]] || continue
         # Redirections apply left to right, so the silencer has to precede the read it is silencing.
-        if tr '\0' ' ' 2>/dev/null < "$process/cmdline" | grep -Fq "$flea_ui"; then
+        if tr '\0' ' ' 2>/dev/null < "$process/cmdline" | grep -Fq "$bachy_ui"; then
             printf '%s\n' "$pid"
         fi
     done
 }
 
-flea_process_dir() { printf '/proc/%s\n' "$1"; }
+bachy_process_dir() { printf '/proc/%s\n' "$1"; }
 
 # Return 0 for this run, 1 for foreign, 2 for vanished, and 3 when a live process cannot be inspected.
-flea_process_owned() {
+bachy_process_owned() {
     local process environment
     [[ "$1" =~ ^[0-9]+$ ]] || return 1
-    process=$(flea_process_dir "$1") || return 3
+    process=$(bachy_process_dir "$1") || return 3
     [[ -d "$process" ]] || return 2
     [[ -O "$process" ]] || return 1
     # The environ of a process this run started is unreadable for the moment it spends in exec and
@@ -174,33 +174,33 @@ flea_process_owned() {
         sleep 0.05
     done
     (( read )) || return 3
-    grep -Fx "FLEA_TEST_RUN_ROOT=$run_root" <<< "$environment" >/dev/null
+    grep -Fx "BACHY_TEST_RUN_ROOT=$run_root" <<< "$environment" >/dev/null
 }
 
-# Any Flea from this checkout that we did not start, captured once before anything is killed. The
-# operator works at this box, and flea_pids cannot tell their window from ours: both match "$flea_ui".
-foreign_pids=$(flea_pids | tr '\n' ' ') || fail "cannot enumerate native windows before launch"
+# Any Bachy from this checkout that we did not start, captured once before anything is killed. The
+# operator works at this box, and bachy_pids cannot tell their window from ours: both match "$bachy_ui".
+foreign_pids=$(bachy_pids | tr '\n' ' ') || fail "cannot enumerate native windows before launch"
 if [[ -n "${foreign_pids// /}" ]]; then
-    printf 'REFUSED a Flea from %s is already running (pid%s %s)\n' \
-        "$flea_ui" "$( [[ $(wc -w <<< "$foreign_pids") -gt 1 ]] && printf s )" "${foreign_pids% }"
-    printf 'REFUSED this suite kills every Flea it finds, so it will not run beside one it did not start.\n'
+    printf 'REFUSED a Bachy from %s is already running (pid%s %s)\n' \
+        "$bachy_ui" "$( [[ $(wc -w <<< "$foreign_pids") -gt 1 ]] && printf s )" "${foreign_pids% }"
+    printf 'REFUSED this suite kills every Bachy it finds, so it will not run beside one it did not start.\n'
     printf 'REFUSED close it, or run the suite against a git archive export at another path.\n'
     exit 1
 fi
 
-# A packaged Flea uses another UI path, but still makes every title/class-based drive ambiguous.
+# A packaged Bachy uses another UI path, but still makes every title/class-based drive ambiguous.
 windows_status=0
 windows_json=$(omarchy-drive --json windows) || windows_status=$?
 [[ "$windows_status" -eq 0 ]] \
     || fail "omarchy-drive windows failed with status $windows_status, so foreign-window state is unknown"
-foreign_window_count=$(jq -er --arg class "$flea_window_class" \
+foreign_window_count=$(jq -er --arg class "$bachy_window_class" \
     'select(.ok == true and (.windows | type == "array")) | [.windows[] | select(.class == $class)] | length' \
     <<< "$windows_json") \
     || fail "omarchy-drive windows returned an invalid payload, so foreign-window state is unknown"
 if [[ "$foreign_window_count" -ne 0 ]]; then
-    printf 'REFUSED %s Flea window%s already open outside this suite.\n' \
+    printf 'REFUSED %s Bachy window%s already open outside this suite.\n' \
         "$foreign_window_count" "$( [[ "$foreign_window_count" -ne 1 ]] && printf s )"
-    printf 'REFUSED close every Flea window before running pointer-driven tests.\n'
+    printf 'REFUSED close every Bachy window before running pointer-driven tests.\n'
     exit 1
 fi
 unset foreign_window_count windows_json windows_status
@@ -208,25 +208,25 @@ unset foreign_window_count windows_json windows_status
 # The backend outlives the qs that spawned it, and only its own drain may publish or remove its temps.
 backend_pids() {
     local pid pids process result=0
-    pids=$(pgrep -x flea) || result=$?
+    pids=$(pgrep -x bachy) || result=$?
     (( result <= 1 )) || return "$result"
     for pid in $pids; do
-        process=$(flea_process_dir "$pid") || return 3
+        process=$(bachy_process_dir "$pid") || return 3
         [[ -r "$process/cmdline" ]] || continue
-        if tr '\0' ' ' 2>/dev/null < "$process/cmdline" | grep -Fq -- "$flea_bin --backend"; then
-            if flea_process_owned "$pid"; then printf '%s\n' "$pid"
+        if tr '\0' ' ' 2>/dev/null < "$process/cmdline" | grep -Fq -- "$bachy_bin --backend"; then
+            if bachy_process_owned "$pid"; then printf '%s\n' "$pid"
             else result=$?; (( result != 3 )) || return 3; fi
         fi
     done
 }
 
-flea_pid() {
+bachy_pid() {
     local found
     local -a pids
-    found=$(flea_pids) || fail "cannot enumerate native window processes"
+    found=$(bachy_pids) || fail "cannot enumerate native window processes"
     pids=()
     [[ -z "$found" ]] || mapfile -t pids <<< "$found"
-    [[ ${#pids[@]} -eq 1 ]] || fail "expected one exact Flea qs pid, got ${#pids[@]}"
+    [[ ${#pids[@]} -eq 1 ]] || fail "expected one exact Bachy qs pid, got ${#pids[@]}"
     printf '%s\n' "${pids[0]}"
 }
 
@@ -235,10 +235,10 @@ owned_trash_monitors() {
     pids=$(pgrep -x gio) || result=$?
     (( result <= 1 )) || return "$result"
     for pid in $pids; do
-        process=$(flea_process_dir "$pid") || return 3
-        if flea_process_owned "$pid"; then
-            if tr '\0' '\n' < "$process/environ" | grep -Fx "FLEA_BIN=$flea_bin" >/dev/null \
-                && tr '\0' '\n' < "$process/environ" | grep -F "FLEA_PATH=$fixture_root/" >/dev/null; then
+        process=$(bachy_process_dir "$pid") || return 3
+        if bachy_process_owned "$pid"; then
+            if tr '\0' '\n' < "$process/environ" | grep -Fx "BACHY_BIN=$bachy_bin" >/dev/null \
+                && tr '\0' '\n' < "$process/environ" | grep -F "BACHY_PATH=$fixture_root/" >/dev/null; then
                 printf '%s\n' "$pid"
             fi
         else
@@ -248,15 +248,15 @@ owned_trash_monitors() {
     done
 }
 
-kill_flea() {
+kill_bachy() {
     local pid pids found waited ownership deadline=$((SECONDS + drain_wait_s))
-    [[ "$run_root" == /* && -f "$run_root/.flea-test-sandbox" ]] || fail "native process ownership root is missing"
-    pids=$(flea_pids) || fail "cannot enumerate native windows for teardown"
+    [[ "$run_root" == /* && -f "$run_root/.bachy-test-sandbox" ]] || fail "native process ownership root is missing"
+    pids=$(bachy_pids) || fail "cannot enumerate native windows for teardown"
     for pid in $pids; do
         [[ " $foreign_pids " == *" $pid "* ]] && continue
-        if flea_process_owned "$pid"; then
+        if bachy_process_owned "$pid"; then
             kill "$pid" || {
-                [[ ! -d "$(flea_process_dir "$pid")" ]] || fail "could not stop owned native window $pid"
+                [[ ! -d "$(bachy_process_dir "$pid")" ]] || fail "could not stop owned native window $pid"
             }
         else
             ownership=$?
@@ -265,10 +265,10 @@ kill_flea() {
     done
     while :; do
         found=0
-        pids=$(flea_pids) || fail "cannot enumerate native windows while draining"
+        pids=$(bachy_pids) || fail "cannot enumerate native windows while draining"
         for pid in $pids; do
             [[ " $foreign_pids " == *" $pid "* ]] && continue
-            if flea_process_owned "$pid"; then found=1
+            if bachy_process_owned "$pid"; then found=1
             else
                 ownership=$?
                 (( ownership == 2 )) || fail "refusing to drain unowned or unreadable native window $pid"
@@ -300,7 +300,7 @@ sandbox_make "$stale_fixture"
 
 cleanup() {
     # fail is an exit that || true cannot catch, so the reap runs in a subshell and its status is re-raised below.
-    if ! ( kill_flea ); then
+    if ! ( kill_bachy ); then
         printf 'FAIL drain at exit; active fixture roots kept: %s\n' "$fixture_root" >&2
         exit 1
     fi
@@ -342,14 +342,14 @@ focused_class() {
 assert_focus() {
     local seen
     seen=$(focused_class || true)
-    [[ "$seen" == "$flea_window_class" ]] \
-        || fail "focus is on class '$seen', not $flea_window_class, so this case sends no more keys"
+    [[ "$seen" == "$bachy_window_class" ]] \
+        || fail "focus is on class '$seen', not $bachy_window_class, so this case sends no more keys"
 }
 
 # Every keystroke goes through here, because a rule each case has to remember is not a gate.
 key() {
     assert_focus
-    omarchy-drive key --window flea "$@"
+    omarchy-drive key --window bachy "$@"
 }
 
 hotkey() {
@@ -403,22 +403,22 @@ fixture_home_make() {
 
 assert_window() {
     local count class
-    count=$(omarchy-drive windows --json | jq '[.windows[] | select(.title == "Flea")] | length')
-    [[ "$count" == "1" ]] || fail "expected one Flea window, got $count"
-    class=$(omarchy-drive windows --json | jq -r '.windows[] | select(.title == "Flea") | .class')
-    [[ "$class" == "$flea_window_class" ]] || fail "unexpected Flea class '$class'"
+    count=$(omarchy-drive windows --json | jq '[.windows[] | select(.title == "Bachy")] | length')
+    [[ "$count" == "1" ]] || fail "expected one Bachy window, got $count"
+    class=$(omarchy-drive windows --json | jq -r '.windows[] | select(.title == "Bachy") | .class')
+    [[ "$class" == "$bachy_window_class" ]] || fail "unexpected Bachy class '$class'"
     assert_theme
 }
 
-# The state a case needs the window to start from, written through flea --ui-state so the schema
+# The state a case needs the window to start from, written through bachy --ui-state so the schema
 # sees it too, into a state home inside the fixture root: hard rule 9 covers writes, so no case here
-# reaches the operator's own ~/.local/state/flea/ui.json. Exports it, because launch() below hands
+# reaches the operator's own ~/.local/state/bachy/ui.json. Exports it, because launch() below hands
 # the window whatever environment the case is holding.
 seed_ui_state() {
     local state="$1" patch="$2"
     sandbox_scratch "$state"
-    env XDG_STATE_HOME="$state" "$flea_bin" --ui-state "$patch" >/dev/null \
-        || fail "the seeding write through flea --ui-state failed for $patch"
+    env XDG_STATE_HOME="$state" "$bachy_bin" --ui-state "$patch" >/dev/null \
+        || fail "the seeding write through bachy --ui-state failed for $patch"
     export XDG_STATE_HOME="$state"
 }
 
@@ -431,15 +431,15 @@ menu_shipped='["delete","openTerminal","moveto","copyto","properties","permissio
 
 launch() {
     local start_path="$1"
-    kill_flea
-    cat "$flea_log" >> "$run_log" 2>/dev/null || true
-    : > "$flea_log"
-    FLEA_UI="$flea_ui" FLEA_BIN="$flea_bin" \
-        setsid nohup "$flea_bin" --gui "$start_path" >"$flea_log" 2>&1 </dev/null &
-    omarchy-drive wait window flea --timeout 15 >/dev/null
-    omarchy-drive focus flea >/dev/null
+    kill_bachy
+    cat "$bachy_log" >> "$run_log" 2>/dev/null || true
+    : > "$bachy_log"
+    BACHY_UI="$bachy_ui" BACHY_BIN="$bachy_bin" \
+        setsid nohup "$bachy_bin" --gui "$start_path" >"$bachy_log" 2>&1 </dev/null &
+    omarchy-drive wait window bachy --timeout 15 >/dev/null
+    omarchy-drive focus bachy >/dev/null
     assert_window
-    printf 'LAUNCH path=%q pid=%s\n' "$start_path" "$(flea_pid)"
+    printf 'LAUNCH path=%q pid=%s\n' "$start_path" "$(bachy_pid)"
 }
 
 wait_listing() {
@@ -468,12 +468,12 @@ wait_listing_wall() {
     local want_total="$1" timeout_s="${2:-20}" total=unavailable row=loading state=unavailable
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        total=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea total 2>/dev/null || printf unavailable)
+        total=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy total 2>/dev/null || printf unavailable)
         if [[ "$want_total" == 0 ]]; then
-            state=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea state 2>/dev/null || printf unavailable)
+            state=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy state 2>/dev/null || printf unavailable)
             [[ "$total" == 0 && "$state" == empty ]] && return 0
         else
-            row=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea rowAt 0 2>/dev/null || printf loading)
+            row=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy rowAt 0 2>/dev/null || printf loading)
             [[ "$total" == "$want_total" && "$row" != "loading" ]] && return 0
         fi
         sleep 0.05
@@ -485,7 +485,7 @@ wait_path_wall() {
     local want="$1" timeout_s="${2:-20}" seen=unavailable
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        seen=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea path 2>/dev/null || printf unavailable)
+        seen=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy path 2>/dev/null || printf unavailable)
         [[ "$seen" == "$want" ]] && return 0
         sleep 0.05
     done
@@ -496,9 +496,9 @@ find_row_wall() {
     local want="$1" timeout_s="${2:-20}" total=0 seen="" path=unavailable row
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        total=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea total 2>/dev/null || printf 0)
+        total=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy total 2>/dev/null || printf 0)
         for ((row = 0; row < total && $(date +%s%3N) < deadline; row++)); do
-            seen=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea rowAt "$row" 2>/dev/null || true)
+            seen=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy rowAt "$row" 2>/dev/null || true)
             if [[ "$seen" == "$want|"* ]]; then
                 printf '%s\n' "$row"
                 return 0
@@ -507,7 +507,7 @@ find_row_wall() {
         sleep 0.05
     done
     [[ "$total" =~ ^[0-9]+$ ]] || total=-1
-    path=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea path 2>/dev/null || printf unavailable)
+    path=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy path 2>/dev/null || printf unavailable)
     printf 'NETWORKLIVE traversal expected=%s total=%s path=%s\n' "$want" "$total" "$path" >&2
     return 1
 }
@@ -579,21 +579,21 @@ rail_row_of() {
     printf '%s' "$index"
 }
 
-# The Flea window is tiled here, so a pane coordinate needs its origin added before a click.
+# The Bachy window is tiled here, so a pane coordinate needs its origin added before a click.
 window_box() {
     local clients geometry pid expected wx wy width height
     # The driver's windows summary omits PID; native client IPC ties coordinates to this run.
     clients=$(hyprctl clients -j) || fail "cannot inspect native window ownership"
-    # hyprctl clients -j: [{"class":"com.thisisgm.flea","pid":123,"at":[12,42],"size":[880,620]}]
-    geometry=$(jq -er --arg class "$flea_window_class" '
+    # hyprctl clients -j: [{"class":"local.bachy.FileManager","pid":123,"at":[12,42],"size":[880,620]}]
+    geometry=$(jq -er --arg class "$bachy_window_class" '
         [.[] | select(.class == $class)] | select(length == 1) | .[0]
         | [.pid, .at[0], .at[1], .size[0], .size[1]]
         | select(all(.[]; type == "number" and . == floor))
         | select(.[0] > 0 and .[3] > 0 and .[4] > 0) | @tsv' <<< "$clients") \
-        || fail "expected exactly one native Flea window with valid geometry"
+        || fail "expected exactly one native Bachy window with valid geometry"
     read -r pid wx wy width height <<< "$geometry"
-    expected=$(flea_pid) || fail "cannot identify the owned native window"
-    [[ "$pid" == "$expected" ]] && flea_process_owned "$pid" \
+    expected=$(bachy_pid) || fail "cannot identify the owned native window"
+    [[ "$pid" == "$expected" ]] && bachy_process_owned "$pid" \
         || fail "refusing coordinates from unowned native window $pid"
     printf '%s %s %s %s\n' "$wx" "$wy" "$width" "$height"
 }
@@ -762,7 +762,7 @@ assert_invalid_network_port() {
     settle
     uri=$(ipc networkUri)
     dialog=$(ipc dialogOpen)
-    visible_text=$(omarchy-drive ocr flea 2>/dev/null || true)
+    visible_text=$(omarchy-drive ocr bachy 2>/dev/null || true)
     error=missing
     grep -Fq "Enter a valid host and port." <<< "$visible_text" && error=visible
     bytes=changed
@@ -868,7 +868,7 @@ probe_network_mark_target() {
 # A single IPC call may consume its own two-second timeout, so count wall time and bound each read;
 # a retry count alone turned one nominal 25-second wait into more than eight minutes.
 
-# ui/Opener.qml spawns flea --terminal and returns, so the stub's line lands after the key has
+# ui/Opener.qml spawns bachy --terminal and returns, so the stub's line lands after the key has
 # been answered: waited for, never slept at, and the path it carries is checked here rather than
 # by the caller so a wrong directory reads as a timeout with the log printed.
 wait_terminal() {
@@ -887,7 +887,7 @@ wait_message() {
     while (( $(date +%s%3N) < deadline )); do
         # 3 s, not 1: one ipc round trip costs hundreds of ms and grows under load, and a call that
         # times out returns nothing, which spends a sample of a sentence that stands for only 4 s.
-        seen=$(timeout 3 omarchy-drive ipc -p "$flea_ui/boot" flea lastMessage 2>/dev/null || true)
+        seen=$(timeout 3 omarchy-drive ipc -p "$bachy_ui/boot" bachy lastMessage 2>/dev/null || true)
         if [[ "$seen" == "$want" ]]; then
             return 0
         fi
@@ -900,7 +900,7 @@ wait_network_result() {
     local want="$1" timeout_s="${2:-40}" seen=""
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        seen=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea networkResult 2>/dev/null || true)
+        seen=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy networkResult 2>/dev/null || true)
         [[ "$seen" == "$want" ]] && return 0
         sleep 0.1
     done
@@ -913,7 +913,7 @@ wait_network_status() {
     local want="$1" timeout_s="${2:-40}" seen=""
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        seen=$(timeout 2 omarchy-drive ipc -p "$flea_ui/boot" flea networkStatus 2>/dev/null || true)
+        seen=$(timeout 2 omarchy-drive ipc -p "$bachy_ui/boot" bachy networkStatus 2>/dev/null || true)
         [[ "$seen" == "$want" ]] && return 0
         sleep 0.1
     done
@@ -924,7 +924,7 @@ wait_network_entry_state() {
     local want="$1" timeout_s="${2:-20}" seen=""
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        seen=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea networkEntries 2>/dev/null || true)
+        seen=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy networkEntries 2>/dev/null || true)
         [[ "$seen" == *"|network|share|$want" ]] && return 0
         sleep 0.1
     done
@@ -936,7 +936,7 @@ wait_network_entry_absent() {
     local row="$1" mount_uri="$2" timeout_s="${3:-20}" seen="" status=0 line present
     local deadline=$(( $(date +%s%3N) + timeout_s * 1000 ))
     while (( $(date +%s%3N) < deadline )); do
-        if seen=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea networkEntries 2>/dev/null); then
+        if seen=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy networkEntries 2>/dev/null); then
             status=0
             present=false
             # networkEntries row: SFTP|network|share|true
@@ -1076,7 +1076,7 @@ shot() {
     local name="$1" png="$evidence_dir/$1.png"
     mkdir -p "$evidence_dir"
     [[ ! -e "$png" && ! -L "$png" ]] || fail "shot: refusing existing evidence $png"
-    omarchy-drive shot "$png" flea >/dev/null || fail "shot: omarchy-drive shot failed for $name"
+    omarchy-drive shot "$png" bachy >/dev/null || fail "shot: omarchy-drive shot failed for $name"
     [[ -s "$png" ]] || fail "shot: $png is missing or empty after a capture that reported success"
     printf 'SHOT %s\n' "$png"
 }
@@ -1271,13 +1271,13 @@ case_terminal() {
     launch "$dir"
     wait_listing 1
     local qs_pid backend_pid
-    qs_pid=$(flea_pid)
-    backend_pid=$(pgrep -P "$qs_pid" -x flea)
-    [[ -n "$backend_pid" ]] || fail "no flea backend child of qs $qs_pid"
+    qs_pid=$(bachy_pid)
+    backend_pid=$(pgrep -P "$qs_pid" -x bachy)
+    [[ -n "$backend_pid" ]] || fail "no bachy backend child of qs $qs_pid"
     printf 'TERMINAL qs=%s backend=%s before state=%s total=%s row=%q\n' \
         "$qs_pid" "$backend_pid" "$(ipc state)" "$(ipc total)" "$(ipc rowAt 0)"
     kill "$backend_pid"
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea state error --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy state error --timeout 15 >/dev/null \
         || fail "the pane stayed in state '$(ipc state)' after the backend died"
     [[ "$(ipc total)" == "0" ]] || fail "the stale total $(ipc total) survived the backend"
     [[ "$(ipc rowAt 0)" == "loading" ]] || fail "the stale row $(ipc rowAt 0) survived the backend"
@@ -1292,7 +1292,7 @@ case_terminal() {
     assert_window
 }
 
-# The row and menu presentation the boards specify: FleaWindow.html's symlink row, a directory drawn
+# The row and menu presentation the boards specify: BachyWindow.html's symlink row, a directory drawn
 # without the 0.1.4 trailing slash (0.3.3), and Menus.html's right-aligned key beside every bound row.
 # Catches deleting decoratedName, sizeText's link branch or Icons.glyphForRow from ui/Row.qml, and
 # the hint slot from ui/MenuRow.qml.
@@ -1452,7 +1452,7 @@ case_open() {
     seek_row_named subdir
     key l >/dev/null
     wait_path "$dir/subdir"
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea state empty --timeout 10 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy state empty --timeout 10 >/dev/null \
         || fail "open: subdir never reached its empty listing, state is $(ipc state)"
     [[ ! -s "$opened" ]] || fail "l on a directory handed $(cat "$opened") to $open_handoff open"
     [[ -z "$(ipc lastMessage)" ]] || fail "open: entering the empty subdir said $(ipc lastMessage)"
@@ -1511,11 +1511,11 @@ case_open() {
     [[ "$(grep -c OPENED "$opened")" == "1" ]] || fail "a broken symlink was handed to $open_handoff open"
     [[ "$(ipc total)" == "8" ]] || fail "the listing did not survive Enter on a broken symlink"
 
-    # The operator's 0.1.4 ruling: Enter on an archive opens Flea's own view and hands nothing on,
+    # The operator's 0.1.4 ruling: Enter on an archive opens Bachy's own view and hands nothing on,
     # because every archive type this box can name defaults to org.gnome.Nautilus.desktop.
     seek_row_named sample.zip
     key -k Return >/dev/null
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea previewState archive --timeout 10 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy previewState archive --timeout 10 >/dev/null \
         || fail "Enter on an archive left the preview at $(ipc previewState), kind $(ipc previewKind), and the log holds $(cat "$opened")"
     printf 'OPEN archive kind=%q state=%q log=%q\n' "$(ipc previewKind)" "$(ipc previewState)" "$(cat "$opened")"
     shot open-archive
@@ -1535,10 +1535,10 @@ case_openterminal() {
     sandbox_scratch "$dir"
     mkdir -p "$dir/bin"
     printf 'abc' > "$dir/target.txt"
-    local ran="$dir/ran.log" opened="$dir/opened.log" real_bin="$flea_bin"
+    local ran="$dir/ran.log" opened="$dir/opened.log" real_bin="$bachy_bin"
     : > "$ran"
     : > "$opened"
-    # FLEA_BIN is the backend's binary as well as the opener's, so only --terminal is intercepted
+    # BACHY_BIN is the backend's binary as well as the opener's, so only --terminal is intercepted
     # and every other mode execs the real one: a stub that swallowed --backend would leave the
     # window with no listing to press a key in. The sleep is what makes the single-flight guard and
     # the two-paths-at-once check observable at all.
@@ -1548,13 +1548,13 @@ case_openterminal() {
       printf 'sleep 1\n'
       printf 'printf "TERMINAL %%s\\n" "$2" >> %q\n' "$ran"
       printf 'exit 0\n'
-    } > "$dir/bin/flea"
-    chmod +x "$dir/bin/flea"
+    } > "$dir/bin/bachy"
+    chmod +x "$dir/bin/bachy"
     # The real route, stubbed too: if anything ever reaches src/terminal.rs this records it instead
     # of opening a terminal on the operator's display, which is what used to leak a window per run.
     {
       printf '#!/bin/sh\n'
-      printf '# Sample input: xdg-terminal-exec --dir=/home/flea-sandbox/fixtures/openterminal\n'
+      printf '# Sample input: xdg-terminal-exec --dir=/home/bachy-sandbox/fixtures/openterminal\n'
       printf 'printf "REAL-TERMINAL %%s\\n" "${1#--dir=}" >> %q\n' "$ran"
       printf 'exit 0\n'
     } > "$dir/bin/xdg-terminal-exec"
@@ -1575,10 +1575,10 @@ case_openterminal() {
     seed_ui_state "$fixture_root/openterminal-state" "{\"menu\":{\"hidden\":$terminal_shown}}"
     local saved_path="$PATH"
     export PATH="$dir/bin:$PATH"
-    flea_bin="$dir/bin/flea"
+    bachy_bin="$dir/bin/bachy"
     launch "$dir"
     export PATH="$saved_path"
-    flea_bin="$real_bin"
+    bachy_bin="$real_bin"
     # bin, opened.log, ran.log, target.txt.
     wait_listing 4
 
@@ -1595,7 +1595,7 @@ case_openterminal() {
 
     # The keyboard half, from the list.
     : > "$ran"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     wait_terminal "$ran" "$dir" "ctrl+t in the list"
 
     # And from the rail, which owns its own keys and would otherwise swallow the chord.
@@ -1603,7 +1603,7 @@ case_openterminal() {
     key -k Tab >/dev/null
     settle
     [[ "$(ipc focusView)" == "rail" ]] || fail "openterminal: tab did not reach the rail"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     wait_terminal "$ran" "$dir" "ctrl+t on the rail"
     key -k Escape >/dev/null
     settle
@@ -1613,22 +1613,22 @@ case_openterminal() {
     # has exited, is not: without the second half this check passes for a key that does nothing.
     # The drop is announced, because a swallowed keypress with nothing on screen is the defect.
     : > "$ran"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     settle
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     wait_message "Still opening the last terminal; try again in a moment."
     wait_terminal "$ran" "$dir" "the single-flight guard"
     sleep 1
     [[ "$(grep -c . "$ran")" == "1" ]] || fail "openterminal: two terminals were started, log is $(cat "$ran")"
     : > "$ran"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     wait_terminal "$ran" "$dir" "a request after the child exited"
 
     # Both at once: the terminal child is still sleeping when Enter opens a file, so a shared path or
     # a shared Process would show up as one of the two logs carrying the other's argument.
     : > "$ran"
     : > "$opened"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     seek_row_named target.txt
     key -k Return >/dev/null
     local waited
@@ -1648,17 +1648,17 @@ case_openterminal() {
       printf '#!/bin/sh\n'
       printf '[ "$1" = --terminal ] || exec %q "$@"\n' "$real_bin"
       printf 'exit 2\n'
-    } > "$dir/bin/flea"
-    chmod +x "$dir/bin/flea"
+    } > "$dir/bin/bachy"
+    chmod +x "$dir/bin/bachy"
     : > "$ran"
-    hotkey --global ctrl t flea >/dev/null
+    hotkey --global ctrl t bachy >/dev/null
     wait_message "No terminal on this system opened that directory."
     shot openterminal-failed
     [[ ! -s "$ran" ]] || fail "openterminal: the failing stub still logged $(cat "$ran")"
 
     printf 'OPENTERMINAL menu=ok list=ok rail=ok single-flight=ok crossed=ok failure=ok\n'
     if [[ -n "$real_state" ]]; then export XDG_STATE_HOME="$real_state"; else unset XDG_STATE_HOME; fi
-    kill_flea
+    kill_bachy
 }
 
 # The operator's defect of 2026-09-02, in their own words: "when clicking a single click opens the
@@ -1932,13 +1932,13 @@ case_click() {
     [[ -n "$centre" ]] || fail "click: crumb $target has no on-screen centre for the double click"
     read -r cx cy <<< "$centre"
     local qs_pid pid held_pid="" click_status held_path held_bar
-    qs_pid=$(flea_pid)
-    # Sample input: /proc/<pid>/cmdline "/usr/bin/flea\0--backend\0"; ViewState's writer is a flea child too, run as --ui-state.
-    for pid in $(pgrep -P "$qs_pid" -x flea); do
+    qs_pid=$(bachy_pid)
+    # Sample input: /proc/<pid>/cmdline "/usr/bin/bachy\0--backend\0"; ViewState's writer is a bachy child too, run as --ui-state.
+    for pid in $(pgrep -P "$qs_pid" -x bachy); do
         tr '\0' ' ' 2>/dev/null < "/proc/$pid/cmdline" | grep -Fq -- ' --backend ' && held_pid="$held_pid $pid"
     done
     held_pid=${held_pid# }
-    [[ "$held_pid" =~ ^[0-9]+$ ]] || fail "click: expected one flea --backend child of qs $qs_pid to hold, found '$held_pid'"
+    [[ "$held_pid" =~ ^[0-9]+$ ]] || fail "click: expected one bachy --backend child of qs $qs_pid to hold, found '$held_pid'"
     # The path is written only when a listing answers, so a held backend keeps one crumb delegate under both taps.
     kill -STOP "$held_pid" || fail "click: could not stop backend $held_pid, so the double click would run unheld"
     omarchy-drive click "$((cx + wx))" "$((cy + wy))" --double >/dev/null
@@ -1956,7 +1956,7 @@ case_click() {
     settle
     printf 'CLICK crumb-double released path=%q\n' "$(ipc path)"
     [[ "$(ipc path)" == "$(dirname "$up")" ]] || fail "click: a double click on a parent crumb went to $(ipc path), not the one directory it names"
-    kill_flea
+    kill_bachy
 }
 
 # Ctrl+click after a plain click, in all three views. The plain click leaves the set empty with the
@@ -2063,8 +2063,8 @@ case_viewrestart() {
     drew=$(ipc viewMode)
     [[ "$drew" == "grid" ]] || fail "viewrestart: after the second tab's own switch the launch opened on '$drew', not the grid the window was left on"
     # PR 97's own edge: a word this build cannot draw is read as the list and put back drawable.
-    kill_flea
-    local stored="$fixture_root/viewrestart-state/flea/ui.json"
+    kill_bachy
+    local stored="$fixture_root/viewrestart-state/bachy/ui.json"
     python3 - "$stored" <<'EDIT'
 import json, sys
 path = sys.argv[1]
@@ -2084,7 +2084,7 @@ EDIT
     stored_view=$(grep -o '"view": *"[^"]*"' "$stored" | cut -d'"' -f4) || stored_view=""
     [[ -n "$stored_view" ]] || fail "viewrestart: $stored names no view key at all"
     [[ "$stored_view" == "list" ]] || fail "viewrestart: the settle left '$stored_view' in the state file, not the list the pane drew"
-    kill_flea
+    kill_bachy
 }
 
 # Issue 70, TyRichards: the sort choice outlives the window, and the next launch lists in it rather
@@ -2117,7 +2117,7 @@ case_sortrestart() {
     [[ "$(ipc rowAt 0)" == "b.txt|"* && "$(ipc rowAt 1)" == "c.txt|"* && "$(ipc rowAt 2)" == "a.txt|"* ]] \
         || fail "sortrestart: the restored listing reads $(ipc rowAt 0) $(ipc rowAt 1) $(ipc rowAt 2)"
     printf 'SORTRESTART mark=%s rows=%s %s %s\n' "$mark" "$(ipc rowAt 0)" "$(ipc rowAt 1)" "$(ipc rowAt 2)"
-    kill_flea
+    kill_bachy
 }
 
 # MediaMute board: one mark at the strip's right end says the state by its glyph, m flips it while a
@@ -2190,7 +2190,7 @@ case_mute() {
         || fail "mute: the next preview forgot the session's own flag"
     key -k Escape >/dev/null
     settle
-    kill_flea
+    kill_bachy
 }
 
 # MenuAdditions rule 3: a Places or Favorites row opens the folder menu for its own path, and with
@@ -2253,7 +2253,7 @@ case_placemenu() {
     printf 'PLACEMENU tabs=%s path=%s labels=%s\n' "$(ipc tabCount)" "$(ipc path)" "$(ipc tabLabels)"
 
     echo "-- with the switch off it is the menu it was --"
-    kill_flea
+    kill_bachy
     seed_ui_state "$fixture_root/placemenu-off" "$(printf '{"places":{"favourites":[{"label":"Work","path":"%s/Work"}]}}' "$dir")"
     launch "$dir"
     wait_listing 2
@@ -2272,10 +2272,10 @@ case_placemenu() {
     [[ "$(ipc contextMenuVisible)" == "false" ]] \
         || fail "placemenu: with the switch off the Home row opened $(ipc contextMenuEntries)"
     printf 'PLACEMENU off=%s\n' "$(ipc contextMenuVisible)"
-    kill_flea
+    kill_bachy
 }
 
-# MenuAdditions rule 2: one row per executable in ~/.config/flea/scripts, read when the menu opens,
+# MenuAdditions rule 2: one row per executable in ~/.config/bachy/scripts, read when the menu opens,
 # run with the selected paths in the first one's folder, and absent when that directory holds none.
 case_runscript() {
     local dir="$fixture_root/runscript"
@@ -2284,13 +2284,13 @@ case_runscript() {
     printf 'two\n' > "$dir/b.txt"
     local config="$fixture_root/runscript-config"
     sandbox_scratch "$config"
-    mkdir -p "$config/flea/scripts"
+    mkdir -p "$config/bachy/scripts"
     export XDG_CONFIG_HOME="$config"
     # Three, one of them not executable and one failing, which is the whole of the rule's own edges.
-    printf '#!/bin/sh\nprintf "%%s\\n" "$@" > %s/ran.log\nprintf "%%s\\n" "$PWD" >> %s/ran.log\n' "$dir" "$dir" > "$config/flea/scripts/stamp.sh"
-    printf '#!/bin/sh\nprintf "no such page\\n" >&2\nexit 2\n' > "$config/flea/scripts/ocr.sh"
-    printf '#!/bin/sh\nexit 0\n' > "$config/flea/scripts/not-executable.sh"
-    chmod +x "$config/flea/scripts/stamp.sh" "$config/flea/scripts/ocr.sh"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$@" > %s/ran.log\nprintf "%%s\\n" "$PWD" >> %s/ran.log\n' "$dir" "$dir" > "$config/bachy/scripts/stamp.sh"
+    printf '#!/bin/sh\nprintf "no such page\\n" >&2\nexit 2\n' > "$config/bachy/scripts/ocr.sh"
+    printf '#!/bin/sh\nexit 0\n' > "$config/bachy/scripts/not-executable.sh"
+    chmod +x "$config/bachy/scripts/stamp.sh" "$config/bachy/scripts/ocr.sh"
     # The switch on: everything else in the shipped set stays as it is.
     seed_ui_state "$fixture_root/runscript-state" '{"menu":{"hidden":["delete","openTerminal","placeMenu","moveto","copyto","properties","permissions","copypath"]}}'
 
@@ -2332,7 +2332,7 @@ case_runscript() {
     printf 'RUNSCRIPT said=%s\n' "$(ipc lastMessage)"
 
     echo "-- an empty directory offers no row at all --"
-    rm -f "$config/flea/scripts/stamp.sh" "$config/flea/scripts/ocr.sh"
+    rm -f "$config/bachy/scripts/stamp.sh" "$config/bachy/scripts/ocr.sh"
     click_row "$(ipc cursor)" right
     settle
     key -k Escape >/dev/null
@@ -2342,7 +2342,7 @@ case_runscript() {
     [[ "$(ipc contextMenuEntries)" != *"Run script"* ]] \
         || fail "runscript: an empty directory still offers $(ipc contextMenuEntries)"
     printf 'RUNSCRIPT empty=%s\n' "$(ipc contextMenuEntries)"
-    kill_flea
+    kill_bachy
 }
 
 # Catches narrowing the delegate TapHandler back to Qt.LeftButton in ui/Pane.qml.
@@ -2373,7 +2373,7 @@ case_menu() {
     printf 'MENU on-file visible=%s cursor=%s\n' "$(ipc contextMenuVisible)" "$(ipc cursor)"
     shot menu-open
     printf 'MENU_OCR_BEGIN\n'
-    omarchy-drive ocr flea || true
+    omarchy-drive ocr bachy || true
     printf 'MENU_OCR_END\n'
     [[ "$(ipc contextMenuVisible)" == "true" ]] || fail "right click did not open the context menu"
     [[ "$(ipc cursor)" == "1" ]] || fail "right click did not set the cursor, it is $(ipc cursor)"
@@ -2494,7 +2494,7 @@ case_background() {
         "$(ipc contextMenuGlyphs)" "$(ipc contextMenuHints)"
     shot background-menu
     printf 'BACKGROUND_OCR_BEGIN\n'
-    omarchy-drive ocr flea || true
+    omarchy-drive ocr bachy || true
     printf 'BACKGROUND_OCR_END\n'
     [[ "$(ipc contextMenuVisible)" == "true" ]] \
         || fail "background: a right click on empty space opened no menu"
@@ -2579,7 +2579,7 @@ case_background() {
     rm -f "$png"
     for _attempt in $(seq 1 "$mark_poll_shots"); do
         shots=$_attempt
-        omarchy-drive shot "$png" flea >/dev/null || { captured=0; break; }
+        omarchy-drive shot "$png" bachy >/dev/null || { captured=0; break; }
         lit=$(count_pixels "$png" "${3}x${4}+${1}+${2}" "((r+g+b)/3) > 0.25")
         (( lit > 0 )) && break
         sleep "$mark_poll_s"
@@ -2735,7 +2735,7 @@ case_hidden() {
     [[ "$(ipc rowAt 0)" == "visible.txt|"* ]] || fail "hidden: toggling back off left the dotfile visible, row 0 is $(ipc rowAt 0)"
 
     printf 'HIDDEN default=ok toggle-on=ok menu-label=ok toggle-off=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # Toggle, extend, select-all, clear, and the invariant that matters most: an index into a
@@ -2776,7 +2776,7 @@ case_selection() {
     [[ "$(ipc selectedIndices)" == "1,2,3" ]] || fail "selection: extend covered $(ipc selectedIndices), not 1,2,3"
     shot selection-extend
 
-    hotkey --global ctrl a flea >/dev/null
+    hotkey --global ctrl a bachy >/dev/null
     settle
     [[ "$(ipc selectionCount)" == "5" ]] || fail "selection: ctrl+a selected $(ipc selectionCount), not every row"
 
@@ -2810,7 +2810,7 @@ case_selection() {
     [[ "$(ipc selectionCount)" == "0" ]] || fail "selection: Escape did not clear the pending folder selection"
 
     printf 'SELECTION toggle=ok extend=ok all=ok clear=ok stale=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # Issue 68, driven exactly as it was reported: the reporter's own four changes made from outside
@@ -2826,13 +2826,13 @@ case_watch() {
     wait_listing 3
     [[ "$(ipc rowAt 0)" == alpha.txt\|* ]] || fail "watch: row 0 is $(ipc rowAt 0), not alpha.txt"
 
-    # Issue 159's move-into-new-directory case: create and move from outside Flea while its one window stays open.
+    # Issue 159's move-into-new-directory case: create and move from outside Bachy while its one window stays open.
     local move_bytes='watch-move-payload-159' watch_pid
-    watch_pid=$(flea_pid)
+    watch_pid=$(bachy_pid)
     printf '%s' "$move_bytes" > "$dir/move-source.txt"
     mkdir "$dir/move-target"
     mv "$dir/move-source.txt" "$dir/move-target/move-source.txt"
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea total 4 --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy total 4 --timeout 15 >/dev/null \
         || fail "watch: creating a directory and moving a file into it left the listing at $(ipc total) rows"
     [[ "$(ipc rowAt 0)" == move-target\|dir\|* ]] \
         || fail "watch: the moved-into directory is not row 0, got $(ipc rowAt 0)"
@@ -2859,14 +2859,14 @@ case_watch() {
     key -k Backspace >/dev/null
     wait_path "$dir"
     wait_listing 4
-    [[ "$(flea_pid)" == "$watch_pid" ]] || fail "watch: the move case relaunched Flea"
+    [[ "$(bachy_pid)" == "$watch_pid" ]] || fail "watch: the move case relaunched Bachy"
     printf 'WATCH move=ok parent-row=gone child-bytes=exact no-relaunch=ok\n'
     [[ "$(ipc selectionCount)" == 1 ]] || fail "watch: returning to the parent did not select the folder"
     key -k Escape >/dev/null
     [[ "$(ipc selectionCount)" == 0 ]] || fail "watch: Escape did not release the folder selection"
     rm "$dir/move-target/move-source.txt"
     rmdir "$dir/move-target"
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea total 3 --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy total 3 --timeout 15 >/dev/null \
         || fail "watch: move-case cleanup left the parent listing at $(ipc total) rows"
 
     # The reporter's four changes, from another process, while the window sits on the folder.
@@ -2875,7 +2875,7 @@ case_watch() {
     rm "$dir/beta.txt"
     mkdir "$dir/brand-new-folder"
     # The 400 ms settle plus the re-read; the reporter waited several seconds and saw nothing move.
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea total 4 --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy total 4 --timeout 15 >/dev/null \
         || fail "watch: the listing stayed at $(ipc total) rows after four outside changes"
     settle
     printf 'WATCH total=%s row0=%q row1=%q row2=%q\n' \
@@ -2898,7 +2898,7 @@ case_watch() {
     [[ "$(ipc rowAt "$(ipc cursor)")" == preview-me.txt\|* ]] \
         || fail "watch: the cursor did not start on preview-me.txt"
     printf 'z\n' > "$dir/AAA-above-the-cursor.txt"
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea total 5 --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy total 5 --timeout 15 >/dev/null \
         || fail "watch: the second outside create left the listing at $(ipc total) rows"
     settle
     printf 'WATCH cursor=%s row=%q\n' "$(ipc cursor)" "$(ipc rowAt "$(ipc cursor)")"
@@ -2916,7 +2916,7 @@ case_watch() {
     [[ "$(ipc selectionCount)" == "1" ]] || fail "watch: the held selection was cleared anyway"
     # Clearing the selection is what pays the debt the notification left standing.
     key -k Escape >/dev/null
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea total 6 --timeout 15 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy total 6 --timeout 15 >/dev/null \
         || fail "watch: clearing the selection did not run the owed re-read, total is $(ipc total)"
     printf 'WATCH deferred=ok paid=ok total=%s\n' "$(ipc total)"
 
@@ -2960,7 +2960,7 @@ case_watch() {
     key -k Escape >/dev/null
     settle
     assert_window
-    kill_flea
+    kill_bachy
 }
 
 # Issue 143, stubbed at lsblk and gio: empty, inserted and mounted optical media are all exercised without a real drive.
@@ -2969,7 +2969,7 @@ case_optical() {
     local label='MATSHITA DVD+/-RW UJ8FB' payload='optical-payload-143' gio_log="$dir/gio.log"
     sandbox_scratch "$dir"
     sandbox_scratch "$state"
-    mkdir -p "$dir/bin" "$dir/files" "$dir/mnt/DVD" "$state/flea"
+    mkdir -p "$dir/bin" "$dir/files" "$dir/mnt/DVD" "$state/bachy"
     printf 'keep\n' > "$dir/files/keep.txt"
     printf '%s' "$payload" > "$dir/mnt/DVD/disc-bytes.txt"
     : > "$gio_log"
@@ -3090,7 +3090,7 @@ EOS
     rm -f "$dir/malformed"
     printf 'OPTICAL empty-hidden=ok usb-retained=ok inserted=ok refusal=observable mounted=ok bytes=exact malformed=clears\n'
     if [[ -n "$old_state" ]]; then export XDG_STATE_HOME="$old_state"; else unset XDG_STATE_HOME; fi
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
@@ -3102,14 +3102,14 @@ case_select() {
     : > "$dir/b.txt"
     : > "$dir/c.txt"
 
-    kill_flea
-    cat "$flea_log" >> "$run_log" 2>/dev/null || true
-    : > "$flea_log"
+    kill_bachy
+    cat "$bachy_log" >> "$run_log" 2>/dev/null || true
+    : > "$bachy_log"
     # The renderer is stated because src/gui.rs owns that choice and a direct qs launch never runs it.
-    QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" FLEA_PATH="$dir" FLEA_SELECT="$dir/b.txt" FLEA_BIN="$flea_bin" \
-        setsid nohup qs -p "$flea_ui/boot" >"$flea_log" 2>&1 </dev/null &
-    omarchy-drive wait window flea --timeout 15 >/dev/null
-    omarchy-drive focus flea >/dev/null
+    QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" BACHY_PATH="$dir" BACHY_SELECT="$dir/b.txt" BACHY_BIN="$bachy_bin" \
+        setsid nohup qs -p "$bachy_ui/boot" >"$bachy_log" 2>&1 </dev/null &
+    omarchy-drive wait window bachy --timeout 15 >/dev/null
+    omarchy-drive focus bachy >/dev/null
     assert_window
     wait_listing 3
     [[ "$(ipc path)" == "$dir" ]] || fail "select: opened $(ipc path), not $dir"
@@ -3120,21 +3120,21 @@ case_select() {
     [[ "$(ipc selectedIndices)" == "$want_index" ]] || fail "select: selectedIndices is $(ipc selectedIndices), not $want_index"
 
     # A missing target still opens its directory, with nothing selected.
-    kill_flea
-    cat "$flea_log" >> "$run_log" 2>/dev/null || true
-    : > "$flea_log"
+    kill_bachy
+    cat "$bachy_log" >> "$run_log" 2>/dev/null || true
+    : > "$bachy_log"
     # The renderer is stated because src/gui.rs owns that choice and a direct qs launch never runs it.
-    QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" FLEA_PATH="$dir" FLEA_SELECT="$dir/does-not-exist.txt" FLEA_BIN="$flea_bin" \
-        setsid nohup qs -p "$flea_ui/boot" >"$flea_log" 2>&1 </dev/null &
-    omarchy-drive wait window flea --timeout 15 >/dev/null
-    omarchy-drive focus flea >/dev/null
+    QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}" BACHY_PATH="$dir" BACHY_SELECT="$dir/does-not-exist.txt" BACHY_BIN="$bachy_bin" \
+        setsid nohup qs -p "$bachy_ui/boot" >"$bachy_log" 2>&1 </dev/null &
+    omarchy-drive wait window bachy --timeout 15 >/dev/null
+    omarchy-drive focus bachy >/dev/null
     assert_window
     wait_listing 3
     [[ "$(ipc path)" == "$dir" ]] || fail "select: a missing target opened $(ipc path), not $dir"
     [[ "$(ipc selectionCount)" == "0" ]] || fail "select: a missing target still selected $(ipc selectionCount)"
 
     printf 'SELECT reveal=ok missing=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # Catches restoring the directory accent branch of Row.nameColor in ui/Row.qml.
@@ -3375,7 +3375,7 @@ case_columns() {
     click_chrome list
     settle
     [[ "$(ipc viewMode)" == "list" ]] || fail "columns: the list button did not switch back"
-    kill_flea
+    kill_bachy
 }
 
 # Directive 48: there is no centre lane. The transient ends one padding before the text the disk facts
@@ -3476,7 +3476,7 @@ case_status() {
     settle
     [[ "$(ipc statusFooterState | jq -r '.path')" == "$dir" ]] \
         || fail "status: Escape did not return the strip to $dir, it says $(ipc statusFooterState | jq -r '.path')"
-    kill_flea
+    kill_bachy
 }
 
 case_operations() {
@@ -3608,7 +3608,7 @@ PY
     for _ in $(seq 1 80); do [[ -f "$dir/bundle/notes.txt" ]] && break; sleep 0.25; done
     [[ -f "$dir/bundle/notes.txt" ]] || fail "operations: extract wrote nothing, bar says $(ipc lastMessage)"
     printf 'OPERATIONS extracted=%s\n' "$(ipc lastMessage)"
-    kill_flea
+    kill_bachy
 }
 
 # Issue: after dd the cursor lands on the row that took the removed one's place, which for a block
@@ -3686,7 +3686,7 @@ case_dd() {
         || fail "dd: after the last row the cursor is $(ipc cursor), not $((at - 1))"
     [[ "$(ipc rowAt "$(ipc cursor)")" == "f4.txt|"* ]] \
         || fail "dd: the clamped cursor sits on $(ipc rowAt "$(ipc cursor)")"
-    kill_flea
+    kill_bachy
 }
 
 # Paste onto a name that exists: asked once, and Cancel, Keep both, Skip and Replace with its Undo each do
@@ -3708,7 +3708,7 @@ case_collide() {
     mapfile -t bus < <(dbus-daemon --session --fork --print-address=1 --print-pid=1)
     [[ ${#bus[@]} -eq 2 && "${bus[1]}" =~ ^[0-9]+$ ]] || fail "collide: no private session bus, dbus-daemon printed: ${bus[*]}"
     collide_bus_pid=${bus[1]}
-    trap '( kill_flea ) >/dev/null 2>&1 || true; kill "$collide_bus_pid" 2>/dev/null || true' EXIT
+    trap '( kill_bachy ) >/dev/null 2>&1 || true; kill "$collide_bus_pid" 2>/dev/null || true' EXIT
     export DBUS_SESSION_BUS_ADDRESS="${bus[0]}"
 
     # A finished transfer's own line, polled because it stands only until the bar clears it; the undo hint tells it from the clipboard's.
@@ -3872,7 +3872,7 @@ case_collide() {
     shot collide-largest-text
     key -k Escape >/dev/null
     menus_expect collideState '.opened | not' "Escape cancels at the largest stop"
-    kill_flea
+    kill_bachy
 }
 
 case_grid() {
@@ -3943,7 +3943,7 @@ case_grid() {
     settle
     lnext=$(ipc cursor)
     (( lnext == lstart + 1 )) || fail "grid: in the list j moved $((lnext - lstart)), not one item"
-    kill_flea
+    kill_bachy
 }
 
 grid_chrome_inventory() {
@@ -4139,7 +4139,7 @@ case_gridnavigation() {
         key -k Escape >/dev/null
         cardsize_expect drawnCount 61
         printf 'GRID_NAVIGATION preset=%s columns=%s reflow=%s item_keys=ok cell_edges=ok identity=ok range=ok\n' "$preset" "$columns" "$next_columns"
-        kill_flea
+        kill_bachy
     done
 }
 
@@ -4167,7 +4167,7 @@ case_header() {
     (( date_x >= size_x + size_w )) || fail "header: date starts at $date_x, before size ends at $((size_x + size_w))"
     (( kind_x >= date_x + date_w )) || fail "header: kind starts at $kind_x, before date ends at $((date_x + date_w))"
 
-    kill_flea
+    kill_bachy
 }
 
 # contentWidth exceeds width only when elide is missing, since elide always caps it to width; this guards elide, not sizing.
@@ -4185,7 +4185,7 @@ case_overflow() {
     printf 'OVERFLOW row0=%s row=%s\n' "$overflow" "$(ipc rowAt 0)"
     shot overflow
     [[ "$overflow" == "0|0|0|0" ]] || fail "overflow: a cell painted past its own column, $overflow"
-    kill_flea
+    kill_bachy
 }
 
 # The OEM modules are reached by symlink, so a broken link is a silent palette regression.
@@ -4195,13 +4195,13 @@ case_oem() {
     fg=$(ipc themeForeground)
     expected_fg=$(theme_key foreground)
     [[ "${fg,,}" == "${expected_fg,,}" ]] \
-        || fail "oem: Flea's foreground is $fg, the theme's is $expected_fg"
+        || fail "oem: Bachy's foreground is $fg, the theme's is $expected_fg"
     local ladder
     ladder=$(ipc selectedFill)
     [[ -n "$ladder" && "$ladder" != "#00000000" ]] \
         || fail "oem: the OEM state ladder did not resolve, selectedFill is $ladder"
     printf 'OEM foreground=%s selectedFill=%s\n' "$fg" "$ladder"
-    kill_flea
+    kill_bachy
 }
 
 # Catches removing the icon slot from ui/Row.qml or its theme fallback.
@@ -4230,7 +4230,7 @@ case_icons() {
         [[ -n "$(ipc rowGlyph "$i")" ]] || fail "row $i has no glyph name at all"
     done
     [[ "$(glyph_of subdir)" == "folder" ]] || fail "the directory row is not the folder glyph: $(glyph_of subdir)"
-    # FleaWindow.html and GridView.html both draw a symlink with the link mark, whatever it points at,
+    # BachyWindow.html and GridView.html both draw a symlink with the link mark, whatever it points at,
     # so the mark follows the mode here while the backend's i still follows the target; the backend
     # side of that split is tests/protocol.sh "and draws as a folder".
     [[ "$(glyph_of linkdir)" == "symlink" ]] || fail "the symlink to a directory is not the link glyph: $(glyph_of linkdir)"
@@ -4247,15 +4247,15 @@ case_icons() {
 
 # Catches turning the settle timer in ui/Pane.qml into a request per scrolled frame.
 case_thumbs() {
-    [[ -d "$FIXTURE_ROOT/flea-media-btrfs" ]] || fail "the media fixture is missing"
+    [[ -d "$FIXTURE_ROOT/bachy-media-btrfs" ]] || fail "the media fixture is missing"
     sandbox_make "$thumb_fixture"
     local i
     for i in $(seq 0 $((thumb_rows - 1))); do
-        ln "$FIXTURE_ROOT/flea-media-btrfs/photo_0.jpg" "$thumb_fixture/p$i.jpg"
+        ln "$FIXTURE_ROOT/bachy-media-btrfs/photo_0.jpg" "$thumb_fixture/p$i.jpg"
     done
-    # kill_flea waits out the previous backend's drain, so the baseline is stable before this one generates.
+    # kill_bachy waits out the previous backend's drain, so the baseline is stable before this one generates.
     local before_large
-    kill_flea
+    kill_bachy
     before_large=$(ls -A "$cache_large" | wc -l)
     seed_ui_state "$fixture_root/thumbs-state" '{"view":"list"}'
     launch "$thumb_fixture"
@@ -4315,7 +4315,7 @@ case_thumbs() {
     local screen_rows requests added
     screen_rows=$(ipc visibleRows)
     requests=$(ipc thumbRequests)
-    kill_flea
+    kill_bachy
     sandbox_make "$thumb_fixture"
     added=$(( $(ls -A "$cache_large" | wc -l) - before_large ))
     # A window that is not row aligned straddles one more row than it holds, so the bound is the viewport rule plus that row.
@@ -4336,18 +4336,18 @@ case_thumbs() {
     # A fling that moves nothing fails here instead of passing quietly; "nothing is requested while moving" is carried by the request-count bounds above.
     (( moved >= 1 )) \
         || fail "the fling did not move the viewport at all, so the bounds above prove nothing"
-    [[ "$(ls -A "$cache_large" | grep -c '^\.flea-')" == "0" ]] || fail "a temp file was left in the shared cache"
+    [[ "$(ls -A "$cache_large" | grep -c '^\.bachy-')" == "0" ]] || fail "a temp file was left in the shared cache"
 }
 
 # Catches encodeURI in ui/Row.qml leaving # or ? literal, which Qt reads as URL syntax and cannot open.
 case_hashcache() {
-    [[ -d "$FIXTURE_ROOT/flea-media-btrfs" ]] || fail "the media fixture is missing"
+    [[ -d "$FIXTURE_ROOT/bachy-media-btrfs" ]] || fail "the media fixture is missing"
     local pics="$hash_fixture/pics"
     # The two bytes encodeURI leaves alone, in the half of the path that can legally hold them.
     local cache="$hash_fixture/c#a?che"
     sandbox_make "$hash_fixture"
     mkdir -p "$pics" "$cache/thumbnails/large" "$cache/thumbnails/fail"
-    ln "$FIXTURE_ROOT/flea-media-btrfs/photo_0.jpg" "$pics/one.jpg"
+    ln "$FIXTURE_ROOT/bachy-media-btrfs/photo_0.jpg" "$pics/one.jpg"
     # Exported inside this case's own subshell, so no other case reads or writes the redirected root.
     export XDG_CACHE_HOME="$cache"
     launch "$pics"
@@ -4373,7 +4373,7 @@ case_hashcache() {
         || fail "the backend did not use the redirected cache root, so no # ever reached the row: $file"
     [[ "$icon" == *%23* && "$icon" == *%3F* ]] || fail "the row URL left # or ? unescaped: $icon"
     [[ "$status" == "$image_ready" ]] || fail "the row URL never opened, Image.status is $status: $icon"
-    kill_flea
+    kill_bachy
     sandbox_make "$hash_fixture"
 }
 
@@ -4473,7 +4473,7 @@ case_stale() {
     (( red_cols > 0 )) || fail "columns: the regenerated thumbnail drew no red pixel, so the row is showing the old frame"
     (( blue_cols == 0 )) || fail "columns: the row still draws $blue_cols blue pixels of the thumbnail it replaced"
     switch_view list
-    kill_flea
+    kill_bachy
     sandbox_make "$stale_fixture"
 }
 
@@ -4482,7 +4482,7 @@ case_nosweep() {
     [[ -d "$bench_dir" ]] || fail "the 100,000-file fixture is missing at $bench_dir"
     # Same shape as case_thumbs: the drain the previous backend owes this cache is finished before the baseline.
     local before_large after_large wx wy ww wh burst
-    kill_flea
+    kill_bachy
     before_large=$(ls -A "$cache_large" | wc -l)
     launch "$bench_dir"
     wait_listing 100000
@@ -4501,7 +4501,7 @@ case_nosweep() {
     shot nosweep
     [[ "$(ipc thumbRequests)" == "0" ]] || fail "a directory of text files produced $(ipc thumbRequests) thumb requests"
     [[ "$before_large" == "$after_large" ]] || fail "the cache grew from $before_large to $after_large"
-    [[ "$(ls -A "$cache_large" | grep -c '^\.flea-')" == "0" ]] || fail "a temp file was left in the shared cache"
+    [[ "$(ls -A "$cache_large" | grep -c '^\.bachy-')" == "0" ]] || fail "a temp file was left in the shared cache"
 
     # Task 16's twin: every row here is a dirsize candidate; the delta bound stands in for a literal zero, see AGENTS.md "Thumbnail requests".
     local dirsweep_dir before_requests after_requests delta
@@ -4510,7 +4510,7 @@ case_nosweep() {
         sandbox_scratch "$dirsweep_dir"
         seq 1 100000 | sed "s#^#$dirsweep_dir/dir_#" | xargs mkdir
     fi
-    kill_flea
+    kill_bachy
     launch "$dirsweep_dir"
     wait_listing 100000
     read -r wx wy ww wh < <(window_box) || fail "native window coordinates unavailable"
@@ -4536,7 +4536,7 @@ case_focus() {
     : > "$dir/plain.txt"
     launch "$dir"
     wait_listing 1
-    [[ "$(ipc focusView)" == "list" ]] || fail "focus: Flea does not start on the list"
+    [[ "$(ipc focusView)" == "list" ]] || fail "focus: Bachy does not start on the list"
     key -k Tab >/dev/null
     settle
     [[ "$(ipc focusView)" == "rail" ]] || fail "focus: tab did not reach the rail"
@@ -4568,7 +4568,7 @@ case_focus() {
     [[ "$(ipc focusView)" == "list" ]] || fail "focus: escape did not return to the list"
     printf 'FOCUS view=%s railCursor=%s path=%s\n' "$(ipc focusView)" "$(ipc railCursor)" "$(ipc path)"
     shot focus-listed
-    kill_flea
+    kill_bachy
 }
 
 # Catches t not opening a tab, 1-9 not switching, w not closing, or the bar showing with one tab.
@@ -4628,48 +4628,48 @@ case_tabs() {
     [[ "$(ipc tabIndex)" == "0" ]] || fail "tabs: clicking tab 0 did not select it, index=$(ipc tabIndex)"
     shot tabs-two
     printf 'TABS count=%s index=%s labels=%s\n' "$(ipc tabCount)" "$(ipc tabIndex)" "$(ipc tabLabels)"
-    kill_flea
+    kill_bachy
 }
 
 # The one scene-graph failure found to be raisable here: Qt's GL backend with no EGL vendor file to load.
 case_renderer() {
-    kill_flea
+    kill_bachy
     local dir="$fixture_root/renderer"
     sandbox_scratch "$dir"
     local log="$dir/shell.log"
     local relaunched="$dir/relaunch.log"
     : > "$relaunched"
-    printf '#!/bin/sh\nprintf "RAN %%s\\n" "$*" >> %q\n' "$relaunched" > "$dir/flea-stub"
-    chmod +x "$dir/flea-stub"
+    printf '#!/bin/sh\nprintf "RAN %%s\\n" "$*" >> %q\n' "$relaunched" > "$dir/bachy-stub"
+    chmod +x "$dir/bachy-stub"
     # The marker is set, so the renderer's own name is the only thing standing between this and a retry.
-    env QSG_RHI_BACKEND=opengl FLEA_RENDERER_AUTOMATIC=1 \
+    env QSG_RHI_BACKEND=opengl BACHY_RENDERER_AUTOMATIC=1 \
         __EGL_VENDOR_LIBRARY_FILENAMES="$dir/no-such-egl-vendor.json" \
-        FLEA_PATH="$dir" FLEA_BIN="$dir/flea-stub" \
-        setsid nohup qs -p "$flea_ui/boot" > "$log" 2>&1 </dev/null &
+        BACHY_PATH="$dir" BACHY_BIN="$dir/bachy-stub" \
+        setsid nohup qs -p "$bachy_ui/boot" > "$log" 2>&1 </dev/null &
     local waited
     for waited in $(seq 1 200); do
         grep -aq 'graphics backend opengl failed' "$log" && break
         sleep 0.1
     done
-    kill_flea
+    kill_bachy
     printf 'RENDERER ran=%q\n' "$(tr '\n' ' ' < "$relaunched")"
     grep -aq 'graphics backend opengl failed' "$log" \
         || fail "no scene-graph error reached ui/boot/shell.qml, so its Connections never held the window"
-    # A scene-graph failure now starts no backend at all, so counting FLEA_BIN is a zero denominator.
+    # A scene-graph failure now starts no backend at all, so counting BACHY_BIN is a zero denominator.
     local retried
     retried=$(grep -c -- '--gui' "$relaunched" || true)
     [[ "$retried" == "0" ]] || fail "the retry fired for a renderer the operator named: $(cat "$relaunched")"
     # The argv side of that arm, from a root carrying ui/boot's own two symlinks: the helper implicitly imports ui/, whose qmldir singletons import qs.Commons, and qs: resolves against the root.
     local proberoot="$dir/retry-cfg" probe="$dir/retry-probe.log"
     mkdir -p "$proberoot"
-    cp -a "$flea_ui/boot/Commons" "$flea_ui/boot/Ui" "$proberoot/" \
+    cp -a "$bachy_ui/boot/Commons" "$bachy_ui/boot/Ui" "$proberoot/" \
         || fail "the boot root has no Commons or Ui to copy, so this probe would test its own fake root"
     cp "$repo/tests/renderer-retry.qml" "$proberoot/probe.qml"
     : > "$probe"
-    env RETRY_HELPER="$flea_ui/RendererRetry.qml" RETRY_BACKEND=vulkan \
-        FLEA_RENDERER_AUTOMATIC=1 FLEA_BIN="$dir/flea-stub" QT_QPA_PLATFORM=offscreen \
+    env RETRY_HELPER="$bachy_ui/RendererRetry.qml" RETRY_BACKEND=vulkan \
+        BACHY_RENDERER_AUTOMATIC=1 BACHY_BIN="$dir/bachy-stub" QT_QPA_PLATFORM=offscreen \
         timeout 20 qs -p "$proberoot/probe.qml" > "$probe" 2>&1
-    local want='RETRY argv ["/usr/bin/env","QSG_RHI_BACKEND=opengl","'"$dir/flea-stub"'","--gui"]'
+    local want='RETRY argv ["/usr/bin/env","QSG_RHI_BACKEND=opengl","'"$dir/bachy-stub"'","--gui"]'
     grep -aqF "$want" "$probe" \
         || fail "the retry helper did not answer with the argv Renderer.js names: $(grep -a RETRY "$probe" | head -2)"
 }
@@ -4692,7 +4692,7 @@ case_preview() {
       printf 'printf "OPENED %%s\\n" "$2" >> %q\n' "$opened"
     } > "$dir/bin/$open_handoff"
     chmod +x "$dir/bin/$open_handoff"
-    printf 'hello from flea\n' > "$dir/sample.txt"
+    printf 'hello from bachy\n' > "$dir/sample.txt"
     printf '# Notes\n\nSome *text*.\n' > "$dir/notes.md"
     truncate -s 2M "$dir/big.txt"
     # A 440 Hz tone and not silence, so playback is provable by ear and not just by state. Fifteen
@@ -4875,9 +4875,9 @@ PYEOF
         || fail "preview: the pdf overlay reports $(ipc previewState), so it fell through to the refusal"
     [[ "$(ipc previewPdfPage)" == "0" ]] || fail "preview: manual.pdf opened on page $(ipc previewPdfPage), not page 0"
     key l >/dev/null
-    omarchy-drive wait ipc -p "$flea_ui/boot" flea previewPdfPage 1 --timeout 10 >/dev/null \
+    omarchy-drive wait ipc -p "$bachy_ui/boot" bachy previewPdfPage 1 --timeout 10 >/dev/null \
         || fail "preview: l left manual.pdf on page $(ipc previewPdfPage), not page 1"
-    omarchy-drive wait ocr flea PAGETWO --timeout 10 >/dev/null \
+    omarchy-drive wait ocr bachy PAGETWO --timeout 10 >/dev/null \
         || fail "preview: l advanced manual.pdf state but left page 1 painted"
     shot preview-pdf
     key -k Escape >/dev/null
@@ -4915,7 +4915,7 @@ PYEOF
     [[ "$(ipc previewOpen)" == "false" ]] || fail "preview: escape did not close the click-away preview"
 
     printf 'PREVIEW text=ok markdown=ok audio=ok video=ok toolarge=ok mediacontrols=ok striphide=ok clickaway=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # Catches the Network group failing to self-hide, the add dialog's keyboard path breaking the
@@ -5021,7 +5021,7 @@ file:///missing/legacy Local legacy' ]] \
     done
     [[ "$rail_uri" == "smb://legacy2.test/data" ]] \
         || fail "editplace: the rail's network rows are $rail_uri, not the one corrected place"
-    # The edit rewrites the place it came from, so Flea's own favourites gain nothing.
+    # The edit rewrites the place it came from, so Bachy's own favourites gain nothing.
     [[ "$(ipc railEntries | jq -r '[.[] | select(.group == "favorite")] | length')" == "0" ]] \
         || fail "editplace: the edit added a favourite as well as rewriting the place"
     printf 'EDITPLACE edit=%s rail=%s\n' "$(head -1 "$bookmarks")" "$rail_uri"
@@ -5061,7 +5061,7 @@ file:///missing/legacy Local legacy' ]] \
     printf 'EDITPLACE abandoned=unchanged marks=%s\n' "$(head -1 "$bookmarks")"
 
     export PATH="$saved_path"
-    kill_flea
+    kill_bachy
 }
 
 case_network() {
@@ -5085,7 +5085,7 @@ case_network() {
     local real_state="${XDG_STATE_HOME-}" real_config="${XDG_CONFIG_HOME-}"
     export XDG_CONFIG_HOME="$fixture_home/.config"
     seed_ui_state "$state" '{"view":"list","keys":"default","places":{"favourites":[]}}'
-    stored="$state/flea/ui.json"
+    stored="$state/bachy/ui.json"
     : > "$mount_log"
     : > "$mount_calls"
     mkfifo "$fake_root/mount-release"
@@ -5117,7 +5117,7 @@ case_network() {
             release_fds+=("$fd")
             printf 'release\n' >&"$fd" || fail "network: could not release cleanup barrier: $fifo"
         done
-        ( kill_flea ) || result=1
+        ( kill_bachy ) || result=1
         for fd in "${release_fds[@]}"; do exec {fd}>&-; done
         return "$result"
     }
@@ -5221,7 +5221,7 @@ case_network() {
         settings_wait_value '.display.textSize.mode == "system"'
         font_before=$(token_of baseSize)
         # Sample source: var STOPS = [9, 10, 11, 12, 14, 16, 20]
-        stops=$(grep '^var STOPS = ' "$flea_ui/js/TextSize.js" | cut -d= -f2-) || fail 'network: text-size stops are unavailable'
+        stops=$(grep '^var STOPS = ' "$bachy_ui/js/TextSize.js" | cut -d= -f2-) || fail 'network: text-size stops are unavailable'
         font_after=$(jq -r --argjson size "$font_before" 'map(select(. > $size)) | first' <<< "$stops") \
             || fail 'network: text-size stops could not be read'
         direction=equal
@@ -5631,12 +5631,12 @@ EOS
     settle
     [[ "$(ipc dialogOpen)" == "false" ]] || fail "network: escape did not close the dialog after the TLS pass"
 
-    # Legacy GTK rows stay readable and byte-for-byte intact alongside persisted Flea favourites.
+    # Legacy GTK rows stay readable and byte-for-byte intact alongside persisted Bachy favourites.
     mkdir -p "$fixture_home/.config/gtk-3.0"
     printf 'smb://legacy.test/data Legacy share\nfile:///missing/legacy Local legacy\n' > "$bookmarks"
     local legacy_before
     legacy_before=$(cat "$bookmarks")
-    kill_flea
+    kill_bachy
     export HOME="$fixture_home"
     launch "$dir"
     export HOME="$real_home"
@@ -5729,7 +5729,7 @@ EOS
     printf 'NETWORK empty=ok a-scoped=ok dialog=ok submit-path=ok keyboard-after=ok guest-smb=anonymous nfs=plain caches=isolated\n'
 
     # Separate persisted fixtures keep the mount-origin races independent of the save inventory above.
-    kill_flea
+    kill_bachy
     seed_ui_state "$race_state" "$(jq -n --arg left "$races/left" --arg right "$races/right" \
         '{view:"list",keys:"default",dual:{paths:[$left,$right],focus:0},places:{favourites:[
             {label:"Late retry",path:"nfs://late-retry.test/export"},
@@ -5855,7 +5855,7 @@ EOS
     retained_shares=$(ipc shareBrowserState | jq -c '{active,owner,baseUri,cursor}')
     retained_entries=$(ipc shareBrowserEntries)
     retained_rect="$network_geometry_rect"
-    exit_log_start=$(wc -l < "$flea_log")
+    exit_log_start=$(wc -l < "$bachy_log")
     click_chrome list
     network_wait_panes "(.active | not) and .focused == 0 and (.panes[1].focused | not) and ((.panes[1] | del(.focused)) == $retained_secondary)"
     menus_expect shareBrowserState "{active,owner,baseUri,cursor} == $retained_shares" 'leaving dual retains the secondary share listing session'
@@ -5891,7 +5891,7 @@ EOS
     shot network-shares-owner-dismissed
     click_chrome list
     network_wait_panes '(.active | not) and .focused == 0 and (.panes[1].focused | not)'
-    tail -n "+$((exit_log_start + 1))" "$flea_log" > "$fake_root/second-pane-exit.log"
+    tail -n "+$((exit_log_start + 1))" "$bachy_log" > "$fake_root/second-pane-exit.log"
     if grep -E 'WARN|ERROR|TypeError|ReferenceError|Cannot' "$fake_root/second-pane-exit.log"; then
         fail "network: second-pane exit or reopen produced native QML errors"
     fi
@@ -5976,7 +5976,7 @@ case_netmark() {
     printf 'NETMARK stops=7 caption=%s..%s probes=4 zoom=%s..%s\n' \
         "$smallest" "$largest" "$zoom_small" "$zoom_large"
     export PATH="$saved_path"
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
     sandbox_remove "$fake_root"
     sandbox_remove "$dir"
@@ -6005,8 +6005,8 @@ case_networkauth() {
     assert_runtime_canary_absent() {
         local surface method value
         for surface in "$fixture_root" "$thumb_fixture" "$hash_fixture" "$stale_fixture" \
-            "$evidence_dir" "$flea_log" "$run_log" "$case_log" \
-            "$repo/.superpowers/flea/release-014-20260904/reports/baseline-authenticated-ui.md"; do
+            "$evidence_dir" "$bachy_log" "$run_log" "$case_log" \
+            "$repo/.superpowers/bachy/release-014-20260904/reports/baseline-authenticated-ui.md"; do
             [[ -e "$surface" ]] || continue
             # -D skip and -r, not -R: case_network leaves FIFOs in its fixture, and a recursive read
             # of one blocks in the kernel forever waiting for a writer that never comes.
@@ -6060,7 +6060,7 @@ case "\$1 \${2:-}" in
 *) exit 1 ;;
 esac
 EOS
-    cat > "$dir/bin/flea-gio-auth" <<'EOS'
+    cat > "$dir/bin/bachy-gio-auth" <<'EOS'
 #!/bin/sh
 [ "$#" -eq 1 ] || exit 2
 IFS= read -r secret || exit 3
@@ -6075,12 +6075,12 @@ printf 'argc=1 uri=%s stdin-lines=1\n' "$1" >> "$state/helper.log"
 printf '%s\n' "$1" > "$state/mounted"
 secret=
 EOS
-    chmod +x "$dir/bin/gio" "$dir/bin/flea-gio-auth"
+    chmod +x "$dir/bin/gio" "$dir/bin/bachy-gio-auth"
 
     local real_home="$HOME" saved_path="$PATH"
     export HOME="$fixture_home"
     export PATH="$dir/bin:$PATH"
-    export FLEA_GIO_AUTH="$dir/bin/flea-gio-auth"
+    export BACHY_GIO_AUTH="$dir/bin/bachy-gio-auth"
     launch "$dir"
     export HOME="$real_home"
     wait_listing_wall 3
@@ -6090,7 +6090,7 @@ EOS
     local want_entries='Own slot|network|share|true' seen_entries="" entries_deadline
     entries_deadline=$(( $(date +%s%3N) + 12000 ))
     while (( $(date +%s%3N) < entries_deadline )); do
-        seen_entries=$(timeout 1 omarchy-drive ipc -p "$flea_ui/boot" flea networkEntries 2>/dev/null || true)
+        seen_entries=$(timeout 1 omarchy-drive ipc -p "$bachy_ui/boot" bachy networkEntries 2>/dev/null || true)
         [[ "$seen_entries" == "$want_entries" ]] && break
         sleep 0.1
     done
@@ -6115,7 +6115,7 @@ EOS
     [[ "$(cat "$state/unmount-uri")" == 'sftp://tester@slot.test/' ]] \
         || fail "networkauth: projected row unmounted its saved descendant URI"
     printf 'NETWORKAUTH descendant-dedup=ok saved-uri=ok mount-uri=ok\n'
-    kill_flea
+    kill_bachy
     : > "$state/mounted"
     printf '%s\n' \
         'dav://tester@plain-default.test/ Plain 80' \
@@ -6139,7 +6139,7 @@ EOS
     [[ "$(ipc networkPort)" == 443 && "$(ipc networkUri)" == 'dav://tester@plain-secure-port.test:443/' ]] \
         || fail "networkauth: dav :443 reparsed as port $(ipc networkPort), URI $(ipc networkUri)"
     printf 'NETWORKAUTH dav-default=80 dav-explicit=443\n'
-    kill_flea
+    kill_bachy
     : > "$bookmarks"
     : > "$state/info-uri"
     export HOME="$fixture_home"
@@ -6194,7 +6194,7 @@ EOS
     key "tester" >/dev/null
     key -k Tab >/dev/null
     [[ "$(ipc networkFocus)" == "Password" ]] || fail "networkauth: Password did not follow Username"
-    printf '%s' "$runtime_canary" | omarchy-drive key --window flea - >/dev/null
+    printf '%s' "$runtime_canary" | omarchy-drive key --window bachy - >/dev/null
     [[ "$(ipc networkPasswordState)" == "masked|set" ]] \
         || fail "networkauth: typed password is not masked"
     shot networkauth-password-masked
@@ -6218,7 +6218,7 @@ EOS
     [[ "$(ipc dialogOpen)" == "false" ]] || fail "networkauth: successful save left dialog open"
     [[ "$(cat "$helper_log")" == "argc=1 uri=smb://tester@slot.test/data stdin-lines=1" ]] \
         || fail "networkauth: SMB helper route is $(cat "$helper_log")"
-    # A save lands in Flea Favorites, never the shared GTK file, and it carries no secret.
+    # A save lands in Bachy Favorites, never the shared GTK file, and it carries no secret.
     local saved_favourite
     saved_favourite=$(ipc uiSettings | jq -c '.places.favourites[-1]')
     [[ "$saved_favourite" == '{"label":"data","path":"smb://tester@slot.test/data"}' ]] \
@@ -6272,8 +6272,8 @@ EOS
     for _field in Port Share Domain Username Password; do key -k Tab >/dev/null; done
     [[ "$(ipc networkFocus)" == "Password" ]] \
         || fail "networkauth: missing-helper setup did not reach Password"
-    printf '%s' "$runtime_canary" | omarchy-drive key --window flea - >/dev/null
-    mv "$dir/bin/flea-gio-auth" "$dir/bin/flea-gio-auth.real"
+    printf '%s' "$runtime_canary" | omarchy-drive key --window bachy - >/dev/null
+    mv "$dir/bin/bachy-gio-auth" "$dir/bin/bachy-gio-auth.real"
     key -k Return >/dev/null
     wait_network_status "Connect failed: authentication helper is unavailable" 10
     [[ "$(ipc dialogOpen)" == "true" \
@@ -6282,8 +6282,8 @@ EOS
     [[ "$(wc -l < "$helper_log")" -eq "$helper_calls" ]] \
         || fail "networkauth: missing helper wrote helper output"
 
-    cp "$dir/bin/flea-gio-auth.real" "$dir/bin/flea-gio-auth"
-    chmod 0644 "$dir/bin/flea-gio-auth"
+    cp "$dir/bin/bachy-gio-auth.real" "$dir/bin/bachy-gio-auth"
+    chmod 0644 "$dir/bin/bachy-gio-auth"
     key -k Escape >/dev/null
     key -k Return >/dev/null
     wait_network_status "Connect failed: authentication helper is unavailable" 10
@@ -6294,12 +6294,12 @@ EOS
         || fail "networkauth: permission-denied helper wrote helper output"
 
     # A helper that never exits must be stopped by the product deadline, not by this driver's wait.
-    cat > "$dir/bin/flea-gio-auth" <<'EOS'
+    cat > "$dir/bin/bachy-gio-auth" <<'EOS'
 #!/bin/sh
 IFS= read -r _password || exit 3
 sleep 120
 EOS
-    chmod +x "$dir/bin/flea-gio-auth"
+    chmod +x "$dir/bin/bachy-gio-auth"
     key -k Escape >/dev/null
     key -k Return >/dev/null
     wait_network_result mounting 5
@@ -6311,8 +6311,8 @@ EOS
 
     # After another restart the same saved row has no map entry. Submitting its populated form with
     # an empty password keeps it open and does not launch any helper.
-    cp "$dir/bin/flea-gio-auth.real" "$dir/bin/flea-gio-auth"
-    chmod +x "$dir/bin/flea-gio-auth"
+    cp "$dir/bin/bachy-gio-auth.real" "$dir/bin/bachy-gio-auth"
+    chmod +x "$dir/bin/bachy-gio-auth"
     key -k Escape >/dev/null
     export HOME="$fixture_home"
     launch "$dir"
@@ -6336,7 +6336,7 @@ EOS
     for _field in Port Share Domain Username Password; do key -k Tab >/dev/null; done
     [[ "$(ipc networkFocus)" == "Password" ]] \
         || fail "networkauth: corrected-retry setup did not reach Password"
-    printf '%s' "$runtime_canary" | omarchy-drive key --window flea - >/dev/null
+    printf '%s' "$runtime_canary" | omarchy-drive key --window bachy - >/dev/null
     key -k Return >/dev/null
     wait_network_result mounted
     [[ "$(cat "$state/info-uri")" == "smb://tester@slot.test/data" ]] \
@@ -6361,7 +6361,7 @@ EOS
     key -k Tab >/dev/null
     key "tester" >/dev/null
     key -k Tab >/dev/null
-    printf '%s' "$runtime_canary" | omarchy-drive key --window flea - >/dev/null
+    printf '%s' "$runtime_canary" | omarchy-drive key --window bachy - >/dev/null
     : > "$state/fail"
     key -k Return >/dev/null
     wait_network_result failed
@@ -6400,9 +6400,9 @@ EOS
         || fail "networkauth: corrected Retry retained stale error text"
 
     printf 'NETWORKAUTH artifact=ok stdin=one persistence=none retry=corrected eye=held missing-session=no-launch\n'
-    unset FLEA_GIO_AUTH
+    unset BACHY_GIO_AUTH
     export PATH="$saved_path"
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
@@ -6460,21 +6460,21 @@ EOS
 
     printf 'NETWORKTIMEOUT retained=ok retry=ok\n'
     export PATH="$saved_path"
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
 case_networklive() {
-    local uri=${FLEA_NETWORK_LIVE_URI:-}
-    local mount_uri=${FLEA_NETWORK_LIVE_MOUNT_URI:-$uri}
-    local product_root=${FLEA_NETWORK_LIVE_ROOT:-}
-    local relative=${FLEA_NETWORK_LIVE_RELATIVE:-}
-    local mount_relative=${FLEA_NETWORK_LIVE_MOUNT_RELATIVE:-}
-    local protocol=${FLEA_NETWORK_LIVE_PROTOCOL:-}
-    local host=${FLEA_NETWORK_LIVE_HOST:-}
-    local remote_path=${FLEA_NETWORK_LIVE_PATH:-}
-    local remote_user=${FLEA_NETWORK_LIVE_USER:-}
-    local auth=${FLEA_NETWORK_LIVE_AUTH:-none}
+    local uri=${BACHY_NETWORK_LIVE_URI:-}
+    local mount_uri=${BACHY_NETWORK_LIVE_MOUNT_URI:-$uri}
+    local product_root=${BACHY_NETWORK_LIVE_ROOT:-}
+    local relative=${BACHY_NETWORK_LIVE_RELATIVE:-}
+    local mount_relative=${BACHY_NETWORK_LIVE_MOUNT_RELATIVE:-}
+    local protocol=${BACHY_NETWORK_LIVE_PROTOCOL:-}
+    local host=${BACHY_NETWORK_LIVE_HOST:-}
+    local remote_path=${BACHY_NETWORK_LIVE_PATH:-}
+    local remote_user=${BACHY_NETWORK_LIVE_USER:-}
+    local auth=${BACHY_NETWORK_LIVE_AUTH:-none}
     local mount_root
     [[ "$uri" == *://* && "$mount_uri" == *://* \
         && "$product_root" == "/run/user/$(id -u)/gvfs/"* ]] \
@@ -6517,7 +6517,7 @@ case_networklive() {
             || fail "networklive: password field did not receive focus"
         [[ "$(ipc networkPasswordState)" == "masked|empty" ]] \
             || fail "networklive: password was populated before stdin delivery"
-        omarchy-drive key --window flea - >/dev/null
+        omarchy-drive key --window bachy - >/dev/null
         [[ "$(ipc networkPasswordState)" == "masked|set" ]] \
             || fail "networklive: password stdin was empty"
         key -k Return >/dev/null
@@ -6600,17 +6600,17 @@ case_networklive() {
     ! gio mount -l 2>/dev/null | grep -Fq -- "-> $mount_uri" || fail "networklive: GIO mount survived"
 
     printf 'NETWORKLIVE protocol=%s cold-mount=ok rail=ok browse=ok preview=ok unmount=ok saved=false\n' "$protocol"
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
 case_gvfs_cleanup() {
-    ( kill_flea ) >/dev/null 2>&1 || true
-    if [[ -n "${FLEA_GVFS_CASE_DIR:-}" ]]; then
-        DIR="$FLEA_GVFS_CASE_DIR" ./tools/flea-gvfs-fixture clean >/dev/null 2>&1 || true
+    ( kill_bachy ) >/dev/null 2>&1 || true
+    if [[ -n "${BACHY_GVFS_CASE_DIR:-}" ]]; then
+        DIR="$BACHY_GVFS_CASE_DIR" ./tools/bachy-gvfs-fixture clean >/dev/null 2>&1 || true
     fi
-    if [[ -n "${FLEA_GVFS_CASE_HOME:-}" ]]; then
-        sandbox_remove "$FLEA_GVFS_CASE_HOME"
+    if [[ -n "${BACHY_GVFS_CASE_HOME:-}" ]]; then
+        sandbox_remove "$BACHY_GVFS_CASE_HOME"
     fi
 }
 
@@ -6622,14 +6622,14 @@ case_gvfs() {
     local share_dir="$fixture_root/gvfs-share"
     local fixture_home="$fixture_root/gvfs-home"
     fixture_home_make "$fixture_home"
-    FLEA_GVFS_CASE_DIR="$share_dir"
-    FLEA_GVFS_CASE_HOME="$fixture_home"
+    BACHY_GVFS_CASE_DIR="$share_dir"
+    BACHY_GVFS_CASE_HOME="$fixture_home"
     trap case_gvfs_cleanup EXIT HUP INT TERM
     local real_home="$HOME"
     local uri local_path
 
-    uri=$(DIR="$share_dir" ./tools/flea-gvfs-fixture make)
-    DIR="$share_dir" ./tools/flea-gvfs-fixture mount
+    uri=$(DIR="$share_dir" ./tools/bachy-gvfs-fixture make)
+    DIR="$share_dir" ./tools/bachy-gvfs-fixture mount
     local_path=$(gio info "$uri" | sed -n 's/^local path: //p')
     [[ "$local_path" == "/run/user/$(id -u)/gvfs/"* ]] \
         || fail "gvfs: fixture has no FUSE path, got $local_path"
@@ -6657,7 +6657,7 @@ case_gvfs() {
     wait_path "$local_path"
     wait_listing 2
     [[ "$(ipc rowAt 0)" == "alpha.txt|"* || "$(ipc rowAt 1)" == "alpha.txt|"* ]] \
-        || fail "gvfs: alpha.txt absent from Flea listing"
+        || fail "gvfs: alpha.txt absent from Bachy listing"
 
     key -k Escape >/dev/null
     open_row alpha.txt
@@ -6681,7 +6681,7 @@ case_gvfs() {
     done
     [[ "$(ipc networkEntries)" != *"share.zip"* ]] \
         || fail "gvfs: the row survived unmount, the rail carries $(ipc networkEntries)"
-    ! gio mount -l | grep -Fq -- "-> $uri" || fail "gvfs: GIO mount survived Flea unmount"
+    ! gio mount -l | grep -Fq -- "-> $uri" || fail "gvfs: GIO mount survived Bachy unmount"
 
     printf 'GVFS rail=ok browse=ok preview=ok unmount=ok\n'
     case_gvfs_cleanup
@@ -6908,7 +6908,7 @@ EOS
         || fail "sharebrowser: a mount that genuinely failed navigated to $(ipc path)"
 
     printf 'SHAREBROWSER list=ok escape=ok mount-open=ok already-mounted-quirk=ok mount-failure=ok\n'
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"; sandbox_remove "$share1_dir"; sandbox_remove "$share2_dir"
 }
 
@@ -7025,7 +7025,7 @@ EOS
     # against a product that never ended the listing at all. A bare server root ends in gio list,
     # which hangs here exactly as gio info did, and nothing else in the chain is left to end it.
     # The stub and the fixture home are exported around this launch exactly as they were around the
-    # first: a relaunch that inherits the restored HOME starts Flea on the operator's own rail.
+    # first: a relaunch that inherits the restored HOME starts Bachy on the operator's own rail.
     export PATH="$dir/bin:$PATH"
     export HOME="$fixture_home"
     launch "$dir"
@@ -7056,7 +7056,7 @@ EOS
     [[ "$(ipc path)" == "$dir" ]] || fail "hangshare: the timed-out listing navigated to $(ipc path)"
 
     printf 'HANGSHARE busy-refusal=ok deadline=ok next-share-opens=ok list-deadline=ok\n'
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"; sandbox_remove "$good_dir"
 }
 
@@ -7186,7 +7186,7 @@ EOS
         || fail "unmount: Remove took a live mount off the rail, got $(ipc networkEntries)"
 
     printf 'UNMOUNT menu=ok escape=ok fire=ok no-menu-on-favourite=ok keyboard=ok unsaved=ok\n'
-    kill_flea
+    kill_bachy
 
     # The next two need a saved place, so the file goes in before the launch that reads it: one line
     # for the share the stub reports live, one for a place nothing mounts.
@@ -7265,7 +7265,7 @@ EOS
         || fail "unmount: the refused press rewrote the file, mtime moved from $before_press4"
 
     printf 'UNMOUNT remove saved-mounted=ok saved-only=ok pressed-again=ok\n'
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
@@ -7276,7 +7276,7 @@ case_phones() {
     local dir="$fixture_root/phones" state="$fixture_root/phones-state"
     sandbox_scratch "$dir"
     sandbox_scratch "$state"
-    mkdir -p "$dir/bin" "$dir/files" "$state/flea"
+    mkdir -p "$dir/bin" "$dir/files" "$state/bachy"
     # The folder gio hands back after the mount, named the way gvfs names it, so the pane's own path
     # is what ui/js/Mounts.js "trashable" reads for issue 133.
     local fuse="$dir/gvfs/mtp:host=SAMSUNG_Android"
@@ -7364,7 +7364,7 @@ EOS
     fixture_home_make "$fixture_home"
     # Drive size on is what makes a phone row's detail reachable: a device row draws one when its
     # size is not null, and a row carrying no size at all wrote a type error into this run's log.
-    printf '{"view":"list","places":{"driveSize":true,"trashCount":true}}\n' > "$state/flea/ui.json"
+    printf '{"view":"list","places":{"driveSize":true,"trashCount":true}}\n' > "$state/bachy/ui.json"
     local real_home="$HOME" saved_path="$PATH" old_state="${XDG_STATE_HOME:-}"
     export PATH="$dir/bin:$PATH"
     export XDG_STATE_HOME="$state"
@@ -7561,7 +7561,7 @@ EOS
     printf 'PHONES rows=ok marks=ok mount=ok trash-guard=ok unmount=ok iphone=ok\n'
     export PATH="$saved_path"
     if [[ -n "$old_state" ]]; then export XDG_STATE_HOME="$old_state"; else unset XDG_STATE_HOME; fi
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
@@ -7572,7 +7572,7 @@ EOS
 case_eject() {
     local dir="$fixture_root/eject"
     sandbox_scratch "$dir"
-    mkdir -p "$dir/bin" "$dir/mnt/FLEASTICK"
+    mkdir -p "$dir/bin" "$dir/mnt/BACHYSTICK"
     : > "$dir/0-one.txt"
     : > "$dir/0-two.txt"
 
@@ -7586,14 +7586,14 @@ case_eject() {
 if [ -f "$dir/ejected" ]; then
   mp=null
 else
-  mp='"$dir/mnt/FLEASTICK"'
+  mp='"$dir/mnt/BACHYSTICK"'
 fi
 cat <<JSON
 {"blockdevices":[
 {"name":"nvme0n1","path":"/dev/nvme0n1","label":null,"mountpoints":[null],"rm":false,"size":"238.5G","type":"disk","model":"KBG40ZNS256G",
 "children":[{"name":"nvme0n1p1","path":"/dev/nvme0n1p1","label":null,"mountpoints":["/"],"rm":false,"size":"238.5G","type":"part","model":null}]},
 {"name":"sda","path":"/dev/sda","label":null,"mountpoints":[null],"rm":true,"size":"116.1G","type":"disk","model":"USB Flash Disk",
-"children":[{"name":"sda1","path":"/dev/sda1","label":"FLEASTICK","mountpoints":[\$mp],"rm":true,"size":"116.1G","type":"part","model":null}]}]}
+"children":[{"name":"sda1","path":"/dev/sda1","label":"BACHYSTICK","mountpoints":[\$mp],"rm":true,"size":"116.1G","type":"part","model":null}]}]}
 JSON
 EOS
     chmod +x "$dir/bin/lsblk"
@@ -7622,10 +7622,10 @@ EOS
     # bin/, mnt/ and gio.log are the stubs' own fixture entries beside the two files under test.
     wait_listing 5
     for _attempt in $(seq 1 100); do
-        [[ "$(ipc deviceEntries)" == *"FLEASTICK|device|volume|true" ]] && break
+        [[ "$(ipc deviceEntries)" == *"BACHYSTICK|device|volume|true" ]] && break
         sleep 0.05
     done
-    [[ "$(ipc deviceEntries)" == *"FLEASTICK|device|volume|true" ]] \
+    [[ "$(ipc deviceEntries)" == *"BACHYSTICK|device|volume|true" ]] \
         || fail "eject: the stub volume never appeared live, got $(ipc deviceEntries)"
     # The hostname prefix makes the disk row's label the box's own, so the shape is asserted, not the text.
     [[ "$(ipc deviceEntries | grep -c '|device|disk|true')" == "1" ]] \
@@ -7662,9 +7662,9 @@ EOS
     # mounted, so the sentence must refuse. A verdict read off the exit code would say safe here.
     key -k Return >/dev/null
     settle
-    grep -q "^mount -e $dir/mnt/FLEASTICK\$" "$gio_log" \
+    grep -q "^mount -e $dir/mnt/BACHYSTICK\$" "$gio_log" \
         || fail "eject: the menu row did not run gio mount -e on the mount point, log is: $(cat "$gio_log")"
-    local refusal="FLEASTICK is still mounted; close what is using it."
+    local refusal="BACHYSTICK is still mounted; close what is using it."
     local seen=""
     for _attempt in $(seq 1 250); do
         seen=$(ipc lastMessage)
@@ -7684,7 +7684,7 @@ EOS
     click_rail_row "$volume_row" right
     settle
     key -k Return >/dev/null
-    wait_message "Ejected FLEASTICK, it is safe to unplug."
+    wait_message "Ejected BACHYSTICK, it is safe to unplug."
     printf 'EJECT really entries=%q\n' "$(ipc deviceEntries)"
     shot eject-safe
 
@@ -7705,7 +7705,7 @@ EOS
         || fail "eject: expected exactly two ejects, log is: $(cat "$gio_log")"
 
     printf 'EJECT menu=ok internal-disk-offers-nothing=ok exit-code-is-not-the-verdict=ok listing-is=ok no-force=ok\n'
-    kill_flea
+    kill_bachy
     if [[ -n "$real_state" ]]; then export XDG_STATE_HOME="$real_state"; else unset XDG_STATE_HOME; fi
     sandbox_remove "$fixture_home"
 }
@@ -7851,7 +7851,7 @@ EOS
     printf 'Mount(0): isos on 192.168.1.10 -> smb://192.168.1.10/isos/\n' > "$dir/bin/gio-out"
     printf 'RENAME poll-survives=ok swap-closes=ok\n'
 
-    kill_flea
+    kill_bachy
 
     # Persistence across a real relaunch: the whole point of writing to the bookmarks file at all.
     export HOME="$fixture_home"
@@ -7869,7 +7869,7 @@ EOS
         || fail "rename: the label did not survive a relaunch, got $(ipc networkEntries)"
 
     printf 'RENAME relabel=ok escape=ok empty=ok create-bookmark=ok persists=ok\n'
-    kill_flea
+    kill_bachy
     sandbox_remove "$fixture_home"
 }
 
@@ -7893,8 +7893,8 @@ case_taildrop() (
 #!/usr/bin/env bash
 set -eu
 [[ "${1:-}" == open ]] || exec /usr/bin/gio "$@"
-box=${FLEA_PROVIDERS_BOX:?}
-[[ "$box" == /* && -f "$box/.flea-test-sandbox" ]] || exit 90
+box=${BACHY_PROVIDERS_BOX:?}
+[[ "$box" == /* && -f "$box/.bachy-test-sandbox" ]] || exit 90
 log=$(realpath -m -- "$box/calls.jsonl")
 [[ "$log" == "$box/"* && "$log" != "$box" ]] || exit 91
 jq -cn --arg helper gio --args '{helper:$helper,args:$ARGS.positional}' -- "$@" >> "$log"
@@ -7904,8 +7904,8 @@ EOS
     providers_install omarchy-tailscale-send yes
     export HOME="$menu_box/home" XDG_STATE_HOME="$menu_box/state" XDG_CONFIG_HOME="$menu_box/config"
     export XDG_CACHE_HOME="$menu_box/cache" XDG_DATA_HOME="$menu_box/data"
-    export PATH="$menu_box/open-bin:$menu_box/bin" FLEA_PROVIDERS_BOX="$menu_box"
-    "$flea_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null \
+    export PATH="$menu_box/open-bin:$menu_box/bin" BACHY_PROVIDERS_BOX="$menu_box"
+    "$bachy_bin" --ui-state '{"view":"list","keys":"default","menu":{"hidden":[]}}' >/dev/null \
         || fail 'taildrop: private settings seed failed'
     launch "$menu_dir"
     wait_listing 3
@@ -8046,13 +8046,13 @@ case_renamelife() {
     [[ -e "$dir/f001.txt" ]] || fail "renamelife: f001.txt was renamed by a whitespace submit"
 
     printf 'RENAMELIFE arms=ok view=ok scroll=ok navigate=ok whitespace=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # The settings panel: its doors, its seven sections, and the one thing a settings window
 # has to do that a menu does not, which is outlive the process that wrote it. XDG_STATE_HOME and
 # XDG_CONFIG_HOME both point inside the fixture root for the whole case, so nothing here can write
-# the operator's own ~/.local/state/flea/ui.json; hard rule 9 covers writes and not only deletes.
+# the operator's own ~/.local/state/bachy/ui.json; hard rule 9 covers writes and not only deletes.
 case_places() {
     local dir="$fixture_root/places"
     local config="$fixture_root/places-config"
@@ -8063,18 +8063,18 @@ case_places() {
     : > "$dir/a.txt"
     mkdir -p "$dir/sub" || fail "places: the second favourite's folder could not be made"
     export XDG_CONFIG_HOME="$config" XDG_STATE_HOME="$state"
-    settings_seed "$state" "$config" "$state/flea/ui.json"
+    settings_seed "$state" "$config" "$state/bachy/ui.json"
     launch "$dir"
     wait_listing 2
     settings_places "$dir" places-favourites
-    kill_flea
+    kill_bachy
 }
 
 case_dual() {
     local dir="$fixture_root/dual" state="$fixture_root/dual-state" before status_disk_x
     sandbox_scratch "$dir"
     sandbox_scratch "$state"
-    mkdir -p "$dir/left/nested" "$dir/right" "$state/flea"
+    mkdir -p "$dir/left/nested" "$dir/right" "$state/bachy"
     printf 'left\n' > "$dir/left/a.txt"
     printf 'left\n' > "$dir/left/b.txt"
     printf 'nested\n' > "$dir/left/nested/one.txt"
@@ -8082,7 +8082,7 @@ case_dual() {
     printf 'right\n' > "$dir/right/d.txt"
     export XDG_STATE_HOME="$state"
     jq -n --arg left "$dir/left" --arg right "$dir/right" \
-        '{view:"list",keys:"default",dual:{paths:[$left,$right],focus:0}}' > "$state/flea/ui.json"
+        '{view:"list",keys:"default",dual:{paths:[$left,$right],focus:0}}' > "$state/bachy/ui.json"
     launch "$dir/left"
     wait_listing 3
     # The baseline the disk facts hold to for the rest of this case, taken before any transient exists.
@@ -8134,7 +8134,7 @@ case_dual() {
         || fail "dual: independent watch refresh did not preserve right cursor"
     shot dual-right-focused
     before=$(ipc dualState)
-    kill_flea
+    kill_bachy
     # A named folder goes to the focused side since 0.3.3 (case_duallaunch); the restored pair is what dualState proves below.
     launch "$dir/right"
     wait_listing 2
@@ -8216,7 +8216,7 @@ case_dual() {
     click_chrome list
     settle
     ipc dualState | jq -e '(.active | not) and .focused == 0' >/dev/null || fail "dual: leaving dual did not restore primary focus"
-    kill_flea
+    kill_bachy
     printf 'DUAL navigation=ok focus=ok watch=ok restart=ok crumb=ok before=%s\n' "$before"
 }
 
@@ -8357,13 +8357,13 @@ case_dualsort() {
         key -k Escape >/dev/null
         dual_sort_wait kind:asc file-00.txt
     done
-    kill_flea
+    kill_bachy
     launch "$dir/left"
     menus_expect dualState '.active and .focused == 1 and all(.panes[]; .total == 80 and (.loading | not))' 'restart restores paths and focus with the saved default sort'
     dual_sort_wait kind:asc file-00.txt
     key -k Tab >/dev/null
     dual_sort_wait kind:asc file-00.txt
-    kill_flea
+    kill_bachy
     printf 'DUAL_SORT native-key=independent header-pointer=independent hidden-session=retained settings=live search-settings=deferred single-persistence=ok restart=defaults checks=%s\n' "$menus_checks"
 }
 
@@ -8381,10 +8381,10 @@ case_settings() {
     local real_state="${XDG_STATE_HOME-}"
     export XDG_CONFIG_HOME="$config"
     export XDG_STATE_HOME="$state"
-    local stored="$state/flea/ui.json"
+    local stored="$state/bachy/ui.json"
 
     # Seeded through the same CLI the window writes through: a column set the header menu owns, two
-    # keys the backend owns and no control in this panel writes, and one key only a newer Flea knows.
+    # keys the backend owns and no control in this panel writes, and one key only a newer Bachy knows.
     # What keeps them below is src/uistate.rs's merge, not a copy the window happened to be holding.
     settings_seed "$state" "$config" "$stored"
 
@@ -8423,12 +8423,12 @@ case_settings() {
     # stored vocabulary rather than two that would have to be kept in step.
     ! grep -q 'uiScale' "$stored" || fail "settings: the state file still carries an interface-scale multiplier"
     ! grep -q '"px"' "$stored" || fail "settings: the state file still carries 0.1.3's override shape"
-    [[ ! -e "$config/flea/view.json" ]] \
-        || fail "settings: a second settings file was written at $config/flea/view.json"
+    [[ ! -e "$config/bachy/view.json" ]] \
+        || fail "settings: a second settings file was written at $config/bachy/view.json"
 
     settings_assert_backend "$state" "$config" "$pinned_base"
 
-    kill_flea
+    kill_bachy
     launch "$dir"
     wait_listing 3
     [[ "$(token_of baseSize)" == "$pinned_base" ]] \
@@ -8474,7 +8474,7 @@ case_settings() {
     printf 'SETTINGS doors=ok view=ok places=ok preview=ok about=ok display=ok menus=ok keys=ok restart=ok backend=ok refused=ok unread=ok\n'
     if [[ -n "$real_config" ]]; then export XDG_CONFIG_HOME="$real_config"; else unset XDG_CONFIG_HOME; fi
     if [[ -n "$real_state" ]]; then export XDG_STATE_HOME="$real_state"; else unset XDG_STATE_HOME; fi
-    kill_flea
+    kill_bachy
 }
 
 # Preset-specific native delivery, with no mutation through the IPC seam.
@@ -8504,7 +8504,7 @@ settings_wait_value() {
     local filter="$1" attempt
     for attempt in $(seq 1 30); do
         if ipc uiSettings | jq -e "$filter" >/dev/null \
-            && jq -e "$filter" "$XDG_STATE_HOME/flea/ui.json" >/dev/null; then return; fi
+            && jq -e "$filter" "$XDG_STATE_HOME/bachy/ui.json" >/dev/null; then return; fi
         sleep 0.1
     done
     fail "settings: session and persisted state never agreed on $filter"
@@ -8688,24 +8688,24 @@ settings_about() {
     key -k Escape >/dev/null; settle
 }
 
-# The state this case starts from, laid down through flea --ui-state so the schema sees it too. The
+# The state this case starts from, laid down through bachy --ui-state so the schema sees it too. The
 # unknown key goes in by hand afterwards, because the CLI refuses a key this build does not know.
 settings_seed() {
     local state="$1" config="$2" stored="$3"
-    env XDG_STATE_HOME="$state" XDG_CONFIG_HOME="$config" "$flea_bin" --ui-state \
+    env XDG_STATE_HOME="$state" XDG_CONFIG_HOME="$config" "$bachy_bin" --ui-state \
         '{"columns":["name","size"],"places":{"sidebarWidth":224},"sort":{"key":"size"}}' >/dev/null \
-        || fail "settings: the seeding write through flea --ui-state failed"
-    jq '. + {fromANewerFlea: {aKeyThisBuildHasNeverHeardOf: true}}' "$stored" > "$stored.seed" \
-        || fail "settings: the newer-Flea key could not be added to the seed"
+        || fail "settings: the seeding write through bachy --ui-state failed"
+    jq '. + {fromANewerBachy: {aKeyThisBuildHasNeverHeardOf: true}}' "$stored" > "$stored.seed" \
+        || fail "settings: the newer-Bachy key could not be added to the seed"
     mv "$stored.seed" "$stored"
 }
 
-# flea --ui-state with no patch is the read half of the one shared path, so this reads the panel's
+# bachy --ui-state with no patch is the read half of the one shared path, so this reads the panel's
 # own three settings back out of the backend, and every key beside them that nobody here writes.
 settings_assert_backend() {
     local state="$1" config="$2" pinned_base="$3" doc
-    doc=$(env XDG_STATE_HOME="$state" XDG_CONFIG_HOME="$config" "$flea_bin" --ui-state) \
-        || fail "settings: flea --ui-state could not read the state file back"
+    doc=$(env XDG_STATE_HOME="$state" XDG_CONFIG_HOME="$config" "$bachy_bin" --ui-state) \
+        || fail "settings: bachy --ui-state could not read the state file back"
     settings_backend_holds "$doc" ".display.textSize.mode == $pinned_base" "the ${pinned_base}px stop"
     settings_backend_holds "$doc" '.keys == "windows"' "the Windows preset"
     settings_backend_holds "$doc" '.menu.hidden | index("paste")' "the hidden Paste action"
@@ -8713,12 +8713,12 @@ settings_assert_backend() {
     # value beside it here would be a value that could disagree with the set the menus actually read.
     settings_backend_holds "$doc" '.menu | has("basic") | not' "menu.hidden alone, with no stored master"
     # The preservation half, and the whole point of one store: four settings writes are four merges,
-    # so the retained view state, the backend's own keys and a newer Flea's key are all still here.
+    # so the retained view state, the backend's own keys and a newer Bachy's key are all still here.
     settings_backend_holds "$doc" '.columns == ["name","size"]' "the stored column set"
     settings_backend_holds "$doc" '.places.sidebarWidth == 224' "places.sidebarWidth"
     settings_backend_holds "$doc" '.sort.key == "size"' "sort.key"
-    settings_backend_holds "$doc" '.fromANewerFlea.aKeyThisBuildHasNeverHeardOf == true' \
-        "the key only a newer Flea knows"
+    settings_backend_holds "$doc" '.fromANewerBachy.aKeyThisBuildHasNeverHeardOf == true' \
+        "the key only a newer Bachy knows"
 }
 
 settings_backend_holds() {
@@ -8734,7 +8734,7 @@ settings_read_refused() {
     local stored="$1" dir="$2" before_sha before_ino
     # Before the reading, because the window this case has been driving still owns a writer, and a
     # patch that landed between the sha below and the chmod would read as this block's own damage.
-    kill_flea
+    kill_bachy
     before_sha=$(sha256sum "$stored" | cut -d' ' -f1)
     before_ino=$(stat -c '%i' "$stored")
     chmod 000 "$stored" || fail "settings: the state file could not be made unreadable"
@@ -8759,7 +8759,7 @@ settings_read_refused() {
     done
     [[ "$(ipc lastMessage)" == "That setting could not be saved." ]] \
         || fail "settings: a save onto an unreadable state file was not reported, the status bar says $(ipc lastMessage)"
-    kill_flea
+    kill_bachy
     chmod 600 "$stored" || fail "settings: the state file could not be made readable again"
     [[ "$(sha256sum "$stored" | cut -d' ' -f1)" == "$before_sha" ]] \
         || fail "settings: a save onto an unreadable state file spent the operator's bytes"
@@ -8771,8 +8771,8 @@ case_settingsrefused() {
     local dir="$fixture_root/settingsrefused" state="$fixture_root/settingsrefused-state"
     sandbox_scratch "$dir"
     sandbox_scratch "$state"
-    local old_state="${XDG_STATE_HOME:-}" stored="$state/flea/ui.json"
-    mkdir -p "$state/flea"
+    local old_state="${XDG_STATE_HOME:-}" stored="$state/bachy/ui.json"
+    mkdir -p "$state/bachy"
     printf '{"view":"list"}\n' > "$stored"
     printf 'a\n' > "$dir/a.txt"
     printf 'b\n' > "$dir/b.txt"
@@ -8784,11 +8784,11 @@ case_settingsrefused() {
 
 # A failed write is reported, never swallowed. The state directory is made unwritable, so the temp
 # file src/uistore.rs renames into place cannot be created at all, and the panel's next change is a
-# change the file does not have. The user is told that in the one place Flea says things.
+# change the file does not have. The user is told that in the one place Bachy says things.
 settings_write_refused() {
     local state="$1" pinned_base="$2" before refused_base retried_base
-    before=$(cat "$state/flea/ui.json")
-    chmod 500 "$state/flea" || fail "settings: the state directory could not be made read-only"
+    before=$(cat "$state/bachy/ui.json")
+    chmod 500 "$state/bachy" || fail "settings: the state directory could not be made read-only"
     settings_open_key
     settle
     # The stop row is Display's, and the panel reopens on whatever section the last block left it on.
@@ -8802,10 +8802,10 @@ settings_write_refused() {
         || fail "settings: the refused step did not move the size on screen, still $refused_base"
     [[ "$(ipc lastMessage)" == "That setting could not be saved." ]] \
         || fail "settings: a refused write was not reported, the status bar says $(ipc lastMessage)"
-    chmod 700 "$state/flea" || fail "settings: the state directory could not be made writable again"
-    [[ "$(cat "$state/flea/ui.json")" == "$before" ]] \
+    chmod 700 "$state/bachy" || fail "settings: the state directory could not be made writable again"
+    [[ "$(cat "$state/bachy/ui.json")" == "$before" ]] \
         || fail "settings: a refused write changed the state file anyway"
-    grep -q "\"mode\": $pinned_base" "$state/flea/ui.json" \
+    grep -q "\"mode\": $pinned_base" "$state/bachy/ui.json" \
         || fail "settings: the state file did not keep the stop the refusal could not replace"
     # The book must not have believed the refusal: the next step still writes, and lands.
     key h >/dev/null
@@ -8813,7 +8813,7 @@ settings_write_refused() {
     retried_base=$(token_of baseSize)
     (( retried_base < refused_base )) \
         || fail "settings: the step after a refusal did not move the size, still $retried_base"
-    grep -q "\"mode\": $retried_base" "$state/flea/ui.json" \
+    grep -q "\"mode\": $retried_base" "$state/bachy/ui.json" \
         || fail "settings: the step after a refusal never reached the state file"
     key -k Escape >/dev/null
     settle
@@ -8868,7 +8868,7 @@ settings_doors() {
 }
 
 # The Display section, whose consumer is ui/Theme.qml. The board rules that Omarchy owns the size
-# until Flea is told otherwise, that an override takes one of seven stops and not a free number, and
+# until Bachy is told otherwise, that an override takes one of seven stops and not a free number, and
 # that the monitor scale is read-only. Every stop is walked and its whole token row is read back off
 # the live seam against the board's own layout table, because the table is the contract.
 # The title's centre with the Display section up: GM's ruling is that the card keeps one place and
@@ -8891,7 +8891,7 @@ settings_display() {
     [[ "$(ipc settingsRows)" == *"fact|Scale|"* ]] \
         || fail "settings: the Display section draws no monitor scale, got $(ipc settingsRows)"
     [[ "$(ipc settingsRows)" != *"choice|Scale|"* ]] \
-        || fail "settings: the monitor scale is a control, and the board says Flea never steps it"
+        || fail "settings: the monitor scale is a control, and the board says Bachy never steps it"
     assert_monitor_scale_row
     shot settings-text-follow
 
@@ -9000,7 +9000,7 @@ settings_walk_to_stop() {
         || fail "settings: seven steps did not reach the ${want}px stop, stopped at $(token_of baseSize)"
 }
 
-# One key of Theme.tokens(), which is the live seam tools/flea-metrics-gate diffs.
+# One key of Theme.tokens(), which is the live seam tools/bachy-metrics-gate diffs.
 token_of() {
     ipc tokens | grep "^$1=" | cut -d= -f2-
 }
@@ -9227,7 +9227,7 @@ case_duallaunch() {
             || fail "duallaunch: focus $side opened $(jq -c '[.panes[].path]' <<< "$dual"), wanted $want_left and $want_right"
         [[ "$(jq -r '.focused' <<< "$dual")" == "$side" ]] || fail "duallaunch: focus moved from side $side: $dual"
         printf 'DUALLAUNCH focus=%s left=%s right=%s\n' "$side" "$(jq -r '.panes[0].path' <<< "$dual")" "$(jq -r '.panes[1].path' <<< "$dual")"
-        kill_flea
+        kill_bachy
     done
 }
 
@@ -9291,7 +9291,7 @@ case_clickthrough() {
     clickthrough_permissions "$dir" "$parked"
     clickthrough_delete "$dir" "$parked"
     printf 'CLICKTHROUGH chips=ok rail=ok favourite=ok permissions=ok close=ok delete=ok cursor=%s\n' "$parked"
-    kill_flea
+    kill_bachy
     export XDG_STATE_HOME="$suite_state_home"
 }
 
@@ -9412,7 +9412,7 @@ case_wheelunder() {
     key -k Escape >/dev/null
     settle
     printf 'WHEELUNDER menu=ok settings=ok keymap=ok network=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 # A pointer warp sends no motion to Qt (hyprland cursor.move carries no wl_pointer frame), so hover needs the one uinput pixel the scroll case uses.
@@ -9484,7 +9484,7 @@ lit_in_rect() {
 
 # The media fixture's rows and a shared fresh layout for the two per-view cases below.
 views_fixture() {
-    local dir="$1" media="$FIXTURE_ROOT/flea-media-btrfs" i
+    local dir="$1" media="$FIXTURE_ROOT/bachy-media-btrfs" i
     [[ -d "$media" ]] || fail "the media fixture is missing at $media"
     sandbox_scratch "$dir"
     mkdir -p "$dir/empty" "$dir/sub"
@@ -9563,7 +9563,7 @@ case_overlays() {
         [[ "$(ipc settingsOpen)" == "false" && "$(ipc cursor)" == "0" ]] || fail "$mode: a left click on the ground left settings $(ipc settingsOpen) and the cursor on $(ipc cursor)"
         printf 'OVERLAYS %s menu=ok settings=ok\n' "$mode"
     done
-    kill_flea
+    kill_bachy
 }
 
 # The same manual test: thumbnails, the empty hero, the peeked column's menu and video playback, per
@@ -9724,13 +9724,13 @@ case_views() {
         [[ "$(ipc path)" == "$root" ]] || fail "$mode: two Backspaces did not return to the root, path $(ipc path)"
         printf 'VIEWS %s thumbs=ok hero=%s\n' "$pass" "$lit"
     done
-    kill_flea
+    kill_bachy
 }
 
 # One row per format family the preview classifies, all in the columns view's own frame, judged on
 # what the frame draws: decoded pixels, lines, member names, pages, an advancing position, the sentence.
 formats_fixture() {
-    local dir="$1" media="$FIXTURE_ROOT/flea-media-btrfs"
+    local dir="$1" media="$FIXTURE_ROOT/bachy-media-btrfs"
     [[ -d "$media" ]] || fail "the media fixture is missing at $media"
     sandbox_scratch "$dir"
     cp "$(ls "$media"/*.jpg | head -1)" "$dir/p.jpg"
@@ -9754,7 +9754,7 @@ PYEOF
     magick \( -size 400x560 xc:white -fill black -draw "rectangle 40,40 120,80" \) \
            \( -size 400x560 xc:white -fill black -draw "rectangle 40,40 360,520" \) "$dir/manual.pdf"
     head -c 200 "$dir/manual.pdf" > "$dir/broken.pdf"
-    printf 'hello from flea\nsecond line\n' > "$dir/sample.txt"
+    printf 'hello from bachy\nsecond line\n' > "$dir/sample.txt"
     printf '# Notes\n\nSome *text*.\n' > "$dir/notes.md"
     : > "$dir/empty.txt"
     head -c 1100000 /dev/zero | tr '\0' 'x' > "$dir/big.txt"
@@ -9841,8 +9841,8 @@ case_formats() {
     column_expect broken.pdf error
     [[ "$(ipc columnFailure)" == "This file could not be read." ]] || fail "formats: broken.pdf's sentence is '$(ipc columnFailure)'"
     column_expect sample.txt text
-    for _attempt in $(seq 1 40); do [[ "$(ipc columnTextLines)" == "hello from flea|"* ]] && break; sleep 0.1; done
-    [[ "$(ipc columnTextLines)" == "hello from flea|second line"* ]] || fail "formats: sample.txt's lines read '$(ipc columnTextLines)'"
+    for _attempt in $(seq 1 40); do [[ "$(ipc columnTextLines)" == "hello from bachy|"* ]] && break; sleep 0.1; done
+    [[ "$(ipc columnTextLines)" == "hello from bachy|second line"* ]] || fail "formats: sample.txt's lines read '$(ipc columnTextLines)'"
     shot formats-sample-lines
     lit=$(lit_in_rect "$evidence_dir/formats-sample-lines.png" $(ipc columnLinesRect))
     (( lit > 50 )) || fail "formats: sample.txt's lines box painted $lit lit pixels"
@@ -9884,7 +9884,7 @@ case_formats() {
     key -k Escape >/dev/null
     settle
     printf 'FORMATS images=4 videos=3 audio=1 pdf=2 text=4 code=2 archives=4 links=3 error=1 unsupported=1 multi=1\n'
-    kill_flea
+    kill_bachy
 }
 
 # Lit pixels inside the preview's content box, inset past any border; the name and floor are the caller's.
@@ -9966,7 +9966,7 @@ case_previewviews() {
             switch_view "$mode"
             key -k space >/dev/null
             for _attempt in $(seq 1 40); do [[ "$(ipc previewState)" == "text" ]] && break; sleep 0.1; done
-            [[ "$(ipc previewKind)" == "text" && "$(ipc previewText)" == *"$([[ $name == sample.txt ]] && echo 'hello from flea' || echo 'fn main')"* ]] \
+            [[ "$(ipc previewKind)" == "text" && "$(ipc previewText)" == *"$([[ $name == sample.txt ]] && echo 'hello from bachy' || echo 'fn main')"* ]] \
                 || fail "$mode: Space on $name: kind $(ipc previewKind), state $(ipc previewState), text '$(ipc previewText | cut -c1-40)'"
             preview_surface_lit "$mode-$name" 50 "$name's text"
             key -k Escape >/dev/null
@@ -10046,7 +10046,7 @@ case_previewviews() {
     settle
     [[ "$(ipc previewOpen)" == "false" && "$(ipc columnPlayerLoaded)" == "false" ]] || fail "previewviews: after Escape, preview $(ipc previewOpen), column player $(ipc columnPlayerLoaded)"
     printf 'PREVIEWVIEWS lifetimes=ok\n'
-    kill_flea
+    kill_bachy
 }
 
 . "$repo/tests/ui-pdf.sh"
@@ -10076,7 +10076,7 @@ declare -a wanted=("$@")
 [[ ${#wanted[@]} -eq 0 ]] && wanted=(cursor scroll scrollbar terminal open rows click ctrlclick viewrestart dd collide sortrestart duallaunch dirsortstale editplace mute placemenu runscript unmounted sidebar menu background hidden selection watch optical select colour lifted icons thumbs hashcache stale nosweep oem header overflow focus preview pdffocus network netmark networkauth networktimeout gvfs sharebrowser unmount phones trasharm eject rename renamelife taildrop providers grid columns operations tabs openterminal renderer settings makedefault clickthrough wheelunder overlays views formats previewviews hangshare openwithdesign noblank transferlive)
 
 : > "$run_log"
-: > "$flea_log"
+: > "$bachy_log"
 failures=0
 # A refusal and an assertion failure mean different things: a failure says a test is wrong, a refusal
 # says the environment is unsafe and every case after it is running against that. Every case runs in
@@ -10107,29 +10107,29 @@ for name in "${wanted[@]}"; do
 done
 
 # launch() rolled every earlier case into the run log, so this adds the last case's share.
-cat "$flea_log" >> "$run_log" 2>/dev/null || true
+cat "$bachy_log" >> "$run_log" 2>/dev/null || true
 
 # The last case's backend is reaped here and not only by the trap, so a wedge lands in the tally like any other check.
-if ! ( kill_flea ); then
+if ! ( kill_bachy ); then
     printf 'FAIL drain\n'
     failures=$((failures + 1))
 fi
 
 printf '\nLOG_CHECK_BEGIN %s\n' "$run_log"
-# case_network makes its own Flea store unreadable on purpose, and Quickshell correctly reports
+# case_network makes its own Bachy store unreadable on purpose, and Quickshell correctly reports
 # that it cannot watch a file it cannot read. This drops that one line and nothing else: the path
 # carries this run's own pid and names one fixture home, so no product warning can ever match it.
 # The reader has no -q, so it drains the pipe and takes no SIGPIPE; pipefail then reports its own
 # status, which is what says whether anything but that one line matched.
-expected_warning="inotify_add_watch($fixture_root/network-state/flea/ui.json) failed: (Permission denied)"
-# Qt Multimedia's ffmpeg backend saying VAAPI zero-copy needs an OpenGL RHI; Flea runs Vulkan, the backend falls back, and case_views proves the frames still change.
+expected_warning="inotify_add_watch($fixture_root/network-state/bachy/ui.json) failed: (Permission denied)"
+# Qt Multimedia's ffmpeg backend saying VAAPI zero-copy needs an OpenGL RHI; Bachy runs Vulkan, the backend falls back, and case_views proves the frames still change.
 vaapi_warning="VAAPITextureConverter: No rhi or non openGL based RHI"
 # case_formats and case_previewviews open a file with no permission bits on purpose; Qt names it, and this run's fixture path is the whole match.
 unreadable_warning="$fixture_root/formats/shut.jpg"
 unreadable_warning2="$fixture_root/previewviews/shut.jpg"
 # case_settings and case_networkauth chmod 000 a fixture ui.json on purpose, so Quickshell reports
 # that it cannot watch it. How many times it says so is the watch's business, not this suite's.
-unreadable_state_warning="/flea/ui.json) failed: (Permission denied)"
+unreadable_state_warning="/bachy/ui.json) failed: (Permission denied)"
 # A case registers a warning once for each time it causes it. Sample input, one uniq -c line: "      2 Process failed to start, ..."
 while read -r want warning; do
     count=$(grep -F -c -- "$warning" "$run_log" || true)

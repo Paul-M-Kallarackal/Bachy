@@ -4,13 +4,13 @@ import Quickshell
 import Quickshell.Io
 import "js/Update.js" as Update
 
-// The one updater every surface shares: `flea --update check` asks the installing source, `flea --update` opens Omarchy's updater, and ui/js/Update.js holds the state and the words.
+// The one updater every surface shares: `bachy --update check` asks the installing source, `bachy --update` opens Omarchy's updater, and ui/js/Update.js holds the state and the words.
 QtObject {
     id: root
 
-    readonly property string binary: Quickshell.env("FLEA_BIN") || "flea"
+    readonly property string binary: Quickshell.env("BACHY_BIN") || "bachy"
     property var status: Update.idle()
-    // The background menu builds its Update Flea row from this, and builds none while it is empty.
+    // The background menu builds its Update Bachy row from this, and builds none while it is empty.
     readonly property string menuVersion: Update.menuVersion(root.status)
     // The pane whose footer says what a launch did; it can close meanwhile, which say() allows for.
     property var asker: null

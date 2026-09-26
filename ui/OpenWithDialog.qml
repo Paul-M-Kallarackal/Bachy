@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/OpenWith.js" as OpenWith
 
 // OpenWith.html rule 4: the Convert popup family, and the one place a default handler is written.
@@ -192,7 +191,7 @@ Item {
             onWheel: function (wheel) { wheel.accepted = true }
         }
 
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.topMargin: Theme.spacing.rowPaddingX
@@ -241,7 +240,7 @@ Item {
                     border.width: Theme.spacing.hairline
                     border.color: field.activeFocus ? Theme.color.accent : Theme.color.muted
 
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         id: lens
                         anchors.left: parent.left
                         anchors.leftMargin: Theme.spacing.gap
@@ -290,7 +289,7 @@ Item {
                         width: field.text.length > 0 ? Theme.font.caption : 0
                         height: Theme.font.caption
 
-                        Flea.Glyph {
+                        Bachy.Glyph {
                             anchors.fill: parent
                             visible: field.text.length > 0
                             name: "x"
@@ -323,7 +322,7 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     activeFocusOnTab: false
                     Keys.forwardTo: [keys]
-                    Flea.ViewportScrollBar {
+                    Bachy.ViewportScrollBar {
                         parent: list
                         anchors { top: parent.top; right: parent.right }
                         flickable: list
@@ -364,7 +363,7 @@ Item {
                             textFormat: Text.PlainText
                         }
 
-                        Flea.MenuRow {
+                        Bachy.MenuRow {
                             id: menuRow
                             visible: !row.isEyebrow
                             width: parent.width
@@ -442,7 +441,7 @@ Item {
                     border.width: Theme.spacing.hairline * 2
                     border.color: root.always || root.focusPart === 2 ? Theme.color.accent : Theme.color.muted
 
-                    Flea.Glyph {
+                    Bachy.Glyph {
                         anchors.centerIn: parent
                         width: parent.width / 2
                         height: width
@@ -514,7 +513,7 @@ Item {
                     anchors.rightMargin: Theme.spacing.rowPaddingX
                     spacing: Theme.spacing.gap
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         id: cancelButton
                         label: "Cancel"
                         primary: root.focusPart === 3
@@ -524,7 +523,7 @@ Item {
                         onActivated: root.close()
                     }
 
-                    Flea.DialogButton {
+                    Bachy.DialogButton {
                         id: openButton
                         label: root.committing ? "Opening..." : "Open"
                         primary: root.canSubmit

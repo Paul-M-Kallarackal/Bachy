@@ -1,5 +1,5 @@
 import QtQuick
-import "." as Flea
+import "." as Bachy
 import "js/Focus.js" as Focus
 import "js/RailKeys.js" as RailKeys
 
@@ -64,7 +64,7 @@ Item {
         anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
         width: item ? item.implicitWidth : 0
         active: root.pane !== null && !root.pane.listOnly && root.pane.sharedSidebar === null && !root.hidden
-        sourceComponent: Flea.Sidebar {
+        sourceComponent: Bachy.Sidebar {
             id: sidebar
             backend: root.pane.backend
             navigationPane: root.pane.railPane

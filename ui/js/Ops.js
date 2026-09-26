@@ -243,8 +243,7 @@ function sendTaildrop(pane, taildrop, peerId, path) {
                                      : "That Taildrop peer is no longer available.", true)
         return
     }
-    // The dispatch is the only result Flea itself ever knows; success or failure is the OEM script's
-    // own desktop notification, see the operations design section 4.1.
+    // Taildrop reports completion through the pane after the CLI exits.
     pane.message("Sending " + leaf(path) + " to " + taildrop.labelFor(peerId) + ".", false)
 }
 

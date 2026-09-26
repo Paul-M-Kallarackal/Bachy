@@ -13,15 +13,15 @@ pub fn current_uid() -> u32 {
     unsafe { getuid() }
 }
 
-// Sample input: XDG_RUNTIME_DIR=/run/user/1000 gives /run/user/1000/flea.
+// Sample input: XDG_RUNTIME_DIR=/run/user/1000 gives /run/user/1000/bachy.
 pub fn candidate_dirs(uid: u32) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if let Some(runtime) = crate::userfile::env_dir("XDG_RUNTIME_DIR") {
-        out.push(runtime.join("flea"));
+        out.push(runtime.join("bachy"));
     }
-    out.push(PathBuf::from(format!("/run/user/{uid}/flea")));
-    out.push(PathBuf::from(format!("/dev/shm/flea-{uid}")));
-    out.push(std::env::temp_dir().join("flea"));
+    out.push(PathBuf::from(format!("/run/user/{uid}/bachy")));
+    out.push(PathBuf::from(format!("/dev/shm/bachy-{uid}")));
+    out.push(std::env::temp_dir().join("bachy"));
     out
 }
 

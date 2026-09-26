@@ -53,7 +53,7 @@ Item {
             NumberAnimation { duration: Motion.durMs.open; easing.type: Easing.BezierSpline; easing.bezierCurve: Motion.bezierCurve }
         }
 
-        FleaMark {
+        BachyMark {
             id: heroMark
             visible: root.caption.length === 0
             anchors.horizontalCenter: parent.horizontalCenter

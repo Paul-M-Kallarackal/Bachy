@@ -1,6 +1,5 @@
 import QtQuick
-import qs.Commons
-import "." as Flea
+import "." as Bachy
 import "js/Collide.js" as Collide
 import "js/Icons.js" as Icons
 
@@ -79,7 +78,7 @@ FocusScope {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             onWheel: function(wheel) { wheel.accepted = true }
         }
-        Flea.CardScroll {
+        Bachy.CardScroll {
             id: body
             anchors.fill: parent
             anchors.leftMargin: root.cardPadding + Theme.spacing.hairline
@@ -108,7 +107,7 @@ FocusScope {
                             width: parent.width
                             height: Theme.fileRowHeight
                             spacing: Theme.spacing.gap
-                            Flea.Glyph { width: Theme.markSize; height: parent.height; name: nameRow.modelData.d ? "folder" : Icons.glyphFor(nameRow.modelData.i); color: Theme.color.foreground }
+                            Bachy.Glyph { width: Theme.markSize; height: parent.height; name: nameRow.modelData.d ? "folder" : Icons.glyphFor(nameRow.modelData.i); color: Theme.color.foreground }
                             Text { width: Math.max(0, parent.width - Theme.markSize - parent.spacing); anchors.verticalCenter: parent.verticalCenter; text: nameRow.modelData.n; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.color.foreground; font { family: Theme.font.family; pixelSize: Theme.font.body } }
                         }
                     }
@@ -135,10 +134,10 @@ FocusScope {
                     id: buttons
                     anchors.right: parent.right
                     spacing: Theme.spacing.gap
-                    Flea.DialogButton { id: cancelButton; label: Collide.LABELS.cancel; primary: root.focusName === "cancel"; onActivated: root.press("cancel") }
-                    Flea.DialogButton { id: skipButton; label: Collide.LABELS.skip; primary: root.focusName === "skip"; onActivated: root.press("skip") }
-                    Flea.DialogButton { id: keepButton; label: Collide.LABELS.keep; primary: root.focusName === "keep"; onActivated: root.press("keep") }
-                    Flea.DialogButton { id: replaceButton; label: Collide.LABELS.replace; primary: root.focusName === "replace"; onActivated: root.press("replace") }
+                    Bachy.DialogButton { id: cancelButton; label: Collide.LABELS.cancel; primary: root.focusName === "cancel"; onActivated: root.press("cancel") }
+                    Bachy.DialogButton { id: skipButton; label: Collide.LABELS.skip; primary: root.focusName === "skip"; onActivated: root.press("skip") }
+                    Bachy.DialogButton { id: keepButton; label: Collide.LABELS.keep; primary: root.focusName === "keep"; onActivated: root.press("keep") }
+                    Bachy.DialogButton { id: replaceButton; label: Collide.LABELS.replace; primary: root.focusName === "replace"; onActivated: root.press("replace") }
                 }
             }
         }

@@ -23,7 +23,7 @@ pub struct Job {
     pub path: PathBuf,
     pub mtime: i64,
     pub mime: String,
-    // None unless FLEA_THUMB_TRACE is set, so an untraced job carries no marks; see AGENTS.md "Thumbnail trace".
+    // None unless BACHY_THUMB_TRACE is set, so an untraced job carries no marks; see AGENTS.md "Thumbnail trace".
     pub trace: Option<Trace>,
 }
 
@@ -40,7 +40,7 @@ pub struct Trace {
 // The environment is read once for the process, because the queue path must not pay a lookup per row.
 pub fn trace(row: usize) -> Option<Trace> {
     static ON: OnceLock<bool> = OnceLock::new();
-    if !*ON.get_or_init(|| std::env::var_os("FLEA_THUMB_TRACE").is_some_and(|v| !v.is_empty())) {
+    if !*ON.get_or_init(|| std::env::var_os("BACHY_THUMB_TRACE").is_some_and(|v| !v.is_empty())) {
         return None;
     }
     let zero = Duration::ZERO;

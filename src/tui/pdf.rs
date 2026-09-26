@@ -71,7 +71,7 @@ impl Pdf {
                 "pipefail".into(),
                 "-c".into(),
                 script.into(),
-                "flea-pdf".into(),
+                "bachy-pdf".into(),
                 self.page.to_string(),
                 width.max(height).saturating_mul(3).min(4096).to_string(),
                 format!("{}x{}", width, height),

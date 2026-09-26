@@ -5,7 +5,7 @@ use std::fs::File;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 
-// open(2) O_NONBLOCK, which is this value on both Linux architectures flea is built for.
+// open(2) O_NONBLOCK, which is this value on both Linux architectures bachy is built for.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 const O_NONBLOCK: i32 = 0o4000;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
