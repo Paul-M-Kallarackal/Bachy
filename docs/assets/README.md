@@ -1,14 +1,18 @@
 # Bachy brand assets
 
-- `bachy-counterpoint.png`: the current abstract logo, dark ink on an opaque white background.
+- `bachy-counterpoint.png`: the current abstract fugue emblem, ultramarine blue on an opaque white background.
 - `bachy-browser.png`: an actual Bachy browser capture using disposable sample files, not a generated UI.
 
 ## Concept
 
-The mark takes its inspiration from Bach's counterpoint: independent voices retain their character while forming a coherent whole. Three flowing bands suggest rhythm, movement and a shared direction. It is an abstract interpretation, without a portrait or literal musical notation.
+The emblem draws on the interweaving voices of Bach's music. Broad ribbons cross and rise into an open, flame-like arch: a visual expression of harmony, movement and possibility. The inspiration is musical and abstract, with no portrait or literal musical notation.
 
-Created with the built-in imagegen tool on 26 September 2026. The original generated PNG is preserved without raster post-processing. This is a repository branding asset; the existing in-app vector glyph remains until a consistent small-size icon family is prepared.
+Created and refined with the built-in imagegen tool on 26 September 2026. The final generated PNG is preserved without raster post-processing. Reviewed at 320 px and the README's 192 px size in [Bachy's Paper design file](https://app.paper.design/file/01M3DNAMX5PQERN25GEWE1PN05/p-1-0), on the “Bachy — abstract fugue emblem” board. This is a repository branding asset; the existing in-app vector glyph remains until a consistent small-size icon family is prepared.
 
 ## Generation prompt
 
-Use case: logo-brand. Design a sophisticated ABSTRACT logo for Bachy, inspired by the counterpoint, rhythmic order and expressive movement of Johann Sebastian Bach's music. This is an abstract visual metaphor for a fugue: three independent flowing bands enter at different heights, weave through a compact composition with deliberate negative-space gaps, and resolve into a harmonious upward movement. Find a distinctive, elegant silhouette with the rigor of a modernist music-publisher symbol and a restrained hint of Baroque calligraphy. Bold smooth shapes, precise optical balance, only a few broad curves; readable as a small app icon. It should feel intelligent, fluid and quietly inspirational, not technical clipart. Flat near-black ink on a completely OPAQUE solid WHITE square canvas. Keep the emblem centered and occupying roughly 70 percent of the canvas. ABSOLUTE exclusions: no person, no face, no wig, no portrait, no bust, no photo, no sheet music, no literal musical notes, no treble clef, no folder, no letters or wordmark, no infinity sign, no AI-style hexagonal knot, no circular badge frame, no shadows, no 3D, no gradients, no mockup, no decorative background. One polished abstract mark only.
+Use case: logo-brand. Create a single beautiful abstract emblem for Bachy, a file manager inspired by Johann Sebastian Bach. Convey the feeling of a fugue: independent melodic voices, rigorous harmony, unfolding possibility, and uplifting movement. Three broad calligraphic ribbons rise, cross once with crisp negative-space separations, and curve into a poised open arch. A compact, surprising and memorable silhouette, subtle baroque movement distilled into modern Swiss graphic restraint. A symbol that feels quietly inspirational and intellectually alive. One solid deep ultramarine-blue ink on a pure white square background. Flat vector-like artwork with immaculate edges, large generous curves, strong optical balance and enough negative space to read at small size. Center the emblem, occupying 70 percent of the square. No text, no letters, no person, no face, no portrait, no wig, no bust, no photographic rendering, no musical notes, no treble clef, no folder, no infinity loop, no generic AI knot, no ornate filigree, no shadows, no gradients, no 3D, no mockup. Deliver only the finished emblem.
+
+## Refinement prompt
+
+Refine this logo for production. Preserve the exact abstract rising-ribbon emblem, its composition and deep ultramarine-blue color. Make every ribbon a perfectly FLAT solid blue fill; remove all speckled pixels, pale edge outlines, texture, gradients and uneven color. Use crisp smooth antialiased edges. Place it on a completely OPAQUE pure white #FFFFFF background across the entire square, including all the gaps between the ribbons. Do not use transparency. Keep all shapes and positions unchanged. No text or additional elements.
