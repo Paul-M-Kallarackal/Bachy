@@ -8,7 +8,7 @@ url='https://github.com/Paul-M-Kallarackal/Bachy'
 arch=('x86_64' 'aarch64')
 license=('MIT')
 # Self-contained QML components; no distribution shell dependency.
-depends=('bubblewrap' 'expect' 'gcc-libs' 'glib2' 'glibc' 'gvfs' 'gvfs-afc' 'gvfs-dnssd' 'gvfs-gphoto2' 'gvfs-mtp' 'gvfs-nfs' 'gvfs-smb' 'hicolor-icon-theme' 'kimageformats' 'libheif' 'python' 'python-gobject' 'qt6-multimedia' 'qt6-webengine' 'quickshell>=0.3.1' 'qt6-wayland' 'noto-fonts' 'shared-mime-info' 'usbmuxd' 'util-linux' 'wl-clipboard' 'xdg-terminal-exec' 'xdg-utils')
+depends=('bubblewrap' 'expect' 'gcc-libs' 'glib2' 'glibc>=2.39' 'gvfs' 'gvfs-afc' 'gvfs-dnssd' 'gvfs-gphoto2' 'gvfs-mtp' 'gvfs-nfs' 'gvfs-smb' 'hicolor-icon-theme' 'kimageformats' 'libheif' 'python' 'python-gobject' 'qt6-multimedia' 'qt6-webengine' 'quickshell>=0.3.1' 'qt6-wayland' 'noto-fonts' 'shared-mime-info' 'usbmuxd' 'util-linux' 'wl-clipboard' 'xdg-terminal-exec' 'xdg-utils')
 makedepends=('cargo')
 conflicts=()
 optdepends=('libarchive: archive listing and extraction'
