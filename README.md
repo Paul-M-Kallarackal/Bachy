@@ -25,7 +25,21 @@ Bachy is an independent fork of [Flea](https://github.com/thisisgm/flea), with a
 
 Some integrations need extra packages or services and have not been tested against real devices. [Feature status and dependencies →](FEATURES.md)
 
-## Build on CachyOS / Arch Linux
+## Install on CachyOS / Arch Linux
+
+[Download the experimental 0.1.0 x86-64 package](https://github.com/Paul-M-Kallarackal/Bachy/releases/tag/v0.1.0) to install without compiling. Use a fully updated CachyOS or Arch Linux system with access to the official runtime dependencies, including Quickshell 0.3.1 or newer.
+
+After downloading `bachy-0.1.0-1-x86_64.pkg.tar.zst` and `SHA256SUMS` into the same directory:
+
+```sh
+sha256sum -c SHA256SUMS
+sudo pacman -U ./bachy-0.1.0-1-x86_64.pkg.tar.zst
+bachy --gui
+```
+
+`pacman` resolves the package's runtime dependencies from your enabled repositories. This is a native package-manager installation, not a verified one-click desktop installer. The download is for x86-64 only; it is not an AppImage and does not bundle Qt or Quickshell. See the release notes for validation and known limits.
+
+### Build from source
 
 Install Git, Rust and the Arch build tools, then clone and build:
 
@@ -37,7 +51,7 @@ makepkg -si
 bachy --gui
 ```
 
-`PKGBUILD` declares the runtime dependencies. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No prebuilt release or AUR listing is currently promised.
+`PKGBUILD` declares the runtime dependencies. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No AUR listing is currently maintained.
 
 For development, with the runtime dependencies installed:
 
