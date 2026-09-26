@@ -5,7 +5,8 @@ Ordered by impact on everyday use. Unchecked items are plans, not shipped functi
 ## 1. Reliable daily file operations
 
 - [ ] System clipboard interoperability: cut/copy/paste between Bachy windows and other managers, including URI lists, ownership changes and move semantics.
-- [ ] Preserve modification timestamps, permissions, extended attributes and ACLs when copying; document filesystem-specific behavior and test across filesystems.
+- [x] On post-0.1.0 main: preserve modification timestamps and user extended attributes for regular files/directories; report metadata failures and test copy/move across filesystems.
+- [ ] Extend copy fidelity to ACLs, ownership and an explicit exact-permission policy; evaluate a pre-transfer access-time snapshot and additional filesystem types.
 - [ ] Recursive directory merge with clear conflict handling, cancellation and meaningful undo boundaries.
 - [ ] Better operation errors and recovery for partial copies, full disks, disconnected mounts and permission failures.
 - [ ] Transfer queue and checksum-verification option; evaluate pause/resume separately.
@@ -43,7 +44,7 @@ A resident process or login preloading is an optional future experiment, not a s
 - [ ] Validate file-chooser routing, multi-item Show in folder and FileManager1 Properties.
 - [ ] Test real network shares, phone backends, removable devices and cross-application drag-and-drop.
 - [ ] Accessibility audit with keyboard-only navigation, AT-SPI/Orca and high-contrast themes; add localization infrastructure.
-- [ ] Refine the generated brand into a reproducible vector/icon family and integrate it consistently into the application.
+- [x] Integrate the abstract fugue emblem into the repository, packaged SVG and native QML marks.
 
 ## Already established
 

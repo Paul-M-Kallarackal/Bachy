@@ -22,6 +22,10 @@ This describes Bachy 0.1.0. “Implemented” means code exists; it does not imp
 | Terminal interface | Inherited Rust TUI, available through --tui | Not a separately parity-certified product |
 | Startup | Small boot QML, lazy components, viewport-scoped row work, source-launcher hybrid-GPU policy | GPU policy measured on one Intel/NVIDIA laptop only |
 
+## Copy metadata on main (after 0.1.0)
+
+Source builds now preserve modification time and `user.*` extended attributes on regular files and directories, including duplicate and cross-filesystem move. Access time is the value observed when each item opens; a background size scan can advance directory access time first. Modes still follow source permissions filtered by umask, with special bits stripped. Metadata errors report failure and keep a partial copy available for recovery; failed cross-filesystem moves retain their source. ACLs, ownership and symlink metadata are excluded. The published **v0.1.0 package does not contain this change**. [First code lesson and verification](docs/lessons/01-copy-metadata.md).
+
 ## Desktop opening behavior
 
 Bachy asks GIO to use the file type's default application. If it is not running, GIO launches it; if it reuses an existing window on another workspace, the compositor decides whether to follow activation. The Hyprland setup guide includes an opt-in setting to focus that destination. HTML and PDF are not hard-coded to a particular browser.

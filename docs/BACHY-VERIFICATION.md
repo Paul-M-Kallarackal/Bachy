@@ -2,6 +2,12 @@
 
 Last local core run: 26 September 2026, CachyOS/Hyprland. Results below distinguish core checks, selected integration checks and unverified behavior. They are not a claim of complete Thunar/Nautilus/Dolphin parity.
 
+## Post-0.1.0 copy-metadata milestone
+
+The source change documented in [Lesson 1](lessons/01-copy-metadata.md) is not in the published v0.1.0 package. Debug and release Rust suites each passed **863 tests**, including **11 new metadata regressions**, and both profiles built. The real-backend `tests/copy-metadata.sh` passed cross-filesystem tree copy/move and injected metadata-failure/source-retention/Undo checks on distinct tmpfs mounts as uid 1000. Modification times and user attributes survived; directory access time can already have advanced during the concurrent size scan. This is not an atomic pre-transfer timestamp snapshot or evidence for every destination filesystem.
+
+A fresh `tests/ops.sh` run passed rename, duplicate, copy/move, no-overwrite and their Undo scenarios, but failed the GIO Trash scenarios in the current test environment. The suite is **not counted as passing**; the feature audit will record the isolated-session rerun separately.
+
 ## Core checks
 
 - `cargo test --release --locked`: **852 passed, 0 failed** on the publication-preparation run.
@@ -14,7 +20,7 @@ Last local core run: 26 September 2026, CachyOS/Hyprland. Results below distingu
 
 During the local port, disposable fixtures and isolated HOME/XDG/private-bus environments were used for copy, move, rename, duplicate, trash, conflicts and undo (`tests/ops.sh`); archive and UI-state writes; CLI modes; FileManager1 routing and encoded paths; portal request handling with a stub picker; and stubbed network/authentication flows. Taildrop's argv/completion/error behavior was tested with a Tailscale stub, not a real peer.
 
-Offscreen Quickshell rendered the browser and About settings. A locally built package was extracted, and its actual UI/binary launched with correct fixture rows and local components. That older package artifact is not published as a current release and predates the later source-launcher changes.
+Offscreen Quickshell rendered the browser and About settings. A locally built package was extracted, and its actual UI/binary launched with correct fixture rows and local components. The public v0.1.0 package was subsequently built from the pre-metadata source, its 201 packaged UI files compared, desktop entry validated, isolated pacman installation checked and its packaged binary/UI launched offscreen. The published download was fetched and its SHA256 verified. This package does not include the post-0.1.0 metadata change or the source-launcher hybrid policy.
 
 Real Hyprland checks subsequently verified:
 

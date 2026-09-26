@@ -10,6 +10,7 @@ pub mod mime;
 pub mod fsinfo;
 pub mod icons;
 pub mod regfile;
+mod copymetadata;
 pub mod imagesize;
 pub mod kind;
 pub mod linecount;

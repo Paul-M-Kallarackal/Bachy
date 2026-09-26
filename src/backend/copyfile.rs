@@ -94,6 +94,9 @@ fn copy_file_at(src: At, dst: At, total: u64, p: &mut Progress) -> Result<(), Ba
     if let Err(e) = w.flush() {
         return Err(left_half_written(p, dst, &w, from_io("copy", &dst.named.to_string_lossy(), &e)));
     }
+    if let Err(e) = super::copymetadata::preserve(&r, &w, &src_meta, mode) {
+        return Err(left_half_written(p, dst, &w, metadata_error(dst.named, &e)));
+    }
     if let Some(carried) = p.tree.as_mut() {
         *carried += done;
     }
@@ -128,6 +131,13 @@ fn umask() -> u32 {
 fn left_partial(p: &mut Progress, dst: &Path, e: BachyError) -> BachyError {
     p.partial = Some(dst.to_path_buf());
     e
+}
+
+// Transfer and duplicate replies carry msg alone, so retain this distinction in that field.
+fn metadata_error(dst: &Path, e: &std::io::Error) -> BachyError {
+    let mut error = from_io("copy metadata", &dst.to_string_lossy(), e);
+    error.msg = format!("could not preserve metadata: {}", error.msg);
+    error
 }
 
 // A failure mid-file leaves a half-written file, which undo removes only if the manifest names it.
@@ -193,9 +203,10 @@ fn copy_dir_at(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
     let from = open_dir(src.at).map_err(|e| from_io("copy", &src.named.to_string_lossy(), &e))?;
     // Issue 109 again, one level up: a 0700 directory landed 0755 and its contents were readable by
     // anyone while the copy ran. It is created with nothing the source does not grant and with the
-    // owner's own three bits, which this run needs to write into it, and takes its exact mode at the end.
-    let keep = from.metadata().ok().map(|m| keep_mode(m.permissions().mode()));
-    std::fs::DirBuilder::new().mode(keep.unwrap_or(0o700) | 0o700).create(dst.at)
+    // owner's own three bits, which this run needs to write into it, then restores the restricted mode.
+    let src_meta = from.metadata().map_err(|e| from_io("copy", &src.named.to_string_lossy(), &e))?;
+    let keep = keep_mode(src_meta.permissions().mode());
+    std::fs::DirBuilder::new().mode(keep | 0o700).create(dst.at)
         .map_err(|e| from_io("copy", &dst.named.to_string_lossy(), &e))?;
     let into = open_dir(dst.at).map_err(|e| from_io("copy", &dst.named.to_string_lossy(), &e))?;
     if let Some(writer) = p.manifest.as_mut() {
@@ -231,13 +242,9 @@ fn copy_dir_at(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {
         }
         return r;
     }
-    // Last, so a directory this run still has to write into is not made unwritable halfway through.
-    // corner: a destination with no mode bits of its own refuses this and keeps the source's bits
-    // widened by the owner's three, because a copy that carried every byte is not a failure.
-    if let Some(mode) = keep {
-        let _ = std::fs::set_permissions(&into_held, std::fs::Permissions::from_mode(mode));
-    }
-    r
+    // Children change their parent's times, so finish metadata and permissions last.
+    super::copymetadata::preserve(&from, &into, &src_meta, keep)
+        .map_err(|e| left_partial(p, dst.named, metadata_error(dst.named, &e)))
 }
 
 fn copy_dir_entries(src: At, dst: At, p: &mut Progress) -> Result<(), BachyError> {

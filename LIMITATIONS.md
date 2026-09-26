@@ -7,7 +7,7 @@ Bachy 0.1.0 is experimental. This is a source audit and targeted comparison with
 | Area | Bachy gap or limitation |
 |---|---|
 | System file clipboard | Cut/copy stores file selections inside one window. It shares between that window's panes, but not separate Bachy windows or Thunar/Nautilus/Dolphin. Copy-path text and drag-and-drop are separate features and do work through different mechanisms. |
-| Copy fidelity | A real file-copy test lost modification time and a user extended attribute, and changed mode 0664 to 0644 under the current umask; GIO preserved all three. Bachy's copier has no ACL/xattr/timestamp preservation path. ACLs and every filesystem attribute were not separately tested. |
+| Copy fidelity | The published v0.1.0 package loses modification time and user extended attributes. Post-0.1.0 main preserves modification time and `user.*` attributes on regular files/directories, subject to destination filesystem support. Access time is captured at item open, possibly after a background size scan. Source mode is still filtered by umask (e.g. 0664 → 0644); special bits, ownership, ACLs, security/system attributes and symlink metadata are excluded. See the [metadata lesson](docs/lessons/01-copy-metadata.md). |
 | Folder collisions | No recursive folder merge. The choices are skip, keep both, replace or cancel. Replacement puts the old object in Trash rather than merging directory contents. |
 | Batch rename | Single-item rename only; no bulk preview, numbering, template naming, find/replace, case conversion or date/metadata renaming. |
 | Multi-item commands | Dedicated Duplicate and Properties actions require one selected item. Ordinary multi-file copy is supported. |
@@ -42,7 +42,7 @@ The system must provide the MIME handlers, GVFS protocol/device backends, authen
 
 Accessibility roles exist, but AT-SPI/Orca parity is unverified. Real remote/device workflows, all thumbnail formats, cross-application drag-and-drop and complete portal integration still need broader coverage. The inherited full integration runner is not green. Native GUI startup and selected opening/routing flows have been checked on one CachyOS/Hyprland laptop.
 
-The source launcher's Intel/NVIDIA policy is not yet shared by the packaged binary. The generated logo is currently a repository branding asset; existing in-app glyphs and the packaged vector icon are retained until a consistent vector icon family is prepared.
+The source launcher's Intel/NVIDIA policy is not yet shared by the packaged binary. The abstract fugue emblem is integrated into the README, packaged vector icon and in-app marks.
 
 ## Comparison references
 
