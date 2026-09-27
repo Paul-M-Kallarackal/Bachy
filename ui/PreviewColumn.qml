@@ -27,7 +27,8 @@ Item {
     readonly property real pdfScrollY: pdfFlick.contentY
     readonly property var pdfFrameItem: frame
     readonly property var pdfToolbarItem: pdfToolbar
-    readonly property var pdfControls: [pagePrev, pageNext, pdfZoomOut, pdfZoomIn, pdfExpand]
+    readonly property var pdfControls: root.pdfUnavailable && pdfLoader.item.openButton
+        ? [pdfLoader.item.openButton] : [pagePrev, pageNext, pdfZoomOut, pdfZoomIn, pdfExpand]
     signal expandRequested()
     // No player exists until the operator presses play. The strip draws from the probe's own
     // duration, so browsing a folder of clips builds no MediaPlayer at all: it costs nothing, makes
@@ -42,7 +43,7 @@ Item {
     // A new row is a new subject, so whatever was playing stops being this column's business, and
     // the player it needed is torn down with it.
     onPathChanged: { root.wantsPlayback = false; root.pdfZoom = 1; root.pdfControlIndex = -1 }
-    onActiveFocusChanged: if (root.activeFocus && root.pdfPages > 0 && root.pdfControlIndex < 0)
+    onActiveFocusChanged: if (root.activeFocus && (root.pdfPages > 0 || root.pdfUnavailable) && root.pdfControlIndex < 0)
         PreviewKeys.pdfAction("focusNext", root)
 
     // What the row itself is, before Loading or Error can override it. The readers below are built
@@ -61,6 +62,7 @@ Item {
     // The PDF reader exists only for a PDF row, the same rule the media transport follows: browsing
     // a folder of anything else builds no PdfDocument at all.
     readonly property int pdfPages: pdfLoader.item ? pdfLoader.item.pageCount : 0
+    readonly property bool pdfUnavailable: pdfLoader.item ? pdfLoader.item.unavailable : false
     readonly property bool pdfFailed: pdfLoader.item ? pdfLoader.item.failed : false
 
     readonly property string previewState: Facts.state(root.row, root.selectionCount, root.busy, root.failure, root.kindName)
@@ -209,8 +211,7 @@ Item {
                 size: root.row ? root.row.s : 0
                 numbered: root.previewState === Facts.CODE
             }
-            // The PDF's own page, which is the frame's whole content for that state. QtPdf is
-            // reached only through this Loader, so a folder with no PDF in it never opens one.
+            // Load optional PDF support only for the selected PDF.
             Flickable {
                 id: pdfFlick
                 anchors.fill: parent
@@ -227,8 +228,8 @@ Item {
                     width: pdfFlick.contentWidth
                     height: pdfFlick.contentHeight
                     active: root.visible && root.rowState === Facts.PDF
-                    source: "PreviewPdf.qml"
-                    onLoaded: { item.path = Qt.binding(function () { return root.path }); item.viewport = pdfFlick; item.active = true }
+                    source: "OptionalPdf.qml"
+                    onLoaded: { item.path = Qt.binding(function () { return root.path }); item.viewport = pdfFlick; item.actionFocused = Qt.binding(function () { return root.activeFocus && root.pdfControlIndex === 0 }); item.active = true }
                 }
             }
 
@@ -427,7 +428,7 @@ Item {
         case Facts.LOADING:
             return false
         case Facts.PDF:
-            return !pdfLoader.item || pdfLoader.item.shownPage < 0
+            return !root.pdfUnavailable && (!pdfLoader.item || pdfLoader.item.shownPage < 0)
         case Facts.TEXT:
         case Facts.CODE:
             return lines.blank

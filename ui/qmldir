@@ -18,6 +18,8 @@ Crumb 1.0 Crumb.qml
 PreviewColumn 1.0 PreviewColumn.qml
 PreviewLines 1.0 PreviewLines.qml
 PreviewPdf 1.0 PreviewPdf.qml
+OptionalPdf 1.0 OptionalPdf.qml
+PdfUnavailable 1.0 PdfUnavailable.qml
 PreviewImage 1.0 PreviewImage.qml
 ConvertDialog 1.0 ConvertDialog.qml
 DialogButton 1.0 DialogButton.qml

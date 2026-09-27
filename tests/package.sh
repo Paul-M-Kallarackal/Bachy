@@ -19,6 +19,14 @@ cleanup_extract() {
 }
 trap cleanup_extract EXIT
 
+# PDF is a feature dependency: core browsing must install without WebEngine.
+if [[ " ${depends[*]} " != *" qt6-webengine "* ]] && printf '%s\n' "${optdepends[@]}" | grep -q '^qt6-webengine:'; then
+    printf 'PASS PDF support is optional in the recipe\n'
+else
+    printf 'FAIL PDF support must be optional in the recipe\n'
+    failed=$((failed + 1))
+fi
+
 required_packages=(expect gvfs gvfs-smb gvfs-dnssd gvfs-nfs gvfs-mtp gvfs-gphoto2 gvfs-afc usbmuxd)
 for package in "${required_packages[@]}"; do
     found=false
@@ -52,6 +60,12 @@ if [ -z "$package_file" ] || [ ! -f "$package_file" ]; then
     failed=$((failed + 1))
 else
     package_info=$(bsdtar -xOf "$package_file" .PKGINFO 2>/dev/null || true)
+    if ! grep -Fxq 'depend = qt6-webengine' <<< "$package_info" && grep -q '^optdepend = qt6-webengine:' <<< "$package_info"; then
+        printf 'PASS PDF support is optional in the package metadata\n'
+    else
+        printf 'FAIL package metadata must make PDF support optional\n'
+        failed=$((failed + 1))
+    fi
     for package in "${required_packages[@]}"; do
         if grep -Fxq "depend = $package" <<< "$package_info"; then
             printf 'PASS package metadata dependency %s\n' "$package"

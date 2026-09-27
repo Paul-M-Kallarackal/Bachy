@@ -55,3 +55,7 @@ See [FEATURES.md](FEATURES.md) for implemented functionality and [ROADMAP.md](RO
 ### Archive tool discovery
 
 Optional tools found on a custom PATH can be offered even when they are outside the archive sandbox. An extracted 7zip runtime in a home workspace was detected but could not execute inside the sandbox (`execvp 7z: No such file or directory`). Use a system installation visible under `/usr`; optional 7z round trips remain unverified in the current audit. System tar.zst, ZIP and RAR fixture checks passed.
+
+### Optional PDF support
+
+Current source makes graphical PDF preview optional (`qt6-webengine` on Arch/CachyOS). Without it, the preview column and Quick Look explain how to enable previews and can open the file externally. A broken PDF component reports a startup error without claiming the package is missing. Corrupt documents keep the file-read error. Restart Bachy after installing support. The original published v0.1.0 package still requires WebEngine.

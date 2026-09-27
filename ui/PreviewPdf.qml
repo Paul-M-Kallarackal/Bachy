@@ -3,9 +3,8 @@ import QtQuick.Pdf
 import "js/Format.js" as Format
 import "js/Swap.js" as Swap
 
-// A page of a PDF, rendered into the preview column's frame. QtPdf ships inside the already
-// installed qt6-webengine and needs no package of its own; proven to import and render under
-// Quickshell itself on this box, not only under qml6.
+// A page of a PDF. OptionalPdf loads this only on demand; Arch provides
+// QtQuick.Pdf through the optional qt6-webengine package.
 Item {
     id: root
 

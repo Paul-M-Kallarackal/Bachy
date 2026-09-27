@@ -51,7 +51,7 @@ makepkg -si
 bachy --gui
 ```
 
-`PKGBUILD` declares the runtime dependencies. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No AUR listing is currently maintained.
+`PKGBUILD` declares the runtime dependencies. On current source/package revision 0.1.0-2, graphical PDF preview is optional: install `qt6-webengine` and restart Bachy to enable it. Without it, PDFs can still open in your default application. The original v0.1.0 release download predates this change. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No AUR listing is currently maintained.
 
 For development, with the runtime dependencies installed:
 

@@ -52,3 +52,15 @@ A resident process or login preloading is an optional future experiment, not a s
 - [x] Working browser, core file operations, source launcher and initial Arch package recipe.
 - [x] Documented Hyprland shortcut, floating-window behavior and cross-workspace application activation.
 - [x] Public features, limitations, verification and upstream provenance documentation.
+
+## Dependency and startup follow-up
+
+- [x] Optional graphical PDF support with missing-module recovery in both preview views.
+- [ ] Review mandatory Noto fonts with font-fallback and layout coverage.
+- [ ] Make multimedia optional with equivalent capability/error-state tests; measure shared dependencies together.
+- [ ] Separate optional phone/camera/SMB backends from core browsing after testing capability discovery.
+- [ ] Measure retained view work after grid/column visits; distinguish useful caches from active hidden views before changing lifetime.
+- [ ] Carry the source launcher’s tested hybrid-GPU policy into packaged launches.
+- [ ] Record dependency closure and fresh application-cache startup baselines for each release.
+
+See [dependency and startup audit](docs/DEPENDENCY-AND-STARTUP-AUDIT.md) for measurements and limits.

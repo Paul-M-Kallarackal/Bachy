@@ -10,7 +10,7 @@ This describes Bachy 0.1.0. “Implemented” means code exists; it does not imp
 | File operations | Copy, move, rename, duplicate, new file/folder, Trash, restore, permanent delete, collision handling | See metadata, clipboard and folder-merge limitations before important transfers |
 | Operation feedback | Progress, cancel, undo and redo for supported operations | One active operation per backend; no persistent queue or pause/resume |
 | Opening | System-default application via GIO, Open With, copy path, external terminal action | MIME handlers must be installed; terminal needs xdg-terminal-exec |
-| Preview | Quick Look, preview column, supported image/text/PDF/media/archive views, directory size | Format coverage depends on Qt and installed decoding/thumbnail tools |
+| Preview | Quick Look, preview column, supported image/text/PDF/media/archive views, directory size | PDF preview needs optional `qt6-webengine`; missing support offers external opening. Other format coverage depends on Qt and installed tools |
 | Images and archives | Image conversion; archive creation/extraction and archive-entry previews | ImageMagick, libarchive or 7zip depending on the action/format |
 | Properties | Basic file information and permission-mode editing | Single local object; no bulk/recursive permission editor |
 | Devices | Discovery, mount, unmount and eject; phone integration paths | GVFS and its relevant backends; physical hardware not comprehensively tested |
@@ -21,6 +21,10 @@ This describes Bachy 0.1.0. “Implemented” means code exists; it does not imp
 | Appearance | Local light palette, adjustable text size/density, reduced-motion support, configurable colours | No Omarchy shell required; no automatic desktop-wide theme synchronization |
 | Terminal interface | Rust TUI via --tui: navigation, selection, operations, external-editor bulk rename, previews/PDF/media and Taildrop | External editor/PDF/media/provider tools required for those features; GUI and TUI capabilities differ |
 | Startup | Small boot QML, lazy components, viewport-scoped row work, source-launcher hybrid-GPU policy | GPU policy measured on one Intel/NVIDIA laptop only |
+
+## Optional PDF preview on main (package revision 0.1.0-2)
+
+`qt6-webengine` is now optional. Both the preview column and Quick Look remain usable without it, with installation guidance and an Open externally action. Installing it enables the existing PDF viewer after restarting Bachy. The published v0.1.0 download still has the original mandatory dependency.
 
 ## Copy metadata on main (after 0.1.0)
 

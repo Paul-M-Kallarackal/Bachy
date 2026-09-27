@@ -14,17 +14,19 @@ Item {
     // Expand fills the window; the overlay that hosts this reads the flag and drops its own inset.
     property bool expanded: false
     property int pdfControlIndex: -1
-    readonly property var pdfControls: [previous, next, zoomOut, zoomIn, expand, close]
+    readonly property var pdfControls: root.unavailable && pdf.openButton
+        ? [pdf.openButton, close] : [previous, next, zoomOut, zoomIn, expand, close]
     // Containers Tier A: a keyboard walk says where it is by brightness, so the control it is on keeps the foreground and the rest of the strip dims.
     readonly property color controlRest: root.activeFocus && root.pdfControlIndex >= 0
         ? Theme.color.muted : Theme.color.foreground
     // The page count signal arrives before the control bindings settle.
     function focusInitialControl() {
-        if (root.activeFocus && root.pageCount > 0 && root.pdfControlIndex < 0)
+        if (root.activeFocus && (root.pageCount > 0 || root.unavailable) && root.pdfControlIndex < 0)
             PreviewKeys.pdfAction("focusNext", root)
     }
     onActiveFocusChanged: Qt.callLater(root.focusInitialControl)
     onPageCountChanged: Qt.callLater(root.focusInitialControl)
+    onPdfControlsChanged: { root.pdfControlIndex = -1; Qt.callLater(root.focusInitialControl) }
     Keys.onPressed: function(event) {
         var action = Keymap.lookup(event.key, event.text, event.modifiers, "pdf")
         if (action === "escape" || action === "focusPreview") root.closed()
@@ -35,6 +37,8 @@ Item {
     readonly property int page: pdf.page
     readonly property int pageCount: pdf.pageCount
     readonly property bool failed: pdf.failed
+    readonly property bool unavailable: pdf.unavailable
+    readonly property string guidance: pdf.guidance
     readonly property real pdfScrollY: pageFlick.contentY
 
     // The canvas draws no scale readout, so the ladder is the whole zoom contract: one step a press,
@@ -217,7 +221,7 @@ Item {
                 id: close
                 glyph: "x"
                 accessName: "Close"
-                keyboardFocused: root.activeFocus && root.pdfControlIndex === 5
+                keyboardFocused: root.activeFocus && root.pdfControls[root.pdfControlIndex] === close
                 restingColor: root.controlRest
                 onActivated: root.closed()
             }
@@ -251,11 +255,12 @@ Item {
             height: pageFlick.contentHeight
             color: Theme.color.background
 
-            Bachy.PreviewPdf {
+            Bachy.OptionalPdf {
                 id: pdf
                 anchors.fill: parent
                 anchors.margins: 2 * Theme.spacing.rowPaddingX
                 viewport: pageFlick
+                actionFocused: root.activeFocus && root.pdfControlIndex === 0
                 path: root.path
                 active: root.active
             }

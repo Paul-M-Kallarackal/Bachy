@@ -56,6 +56,7 @@ Item {
     readonly property string status: {
         if (!root.active) return ""
         if (root.isMedia) return mediaLoader.item ? mediaLoader.item.status : "loading"
+        if (root.isPdf && pdfLoader.item && pdfLoader.item.unavailable) return pdfLoader.item.guidance
         if (root.isPdf) return (pdfLoader.item && pdfLoader.item.failed) ? "This file could not be read." : "pdf"
         if (root.isImage) return imageLoader.item ? imageLoader.item.status : "loading"
         if (root.isArchive) return root.archiveMeta === null ? "loading" : (root.archiveFailed ? "This archive could not be read." : "archive")
