@@ -34,7 +34,7 @@ Item {
     // duration, so browsing a folder of clips builds no MediaPlayer at all: it costs nothing, makes
     // no sound, and stops QtMultimedia logging a teardown warning on every cursor move.
     property bool wantsPlayback: false
-    // The shared Space preview, handed in by ui/ColumnsArea.qml: one file plays in one place.
+    readonly property bool mediaUnavailable: playerLoader.item ? playerLoader.item.unavailable : false
     property bool overlayOpen: false
     // Where a player may exist at all: this column on screen, no overlay over it, and a strip to drive it; losing any of them ends the play intent.
     readonly property bool playerAllowed: root.visible && !root.overlayOpen && mediaLoader.active
@@ -150,14 +150,14 @@ Item {
                 anchors.fill: parent
                 anchors.margins: Theme.spacing.hairline
                 active: root.wantsPlayback && root.playerAllowed
-                visible: active && root.previewState === Facts.VIDEO
-                source: "PreviewMedia.qml"
+                visible: active && (root.previewState === Facts.VIDEO || root.mediaUnavailable)
+                source: "OptionalMedia.qml"
                 onLoaded: {
                     item.path = Qt.binding(function () { return root.path })
                     item.kind = Qt.binding(function () {
                         return root.previewState === Facts.VIDEO ? "video" : "audio"
                     })
-                    // It exists because play was pressed, so it starts.
+                    item.actionFocused = Qt.binding(function () { return root.activeFocus })
                     item.autoStart = true
                 }
             }
@@ -167,7 +167,7 @@ Item {
             Column {
                 anchors.centerIn: parent
                 spacing: Theme.spacing.gap
-                visible: !root.thumbShown && root.glyphState()
+                visible: !root.thumbShown && !root.mediaUnavailable && root.glyphState()
 
                 Bachy.Glyph {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -335,6 +335,7 @@ Item {
         // its Video and Audio tiles. QtMultimedia is reached only through this Loader, on demand.
         Loader {
             id: mediaLoader
+            visible: !root.mediaUnavailable
             width: parent.width
             height: active ? Theme.chromeHeight : 0
             active: root.visible && (root.previewState === Facts.VIDEO || root.previewState === Facts.AUDIO)
@@ -367,7 +368,6 @@ Item {
             readonly property real position: playerLoader.item ? playerLoader.item.position : 0
             readonly property var strip: strip
 
-            // The player is playerLoader in the frame above; the probe's duration gives the strip a scale until it exists.
             Bachy.MediaStrip {
                 id: strip
                 anchors.fill: parent

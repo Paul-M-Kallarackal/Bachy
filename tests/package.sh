@@ -19,13 +19,15 @@ cleanup_extract() {
 }
 trap cleanup_extract EXIT
 
-# PDF is a feature dependency: core browsing must install without WebEngine.
-if [[ " ${depends[*]} " != *" qt6-webengine "* ]] && printf '%s\n' "${optdepends[@]}" | grep -q '^qt6-webengine:'; then
-    printf 'PASS PDF support is optional in the recipe\n'
-else
-    printf 'FAIL PDF support must be optional in the recipe\n'
-    failed=$((failed + 1))
-fi
+# Preview modules and font collections are features, not core browsing requirements.
+for optional in qt6-webengine qt6-multimedia noto-fonts; do
+    if [[ " ${depends[*]} " != *" $optional "* ]] && printf '%s\n' "${optdepends[@]}" | grep -q "^$optional:"; then
+        printf 'PASS %s is optional in the recipe\n' "$optional"
+    else
+        printf 'FAIL %s must be optional in the recipe\n' "$optional"
+        failed=$((failed + 1))
+    fi
+done
 
 required_packages=(expect gvfs gvfs-smb gvfs-dnssd gvfs-nfs gvfs-mtp gvfs-gphoto2 gvfs-afc usbmuxd)
 for package in "${required_packages[@]}"; do
@@ -60,12 +62,31 @@ if [ -z "$package_file" ] || [ ! -f "$package_file" ]; then
     failed=$((failed + 1))
 else
     package_info=$(bsdtar -xOf "$package_file" .PKGINFO 2>/dev/null || true)
-    if ! grep -Fxq 'depend = qt6-webengine' <<< "$package_info" && grep -q '^optdepend = qt6-webengine:' <<< "$package_info"; then
-        printf 'PASS PDF support is optional in the package metadata\n'
-    else
-        printf 'FAIL package metadata must make PDF support optional\n'
-        failed=$((failed + 1))
-    fi
+    for optional in qt6-webengine qt6-multimedia noto-fonts; do
+        if ! grep -Fxq "depend = $optional" <<< "$package_info" && grep -q "^optdepend = $optional:" <<< "$package_info"; then
+            printf 'PASS %s is optional in package metadata\n' "$optional"
+        else
+            printf 'FAIL %s must be optional in package metadata\n' "$optional"
+            failed=$((failed + 1))
+        fi
+    done
+    for member in usr/bin/bachy usr/lib/bachy/bachy-gpu-policy usr/lib/bachy/bachy-gpu-check usr/lib/bachy/bachy; do
+        case "$member" in
+            usr/bin/bachy) source_file=packaging/bachy ;;
+            usr/lib/bachy/bachy) source_file=unused ;;
+            *) source_file="tools/${member##*/}" ;;
+        esac
+        # The executable is built in makepkg's private target, so validate it by
+        # ELF magic; script contents must match this checkout byte for byte.
+        if [ "$member" = usr/lib/bachy/bachy ]; then
+            actual=$(bsdtar -xOf "$package_file" "$member" | head -c 4 | od -An -tx1)
+            [[ "$actual" == ' 7f 45 4c 46' ]] && printf 'PASS real backend ships as ELF\n' || { echo 'FAIL backend ELF missing'; failed=$((failed + 1)); }
+        elif bsdtar -xOf "$package_file" "$member" | cmp -s "$source_file" -; then
+            printf 'PASS packaged launcher component %s\n' "$member"
+        else
+            printf 'FAIL packaged launcher component %s\n' "$member"; failed=$((failed + 1))
+        fi
+    done
     for package in "${required_packages[@]}"; do
         if grep -Fxq "depend = $package" <<< "$package_info"; then
             printf 'PASS package metadata dependency %s\n' "$package"

@@ -27,7 +27,7 @@ Bachy.PreviewColumn {
         if (action === "escape" || action === "focusPreview") root.pane.listArea.forceActiveFocus()
         else if (action === "loadPreview") root.loadSelection()
         else if (root.rowState === Facts.PDF) PreviewKeys.pdfAction(action, root)
-        else if (action === "preview") {
+        else if (action === "preview" || (action === "open" && root.mediaUnavailable)) {
             var strip = root.mediaStripItem()
             if (strip) strip.toggled()
             else if (root.row && !root.row.d) root.pane.preview.open(root.path, root.row.i, root.row.s, root.kindName)

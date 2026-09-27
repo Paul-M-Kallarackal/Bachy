@@ -59,7 +59,7 @@ Item {
         anchors.fill: parent
         active: root.unavailable
         sourceComponent: Component {
-            Bachy.PdfUnavailable {
+            Bachy.PreviewUnavailable {
                 path: root.path
                 detail: root.guidance
                 actionFocused: root.actionFocused

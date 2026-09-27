@@ -3,7 +3,9 @@ import QtQuick
 import Quickshell
 Singleton {
     readonly property QtObject font: QtObject {
-        readonly property string family: Quickshell.env("BACHY_FONT") || "Noto Sans Mono"
+        // Fontconfig uses the installed monospace face; no whole font collection
+        // or startup font enumeration is needed. Explicit choices still win.
+        readonly property string family: Quickshell.env("BACHY_FONT") || "monospace"
         readonly property string resolvedFamily: family
         readonly property int baseSize: Math.max(10, Math.min(24, Number(Quickshell.env("BACHY_FONT_SIZE")) || 14))
         readonly property int body: baseSize

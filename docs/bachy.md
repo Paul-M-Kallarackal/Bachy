@@ -82,17 +82,17 @@ bind = SUPER, E, exec, bachy --gui
 
 Use the window-rule syntax documented for that installed version; do not paste Lua rules into an old `.conf` file. See the [official Hyprland documentation](https://wiki.hypr.land/Configuring/).
 
-## Source-launcher GPU behavior
+## GPU behavior
 
-On Intel-driven displays, `run-bachy` opens immediately on Intel, then runs a bounded NVIDIA readiness check in the background after 500 ms. A subsequent window uses NVIDIA only when its session check succeeded and the GPU is awake. If it sleeps, the next window uses Intel again and retries the background check. This does not migrate an existing window between GPUs.
+On Intel-driven displays, `run-bachy` and the packaged `bachy` launcher select Intel before the foreground Vulkan probe, then runs a bounded NVIDIA readiness check in the background after 500 ms. A subsequent window uses NVIDIA only when its session check succeeded and the GPU is awake. If it sleeps, the next window uses Intel again and retries the background check. This does not migrate an existing window between GPUs.
 
 The policy respects explicit `QSG_RHI_BACKEND`, `VK_DRIVER_FILES`, `VK_ICD_FILENAMES` and PRIME selection variables. Mixed-vendor connected displays follow the original renderer-selection path. Readiness, cooldown and logs live under `$XDG_RUNTIME_DIR/bachy-gpu-<session>/`. The internal `--probe-vulkan` command tests enumeration, not every possible presentation scenario; actual rendering was separately checked on one Intel/RTX 5070 laptop.
 
-This policy currently belongs to the source launcher. The packaged `bachy` command retains the backend's automatic graphics selection. A configurable, unified implementation is planned.
+Source revision 0.1.0-3 installs the shared launcher policy. The original v0.1.0 release asset predates it. The Rust implementation lives at `/usr/lib/bachy/bachy`; `/usr/bin/bachy` is the public launcher, and backend helpers use the implementation directly.
 
 ## Appearance and data
 
-The default is a local light palette with Noto Sans Mono. Display settings support text-size overrides. `BACHY_FONT` and `BACHY_FONT_SIZE` set base typography; `BACHY_REDUCED_MOTION=1` disables interface animation.
+The default is a local light palette with the system monospace font (Noto Sans Mono on the development machine). Display settings support text-size overrides. `BACHY_FONT` and `BACHY_FONT_SIZE` set base typography; `BACHY_REDUCED_MOTION=1` disables interface animation.
 
 Copy `packaging/colors.toml` to `${XDG_CONFIG_HOME:-$HOME/.config}/bachy/theme/colors.toml` to customize colours. Existing palette files reload when edited. The application can start without a configuration file. Configuration, state and cache use Bachy's XDG directories, separate from Flea. `BACHY_UI` and `BACHY_BIN` override the development UI/backend paths.
 

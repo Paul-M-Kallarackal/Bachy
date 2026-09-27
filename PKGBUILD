@@ -2,16 +2,18 @@
 
 pkgname=bachy
 pkgver=0.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc='Keyboard-first file manager for CachyOS, forked from Flea'
 url='https://github.com/Paul-M-Kallarackal/Bachy'
 arch=('x86_64' 'aarch64')
 license=('MIT')
 # Self-contained QML components; no distribution shell dependency.
-depends=('bubblewrap' 'expect' 'gcc-libs' 'glib2' 'glibc>=2.39' 'gvfs' 'gvfs-afc' 'gvfs-dnssd' 'gvfs-gphoto2' 'gvfs-mtp' 'gvfs-nfs' 'gvfs-smb' 'hicolor-icon-theme' 'kimageformats' 'libheif' 'python' 'python-gobject' 'qt6-multimedia' 'quickshell>=0.3.1' 'qt6-wayland' 'noto-fonts' 'shared-mime-info' 'usbmuxd' 'util-linux' 'wl-clipboard' 'xdg-terminal-exec' 'xdg-utils')
+depends=('bubblewrap' 'expect' 'gcc-libs' 'glib2' 'glibc>=2.39' 'gvfs' 'gvfs-afc' 'gvfs-dnssd' 'gvfs-gphoto2' 'gvfs-mtp' 'gvfs-nfs' 'gvfs-smb' 'hicolor-icon-theme' 'kimageformats' 'libheif' 'python' 'python-gobject' 'quickshell>=0.3.1' 'qt6-wayland' 'shared-mime-info' 'usbmuxd' 'util-linux' 'wl-clipboard' 'xdg-terminal-exec' 'xdg-utils')
 makedepends=('cargo')
 conflicts=()
-optdepends=('qt6-webengine: PDF preview in the graphical interface'
+optdepends=('qt6-multimedia: audio and video playback in previews'
+            'noto-fonts: additional fonts and extended character coverage'
+            'qt6-webengine: PDF preview in the graphical interface'
             'libarchive: archive listing and extraction'
             '7zip: 7z archive support'
             'imagemagick: image conversion'
@@ -51,7 +53,10 @@ check() {
 
 package() {
   cd "$startdir"
-  install -Dm755 "$srcdir/target/release/bachy" "$pkgdir/usr/bin/bachy"
+  install -Dm755 packaging/bachy "$pkgdir/usr/bin/bachy"
+  install -Dm755 "$srcdir/target/release/bachy" "$pkgdir/usr/lib/bachy/bachy"
+  install -Dm644 tools/bachy-gpu-policy "$pkgdir/usr/lib/bachy/bachy-gpu-policy"
+  install -Dm755 tools/bachy-gpu-check "$pkgdir/usr/lib/bachy/bachy-gpu-check"
   install -Dm755 tools/bachy-gio-auth "$pkgdir/usr/lib/bachy/bachy-gio-auth"
   # The portal backend, its registration and its D-Bus activation: xdg-desktop-portal 1.22 reads
   # portals/ out of every data dir, and this is Bachy's own package writing Bachy's own files.

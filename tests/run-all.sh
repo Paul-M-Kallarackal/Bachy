@@ -19,7 +19,7 @@ cargo build -q || { printf 'run-all: cargo build failed, nothing else was run\n'
 printf 'run-all: building target/release/bachy, thumbs.sh needs it\n'
 cargo build -q --release || { printf 'run-all: release build failed, nothing else was run\n' >&2; exit 1; }
 
-headless="js keymap-gen charts budget aurpush signalarity empty-state sandbox capability-ownership gio-auth gvfs ops modes update protocol portal archive thumbs thumbs-exec taildrop-send network-open-share network-keyless mount-listing pdf-turn pdf-first pdf-optional preview-decode uistate uiwriter media filemanager1 dragwire shellload settings-columns menu-settle arm-prompt acceptance-matrix"
+headless="js keymap-gen charts budget aurpush signalarity empty-state sandbox capability-ownership gio-auth gvfs ops modes update protocol portal archive thumbs thumbs-exec taildrop-send network-open-share network-keyless mount-listing gpu-policy pdf-turn pdf-first pdf-optional media-optional preview-decode uistate uiwriter media filemanager1 dragwire shellload settings-columns menu-settle arm-prompt acceptance-matrix"
 failed=0
 ran=0
 

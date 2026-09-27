@@ -21,6 +21,7 @@ Item {
     property int size: 0
     property string kind: ""
     readonly property bool isMedia: root.kind === "audio" || root.kind === "video"
+    readonly property bool mediaUnavailable: mediaLoader.item ? mediaLoader.item.unavailable : false
     readonly property bool isPdf: root.kind === "pdf"
     readonly property bool isImage: root.kind === "image"
     readonly property bool isArchive: root.kind === "archive"
@@ -145,7 +146,7 @@ Item {
         root.kindName = newKind || ""
         root.kind = Kinds.quickLookKind(newIcon, newPath)
         root.active = true
-        mediaLoader.source = root.isMedia ? "PreviewMedia.qml" : ""
+        mediaLoader.source = root.isMedia ? "OptionalMedia.qml" : ""
         pdfLoader.source = root.isPdf ? "PdfViewer.qml" : ""
         imageLoader.source = root.isImage ? "PreviewImage.qml" : ""
         root.askArchive()
@@ -375,7 +376,7 @@ Item {
         // MediaStrip unframed: quiet over the video, permanent on audio, and the column draws the framed form of the same file.
         Bachy.MediaStrip {
             id: mediaStrip
-            visible: root.isMedia && (root.kind === "audio" || root.stripShown)
+            visible: root.isMedia && !root.mediaUnavailable && (root.kind === "audio" || root.stripShown)
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom

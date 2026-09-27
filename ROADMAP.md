@@ -17,7 +17,7 @@ Ordered by impact on everyday use. Unchecked items are plans, not shipped functi
 - [x] Identify the synchronous discrete-GPU wake-up cost on the development laptop.
 - [x] Source-launcher Intel-first path with a delayed NVIDIA check, bounded timeout, session lock and fallback after GPU idle.
 - [ ] Make renderer preference configurable; offer Intel-only, automatic and hybrid policies without changing code.
-- [ ] Use the same startup policy from the package, source launcher, chooser and desktop entry.
+- [x] Use the same startup policy from the package, source launcher, chooser and desktop entry (source revision 0.1.0-3).
 - [ ] Instrument startup stages: command receipt, Qt/QML initialization, window mapping, first rows and first usable input.
 - [ ] Measure fresh-install/reboot-cold and idle-GPU cases; report medians and slower-tail results alongside memory usage.
 - [ ] Profile QML creation and evaluate ahead-of-time compilation; defer any remaining optional startup work only when measurements demonstrate a benefit.
@@ -56,11 +56,11 @@ A resident process or login preloading is an optional future experiment, not a s
 ## Dependency and startup follow-up
 
 - [x] Optional graphical PDF support with missing-module recovery in both preview views.
-- [ ] Review mandatory Noto fonts with font-fallback and layout coverage.
-- [ ] Make multimedia optional with equivalent capability/error-state tests; measure shared dependencies together.
+- [x] Use the installed monospace font; keep Noto optional and explicit font overrides.
+- [x] Make multimedia optional with present/missing/broken/corrupt playback tests; measure shared dependencies together.
 - [ ] Separate optional phone/camera/SMB backends from core browsing after testing capability discovery.
 - [ ] Measure retained view work after grid/column visits; distinguish useful caches from active hidden views before changing lifetime.
-- [ ] Carry the source launcher’s tested hybrid-GPU policy into packaged launches.
+- [x] Carry the source launcher’s tested hybrid-GPU policy into packaged launches.
 - [ ] Record dependency closure and fresh application-cache startup baselines for each release.
 
 See [dependency and startup audit](docs/DEPENDENCY-AND-STARTUP-AUDIT.md) for measurements and limits.

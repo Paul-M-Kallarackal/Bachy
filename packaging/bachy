@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Keep --backend and other CLI helpers on the Rust path without graphics probes.
+. /usr/lib/bachy/bachy-gpu-policy
+bachy_select_gpu /usr/lib/bachy/bachy /usr/lib/bachy/bachy-gpu-check "${1:-}"
+exec /usr/lib/bachy/bachy "$@"

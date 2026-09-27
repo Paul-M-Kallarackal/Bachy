@@ -19,7 +19,7 @@ PreviewColumn 1.0 PreviewColumn.qml
 PreviewLines 1.0 PreviewLines.qml
 PreviewPdf 1.0 PreviewPdf.qml
 OptionalPdf 1.0 OptionalPdf.qml
-PdfUnavailable 1.0 PdfUnavailable.qml
+PreviewUnavailable 1.0 PreviewUnavailable.qml
 PreviewImage 1.0 PreviewImage.qml
 ConvertDialog 1.0 ConvertDialog.qml
 DialogButton 1.0 DialogButton.qml
@@ -126,3 +126,5 @@ singleton Util 1.0 Util.qml
 singleton Border 1.0 Border.qml
 BorderSurface 1.0 BorderSurface.qml
 PanelSectionHeader 1.0 PanelSectionHeader.qml
+OptionalMedia 1.0 OptionalMedia.qml
+FugueShape 1.0 FugueShape.qml

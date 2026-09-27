@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Shared by source and packaged launchers. Filesystem roots are parameters so the
+# policy can be tested against fake hardware without waking or changing a GPU.
+bachy_select_gpu() {
+  local bachy_binary=$1 bachy_gpu_helper=$2 bachy_first_arg=${3:-}
+  local bachy_drm_root=${4:-/sys/class/drm} bachy_icd_root=${5:-/usr/share/vulkan/icd.d}
+  local bachy_graphical bachy_intel_display bachy_other_display bachy_status bachy_card bachy_vendor
+  local bachy_nvidia_icd bachy_session bachy_gpu_state bachy_nvidia_awake bachy_gpu
+  # CLI helpers must not initialize graphics or start a background probe.
+  bachy_graphical=0
+  case "$bachy_first_arg" in
+    --gui|--select|--pick|'') bachy_graphical=1 ;;
+    --*) ;;
+    *) bachy_graphical=1 ;;
+  esac
+  # On Intel-driven hybrid laptops, probing every Vulkan driver wakes the discrete
+  # GPU before choosing Intel anyway. Inspect connectors without loading a driver.
+  # Applies only to automatic graphics selection.
+  if [[ "$bachy_graphical" == 1 && -z "${QSG_RHI_BACKEND:-}" && -z "${VK_DRIVER_FILES:-}" && -z "${VK_ICD_FILENAMES:-}" && -z "${DRI_PRIME:-}" && -z "${__NV_PRIME_RENDER_OFFLOAD:-}" && -r $bachy_icd_root/intel_icd.json ]]; then
+    bachy_intel_display=0
+    bachy_other_display=0
+    for bachy_status in "$bachy_drm_root"/card*-*/status; do
+      [[ -r "$bachy_status" ]] || continue
+      [[ $(<"$bachy_status") == connected ]] || continue
+      bachy_card=${bachy_status%/*}
+      bachy_card=${bachy_card##*/}
+      bachy_card=${bachy_card%%-*}
+      bachy_vendor="$bachy_drm_root/$bachy_card/device/vendor"
+      if [[ -r "$bachy_vendor" && $(<"$bachy_vendor") == 0x8086 ]]; then
+        bachy_intel_display=1
+      else
+        bachy_other_display=1
+      fi
+    done
+    if (( bachy_intel_display && !bachy_other_display )); then
+      export VK_DRIVER_FILES=$bachy_icd_root/intel_icd.json
+      export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+      # Existing file/terminal launchers clear Bachy's pin for external apps.
+      export BACHY_VK_PIN=1
+      # Readiness belongs to this login session, not a permanent GPU preference.
+      bachy_nvidia_icd=$bachy_icd_root/nvidia_icd.json
+      if [[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" && -O "$XDG_RUNTIME_DIR" && -r "$bachy_nvidia_icd" ]]; then
+        bachy_session=${HYPRLAND_INSTANCE_SIGNATURE:-${WAYLAND_DISPLAY:-default}}
+        bachy_session=${bachy_session//[!a-zA-Z0-9_.-]/_}
+        bachy_gpu_state="$XDG_RUNTIME_DIR/bachy-gpu-$bachy_session"
+        if mkdir -p -m 700 -- "$bachy_gpu_state"; then
+          bachy_nvidia_awake=0
+          for bachy_gpu in "$bachy_drm_root"/card*/device; do
+            [[ -r "$bachy_gpu/vendor" && -r "$bachy_gpu/power/runtime_status" ]] || continue
+            if [[ $(<"$bachy_gpu/vendor") == 0x10de && $(<"$bachy_gpu/power/runtime_status") == active ]]; then
+              bachy_nvidia_awake=1
+            fi
+          done
+          if [[ "$bachy_nvidia_awake" == 1 && -r "$bachy_gpu_state/ready" && $(<"$bachy_gpu_state/ready") == "$bachy_nvidia_icd" && ! "$bachy_nvidia_icd" -nt "$bachy_gpu_state/ready" ]]; then
+            export VK_DRIVER_FILES="$bachy_nvidia_icd"
+            export VK_ICD_FILENAMES="$bachy_nvidia_icd"
+          else
+            rm -f -- "$bachy_gpu_state/ready"
+            # A failed probe has a short retry cooldown; no failure blocks launch.
+            if [[ ! -f "$bachy_gpu_state/failed" ]] || (( $(date +%s) - $(stat -c %Y "$bachy_gpu_state/failed") >= 60 )); then
+              nohup "$bachy_gpu_helper" "$bachy_binary" "$bachy_gpu_state" "$bachy_nvidia_icd" \
+                >"$bachy_gpu_state/check.log" 2>&1 </dev/null &
+            fi
+          fi
+        fi
+      fi
+    fi
+  fi
+}

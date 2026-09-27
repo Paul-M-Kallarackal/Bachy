@@ -48,6 +48,9 @@ function open(root) {
 function act(action, root) {
     root.preview.revealStrip()
     switch (action) {
+    case "open":
+        if (root.preview.mediaUnavailable) root.preview.surfaceItem().openExternally()
+        return
     case "cursorDown": Filter.moveCursor(root, 1); follow(root); return
     case "cursorUp": Filter.moveCursor(root, -1); follow(root); return
     case "preview": root.preview.close(); return

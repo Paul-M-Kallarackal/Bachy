@@ -51,7 +51,7 @@ makepkg -si
 bachy --gui
 ```
 
-`PKGBUILD` declares the runtime dependencies. On current source/package revision 0.1.0-2, graphical PDF preview is optional: install `qt6-webengine` and restart Bachy to enable it. Without it, PDFs can still open in your default application. The original v0.1.0 release download predates this change. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No AUR listing is currently maintained.
+`PKGBUILD` declares the runtime dependencies. On current source/package revision 0.1.0-3, PDF preview (`qt6-webengine`), audio/video playback (`qt6-multimedia`), and the `noto-fonts` collection are optional. Install preview support and restart Bachy to enable it; files can still open in their default applications without it. The UI uses your installed monospace font, with `BACHY_FONT` available as an override. The original v0.1.0 release download predates this change. If your enabled repositories cannot resolve Quickshell or another dependency, install the missing dependency first; do not skip dependency checks for a normal installation. No AUR listing is currently maintained.
 
 For development, with the runtime dependencies installed:
 
@@ -88,9 +88,11 @@ xdg-mime default local.bachy.FileManager.desktop inode/directory
 
 ## First-launch performance
 
-On one tested Intel/NVIDIA laptop, opening the first usable listing improved from approximately **2.8 seconds to 0.25–0.27 seconds** by avoiding a synchronous NVIDIA wake-up. The source launcher opens on Intel first and checks NVIDIA in the background; later windows can use a checked, awake NVIDIA GPU. After NVIDIA sleeps, it uses Intel again.
+On one tested Intel/NVIDIA laptop, opening the first usable listing improved from approximately **2.8 seconds to 0.25–0.27 seconds** by avoiding a synchronous NVIDIA wake-up. The source and packaged launchers open on Intel first and checks NVIDIA in the background; later windows can use a checked, awake NVIDIA GPU. After NVIDIA sleeps, it uses Intel again.
 
-These are measurements from one machine with a sleeping discrete GPU, **not reboot-cold benchmarks or cross-machine guarantees**. The packaged `bachy` binary currently uses the original automatic renderer selection; the hybrid policy lives in `run-bachy`. Making that policy configurable and consistent across installation methods is on the roadmap.
+These are measurements from one machine with a sleeping discrete GPU, **not reboot-cold benchmarks or cross-machine guarantees**. Source/package revision 0.1.0-3 shares one GPU policy between `run-bachy` and `/usr/bin/bachy`, including chooser launches. Explicit renderer/PRIME selections remain authoritative. The original v0.1.0 release download predates this packaging fix.
+
+The dependency audit estimates **274.13 MiB** of additional hard dependencies above base Arch + Hyprland + Quickshell, down from **838.16 MiB** before optional previews/fonts. These are one package-database snapshot’s installed sizes, excluding Bachy’s own payload. See the [dependency and startup audit](docs/DEPENDENCY-AND-STARTUP-AUDIT.md) for method, tradeoffs and launch measurements.
 
 ## Development
 
@@ -100,7 +102,7 @@ bash tests/js.sh
 bash tests/keymap-gen.sh
 ```
 
-The latest local core check recorded **852 Rust tests and 3,967 JavaScript checks passing**. The complete inherited integration runner is **not green**; see [verification and prerequisites](docs/BACHY-VERIFICATION.md). Run destructive-operation tests only in disposable fixtures with the repository's sandbox guard enabled.
+The latest local core check recorded **863 Rust tests and 3,967 JavaScript checks passing**. The complete inherited integration runner is **not green**; see [verification and prerequisites](docs/BACHY-VERIFICATION.md). Run destructive-operation tests only in disposable fixtures with the repository's sandbox guard enabled.
 
 ## Credits and license
 
